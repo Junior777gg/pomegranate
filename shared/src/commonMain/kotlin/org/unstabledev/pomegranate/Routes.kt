@@ -1,8 +1,10 @@
 package org.unstabledev.pomegranate
 
 object Routes {
-    const val FIRST_SCREEN_ROUTE = "1"
-    const val HOME_SCREEN_ROUTE = "2"
-    const val CHAT_SCREEN_ROUTE = "3"
-    const val CONTACTS_SCREEN_ROUTE = "4"
+    const val WELCOME_SCREEN = "welcome"
+    const val LOGIN_SCREEN = "login"
+    const val HOME_SCREEN = "home"
+    const val CHAT_SCREEN = "chat"
+    const val CONTACTS_SCREEN = "contacts"
+    const val SETTINGS_SCREEN = "settings"
 }

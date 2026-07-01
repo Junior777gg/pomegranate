@@ -1,7 +1,8 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,10 +16,17 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,24 +34,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.ktor.util.PlatformUtils
+import isMobile
+import org.unstabledev.pomegranate.ChatScreenController
+import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Routes
+import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.MessageDC
 
 
 private object ChatColors {
-    val Background = Color(0xFFE7EBF0)
-    val MyBubble = Color(0xFFE3FFC7)
-    val OtherBubble = Color(0xFFFFFFFF)
-    val HeaderBackground = Color(0xFFFFFFFF)
-    val InputBackground = Color(0xFFFFFFFF)
-    val TextPrimary = Color(0xFF000000)
-    val TextSecondary = Color(0xFF707579)
-    val SendButton = Color(0xFF3390EC)
-    val ReadCheck = Color(0xFF3390EC)
+    val MyBubble = Color(0xFF8BFF1A)
+    val Accent = Color(0xFF3390EC)
 }
 
 @Composable
@@ -55,7 +64,7 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val messages = viewModel.messages.collectAsState()
-
+    val foundPartner = Repository.lastContact?.first?.partnerEmail ?: "partner"
 
     LaunchedEffect(messages.value.size) {
         if (messages.value.isNotEmpty()) {
@@ -63,10 +72,13 @@ fun ChatScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(ChatColors.Background)) {
+    Column(modifier = Modifier.fillMaxSize()) {
         ChatHeader(
-            partnerName = "",
-            onBackClick = { navWayObj.goTo(Routes.HOME_SCREEN_ROUTE) }
+            foundPartner,
+            { navWayObj.goTo(Routes.HOME_SCREEN) },
+            {},
+            {},
+            {}
         )
 
         LazyColumn(
@@ -96,13 +108,19 @@ fun ChatScreen(
 @Composable
 private fun ChatHeader(
     partnerName: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onClearHistoryClick: () -> Unit,
+    onDeleteChatClick: () -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
             .height(56.dp)
-            .background(ChatColors.HeaderBackground)
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -110,7 +128,7 @@ private fun ChatHeader(
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Назад",
-                tint = ChatColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -118,12 +136,12 @@ private fun ChatHeader(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF5C6BC0)),
+                .background(Util.randomColor(partnerName.hashCode(), isSystemInDarkTheme())),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = partnerName.take(1).uppercase(),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -134,18 +152,81 @@ private fun ChatHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = partnerName,
-                color = ChatColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
             )
         }
 
-        IconButton(onClick = { /* TODO */ }) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "Меню",
-                tint = ChatColors.TextPrimary
-            )
+        Box {
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Меню",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
+            ) {
+                DropdownMenuItem(
+                    text = {
+                        Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onProfileClick()
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = {
+                        Text("Очистить историю", color = MaterialTheme.colorScheme.onBackground)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onClearHistoryClick()
+                    }
+                )
+
+                HorizontalDivider()
+
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = "Удалить чат",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onDeleteChatClick()
+                    }
+                )
+            }
         }
     }
 }
@@ -160,7 +241,7 @@ private fun MessageBubble(message: MessageDC) {
     ) {
         Box(
             modifier = Modifier
-                .widthIn(max = 280.dp)  // максимальная ширина пузыря
+                .widthIn(max = 280.dp)
                 .clip(
                     RoundedCornerShape(
                         topStart = 16.dp,
@@ -169,7 +250,7 @@ private fun MessageBubble(message: MessageDC) {
                         bottomEnd = if (message.isMine) 4.dp else 16.dp
                     )
                 )
-                .background(if (message.isMine) ChatColors.MyBubble else ChatColors.OtherBubble)
+                .background(if (message.isMine) ChatColors.MyBubble else MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Row(
@@ -178,7 +259,7 @@ private fun MessageBubble(message: MessageDC) {
             ) {
                 Text(
                     text = message.data.decodeToString(),
-                    color = ChatColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 15.sp,
                     modifier = Modifier.weight(1f, fill = false)
                 )
@@ -188,7 +269,7 @@ private fun MessageBubble(message: MessageDC) {
                 ) {
                     Text(
                         text = message.time,
-                        color = ChatColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 11.sp
                     )
                 }
@@ -205,8 +286,7 @@ private fun MessageInput(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(ChatColors.InputBackground)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = if(isMobile) {if(Util.isKeyboardVisible()) 33.dp else 10.dp} else 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -214,7 +294,7 @@ private fun MessageInput(
                 .weight(1f)
                 .heightIn(min = 40.dp, max = 120.dp)
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFFF0F2F5))
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -222,16 +302,16 @@ private fun MessageInput(
                 state = state,
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = TextStyle(
-                    color = ChatColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 15.sp
                 ),
-                cursorBrush = SolidColor(ChatColors.SendButton),
+                cursorBrush = SolidColor(ChatColors.Accent),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
                 decorator = { innerTextField ->
                     if (state.text.isEmpty()) {
                         Text(
                             text = "Сообщение",
-                            color = ChatColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 15.sp
                         )
                     }
@@ -246,14 +326,14 @@ private fun MessageInput(
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(ChatColors.SendButton)
+                .background(ChatColors.Accent)
                 .clickable { onSend() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Send,
                 contentDescription = "Отправить",
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(20.dp)
             )
         }

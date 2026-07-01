@@ -1,5 +1,8 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -10,13 +13,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
+import isLandscape
 
 @Composable
 fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
-    MaterialTheme {
-        Scaffold(Modifier.fillMaxSize().padding(vertical = 30.dp)) {
+    val theme = ColorTheme()
+    theme.AppTheme {
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
+        Scaffold(Modifier.fillMaxSize().padding(bottom = 12.dp, top = if(isLandscape()) 30.dp else 0.dp).displayCutoutPadding()) {
             val navController = rememberNavController()
-             Navigation(navController, chatDao)
+            Navigation(navController, chatDao)
         }
     }
 }
