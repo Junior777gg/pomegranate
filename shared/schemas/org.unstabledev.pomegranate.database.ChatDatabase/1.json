@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "019294db0a1fffba17a1edf7d9b532d5",
+    "entities": [
+      {
+        "tableName": "chat",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`partnerEmail` TEXT NOT NULL, PRIMARY KEY(`partnerEmail`))",
+        "fields": [
+          {
+            "fieldPath": "partnerEmail",
+            "columnName": "partnerEmail",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "partnerEmail"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '019294db0a1fffba17a1edf7d9b532d5')"
+    ]
+  }
+}
