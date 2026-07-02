@@ -8,10 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,13 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MyTextField(state: TextFieldState, hint: String, label: String? = null, onClick: () -> Unit = {}) {
+fun LabeledTextField(state: TextFieldState, hint: String, label: String? = null, onClick: () -> Unit = {}, singleLineIn: Boolean = false) {
     Column(modifier = Modifier.clickable{onClick()}) {
         if (label != null) {
             Text(
                 modifier = Modifier.padding(start = 30.dp),
                 text = label,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 textAlign = TextAlign.End
             )
@@ -44,18 +45,19 @@ fun MyTextField(state: TextFieldState, hint: String, label: String? = null, onCl
             modifier = Modifier
                 .fillMaxWidth().height(34.dp)
                 .background(
-                    color = Color(0xFFF0F2F5), // светло-серый фон
+                    color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(12.dp)
                 ).padding(horizontal = 16.dp, vertical = 8.dp)
                 .onFocusChanged {
                     focused = it.isFocused
                 },
+            lineLimits = if(singleLineIn) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default,
             state = state,
             textStyle = TextStyle(
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 14.sp
             ),
-            cursorBrush = SolidColor(Color.Gray),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
             decorator = {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (!focused) {

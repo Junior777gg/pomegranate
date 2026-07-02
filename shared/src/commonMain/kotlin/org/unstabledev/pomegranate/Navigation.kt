@@ -6,17 +6,23 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.screen.ChatScreen
+import org.unstabledev.pomegranate.screen.ContactsScreen
+import org.unstabledev.pomegranate.screen.LoginScreen
+import org.unstabledev.pomegranate.screen.HomeScreen
+import org.unstabledev.pomegranate.screen.SettingsScreen
+import org.unstabledev.pomegranate.screen.WelcomeScreen
 
 
 @Composable
 fun Navigation(navController: NavHostController, chatDao: ChatDao) {
-    var startDestination = remember { Routes.FIRST_SCREEN_ROUTE}
-    val fistFilePath = remember { "pomegranate${File.sep}firstFile.txt"}
+    var startDestination: String
+    val fistFilePath = remember { "pomegranate${File.sep}auth.txt"}
     if (File(fistFilePath).exists()) {
-        if (File(fistFilePath).readText() != "") {
-            startDestination = Routes.HOME_SCREEN_ROUTE
-        }else{
-            startDestination = Routes.FIRST_SCREEN_ROUTE
+        startDestination = if (File(fistFilePath).readText() != "") {
+            Routes.HOME_SCREEN
+        } else {
+            Routes.WELCOME_SCREEN
         }
     } else {
         if (File("pomegranate").exists()) {
@@ -25,28 +31,37 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao) {
             File("pomegranate").createDirectory()
             File(fistFilePath).createFile()
         }
-        startDestination = Routes.FIRST_SCREEN_ROUTE
+        startDestination = Routes.WELCOME_SCREEN
     }
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(Routes.FIRST_SCREEN_ROUTE) {
+        composable(Routes.WELCOME_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
                     back = { navController.popBackStack() }
                 )
             }
-            FirstScreen(navWayObj)
+            WelcomeScreen(navWayObj)
         }
-        composable(Routes.HOME_SCREEN_ROUTE) {
+        composable(Routes.LOGIN_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
                     back = { navController.popBackStack() }
                 )
             }
-            MainScreen(navWayObj, chatDao)
+            LoginScreen(navWayObj)
         }
-        composable(Routes.CONTACTS_SCREEN_ROUTE){
+        composable(Routes.HOME_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            HomeScreen(navWayObj, chatDao)
+        }
+        composable(Routes.CONTACTS_SCREEN){
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
@@ -55,11 +70,20 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao) {
             }
             ContactsScreen(navWayObj)
         }
-        composable(Routes.CHAT_SCREEN_ROUTE) {
+        composable(Routes.SETTINGS_SCREEN){
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.navigate(Routes.HOME_SCREEN_ROUTE) }
+                    back = { navController.popBackStack() }
+                )
+            }
+            SettingsScreen(navWayObj)
+        }
+        composable(Routes.CHAT_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.navigate(Routes.HOME_SCREEN) }
                 )
             }
             ChatScreen(navWayObj)
