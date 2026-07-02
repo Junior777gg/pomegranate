@@ -1,3 +1,5 @@
+package org.unstabledev.pomegranate
+
 import androidx.compose.runtime.Composable
 
 expect val isMobile: Boolean

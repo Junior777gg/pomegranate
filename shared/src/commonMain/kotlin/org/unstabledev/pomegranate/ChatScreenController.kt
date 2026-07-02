@@ -17,8 +17,7 @@ class ChatScreenController : ViewModel() {
     private val _messages: MutableStateFlow<List<MessageDC>> = MutableStateFlow(listOf())
     val messages: StateFlow<List<MessageDC>> = _messages
     private lateinit var observer: Observer
-    private lateinit var chatDC: ChatDC
-
+    lateinit var chatDC: ChatDC
     init {
         viewModelScope.launch(Dispatchers.IO) {
             chatDC = Repository.lastContact!!.first

@@ -9,5 +9,5 @@ object Repository {
     val myEmail = File(fistFilePath).readText()
     var lastContact : Pair<ChatDC, Observer?>? = null
     val availableChats = mutableMapOf<ChatDC, Observer>()
-
+    var lastOpponentEmail = ""
 }

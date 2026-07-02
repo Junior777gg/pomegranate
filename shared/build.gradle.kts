@@ -54,6 +54,8 @@ kotlin {
             implementation("com.google.crypto.tink:tink:1.21.0")
         }
         commonMain.dependencies {
+            implementation("io.coil-kt.coil3:coil-network-ktor3:3.5.0")
+            implementation("io.coil-kt.coil3:coil-compose:3.5.0")
             implementation("org.kotlincrypto.hash:sha2:0.5.3")
             implementation("io.ktor:ktor-client-content-negotiation:3.0.0")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.0")

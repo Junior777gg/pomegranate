@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import isMobile
+import org.unstabledev.pomegranate.isMobile
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Routes

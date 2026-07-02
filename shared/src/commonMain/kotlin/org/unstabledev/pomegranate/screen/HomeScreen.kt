@@ -21,11 +21,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -37,7 +34,6 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import isMobile
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.File
@@ -63,6 +59,7 @@ import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.menu
 
@@ -163,7 +160,13 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         File(fistFilePath).delete()
                         navWayObj.goTo(Routes.LOGIN_SCREEN)
                     },
-                    icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Logout", tint = MaterialTheme.colorScheme.error) },
+                    icon = {
+                        Icon(
+                            Icons.Default.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }
@@ -186,7 +189,8 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                 Row(
                     modifier = Modifier.height(50.dp).fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically) {
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         modifier = Modifier
                             .size(26.dp)
@@ -224,29 +228,45 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                 }
                         ) {
                             val partnerName = chat.partnerEmail
+                            val profile = chat.profile?.deserialize()
                             Row(modifier = Modifier.fillMaxWidth().height(60.dp)) {
-                                Column(
-                                    modifier = Modifier.width(60.dp).fillMaxHeight(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .clip(CircleShape)
-                                            .background(Util.randomColor(partnerName.hashCode(), isSystemInDarkTheme())),
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        modifier = Modifier.width(60.dp).fillMaxHeight(),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(
-                                            text = partnerName.take(1).uppercase(),
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
+                                        if (profile == null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(50.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        Util.randomColor(
+                                                            partnerName.hashCode(),
+                                                            isSystemInDarkTheme()
+                                                        )
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = partnerName.take(1).uppercase(),
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }else{
+                                            AsyncImage(
+                                                model = profile.avatarUrl,
+                                                contentDescription = profile.displayName,
+                                                modifier = Modifier
+                                                    .size(96.dp)
+                                                    .clip(CircleShape)
+                                            )
+                                        }
                                     }
-                                }
                                 Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
-                                    Text(chat.partnerEmail, color = MaterialTheme.colorScheme.onBackground)
+                                    Text(profile?.displayName ?: chat.partnerEmail, color = MaterialTheme.colorScheme.onBackground)
                                     Text(
                                         text = "<последнее сообщение>",
                                         style = TextStyle(
@@ -266,7 +286,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        if(chats.value.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
+                        if (chats.value.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
                         else "Ничего не найдено",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,

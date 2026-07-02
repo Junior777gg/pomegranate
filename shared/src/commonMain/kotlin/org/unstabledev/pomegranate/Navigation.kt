@@ -10,6 +10,7 @@ import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
 import org.unstabledev.pomegranate.screen.LoginScreen
 import org.unstabledev.pomegranate.screen.HomeScreen
+import org.unstabledev.pomegranate.screen.ProfileScreen
 import org.unstabledev.pomegranate.screen.SettingsScreen
 import org.unstabledev.pomegranate.screen.WelcomeScreen
 
@@ -87,6 +88,15 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao) {
                 )
             }
             ChatScreen(navWayObj)
+        }
+        composable(Routes.PROFILE_SCREEN_ROUTE){
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.navigate(Routes.HOME_SCREEN) }
+                )
+            }
+            ProfileScreen(navWayObj)
         }
     }
 }

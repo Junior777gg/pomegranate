@@ -1,3 +1,5 @@
+package org.unstabledev.pomegranate
+
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration

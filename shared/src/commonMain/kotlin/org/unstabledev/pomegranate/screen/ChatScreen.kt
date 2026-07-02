@@ -34,20 +34,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.ktor.util.PlatformUtils
-import isMobile
+import coil3.compose.AsyncImage
+import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.ChatScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.deserialize
 
 
 private object ChatColors {
@@ -62,9 +63,8 @@ fun ChatScreen(
     val viewModel = viewModel { ChatScreenController() }
     val inputState = rememberTextFieldState()
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     val messages = viewModel.messages.collectAsState()
-    val foundPartner = Repository.lastContact?.first?.partnerEmail ?: "partner"
+    val chat by lazy { viewModel.chatDC }
 
     LaunchedEffect(messages.value.size) {
         if (messages.value.isNotEmpty()) {
@@ -74,9 +74,12 @@ fun ChatScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         ChatHeader(
-            foundPartner,
+            chat,
             { navWayObj.goTo(Routes.HOME_SCREEN) },
-            {},
+            {
+                Repository.lastOpponentEmail = chat.partnerEmail
+                navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+            },
             {},
             {}
         )
@@ -107,12 +110,13 @@ fun ChatScreen(
 
 @Composable
 private fun ChatHeader(
-    partnerName: String,
+    chat: ChatDC,
     onBackClick: () -> Unit,
     onProfileClick: () -> Unit,
     onClearHistoryClick: () -> Unit,
     onDeleteChatClick: () -> Unit
 ) {
+    val profile = chat.profile?.deserialize()
     var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
@@ -131,19 +135,28 @@ private fun ChatHeader(
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
-
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Util.randomColor(partnerName.hashCode(), isSystemInDarkTheme())),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = partnerName.take(1).uppercase(),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
+        if (profile == null) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Util.randomColor(chat.partnerEmail.hashCode(), isSystemInDarkTheme())),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = chat.partnerEmail.take(1).uppercase(),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }else{
+            AsyncImage(
+                model = profile.avatarUrl,
+                contentDescription = profile.displayName,
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
             )
         }
 
@@ -151,7 +164,7 @@ private fun ChatHeader(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = partnerName,
+                text = chat.partnerEmail,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
@@ -286,7 +299,11 @@ private fun MessageInput(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = if(isMobile) {if(Util.isKeyboardVisible()) 33.dp else 10.dp} else 0.dp),
+            .padding(
+                horizontal = 8.dp, vertical = if (isMobile) {
+                    if (Util.isKeyboardVisible()) 33.dp else 10.dp
+                } else 0.dp
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(

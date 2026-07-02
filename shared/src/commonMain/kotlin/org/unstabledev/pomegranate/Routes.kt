@@ -5,6 +5,7 @@ object Routes {
     const val LOGIN_SCREEN = "login"
     const val HOME_SCREEN = "home"
     const val CHAT_SCREEN = "chat"
+    const val PROFILE_SCREEN_ROUTE = "profile"
     const val CONTACTS_SCREEN = "contacts"
     const val SETTINGS_SCREEN = "settings"
 }
