@@ -59,13 +59,14 @@ import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.menu
 
 @Composable
-fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
-    val viewModel = viewModel { MainScreenController(chatDao) }
+fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
+    val viewModel = viewModel { MainScreenController(chatDao, messagesDao) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {

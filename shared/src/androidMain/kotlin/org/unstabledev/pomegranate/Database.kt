@@ -16,7 +16,7 @@ fun getChatDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatDatabase>
 }
 fun getMessagesDatabaseBuilder(context: Context): RoomDatabase.Builder<MessagesDatabase> {
     val appContext = context.applicationContext
-    val dbFile = appContext.getDatabasePath("chat.db")
+    val dbFile = appContext.getDatabasePath("messages.db")
     return Room.databaseBuilder<MessagesDatabase>(
         context = appContext,
         name = dbFile.absolutePath

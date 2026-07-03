@@ -15,7 +15,7 @@ class BaseP2P {
             var email = ""
             while (email == "") {
                 try {
-                email = Firebase.get<String>("p2p/${myEmail}")?.sha256() ?:""
+                email = Firebase.get<String>("p2p/${myEmail}") ?:""
                 } catch (e: Exception) {}
                 delay(100)
             }
@@ -23,13 +23,13 @@ class BaseP2P {
             Firebase.delete("p2p/${myEmail}")
             val manager = P2PManagerImpl()
             Firebase.put(
-                "p2p/${myEmail}/${email}/offer",
+                "p2p/${myEmail}/${email.sha256()}/offer",
                 "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}"
             )
             var answer = ""
             while (answer == "") {
                 try {
-                answer = Firebase.get<String>("p2p/${myEmail}/${email}/answer")?:""
+                answer = Firebase.get<String>("p2p/${myEmail}/${email.sha256()}/answer")?:""
                 } catch (e: Exception) {}
                 delay(100)
             }

@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
-import org.unstabledev.pomegranate.isLandscape
 
 @Composable
 fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
@@ -22,7 +21,7 @@ fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
         Scaffold(Modifier.fillMaxSize().padding(bottom = 12.dp, top = if(isLandscape()) 30.dp else 0.dp).displayCutoutPadding()) {
             val navController = rememberNavController()
-            Navigation(navController, chatDao)
+            Navigation(navController, chatDao, messagesDao)
         }
     }
 }

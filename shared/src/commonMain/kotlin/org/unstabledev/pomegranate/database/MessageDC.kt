@@ -5,7 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "messages")
 data class MessageDC(
-    @PrimaryKey val email: String,
+    @PrimaryKey(autoGenerate = true)
+    val key: Long = 0,
+    val email: String,
     val data: ByteArray,
     val type: String,
     val time: String,

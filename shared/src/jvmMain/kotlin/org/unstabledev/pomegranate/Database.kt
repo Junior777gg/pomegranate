@@ -13,7 +13,7 @@ fun getChatDatabaseBuilder(): RoomDatabase.Builder<ChatDatabase> {
     )
 }
 fun getMessagesDatabaseBuilder(): RoomDatabase.Builder<MessagesDatabase> {
-    val dbFile = File("${System.getProperty("user.dir")}${File.separator}pomegranate", "chat.db")
+    val dbFile = File("${System.getProperty("user.dir")}${File.separator}pomegranate", "messages.db")
     return Room.databaseBuilder<MessagesDatabase>(
         name = dbFile.absolutePath,
     )

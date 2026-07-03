@@ -48,6 +48,7 @@ import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 
 
@@ -59,12 +60,16 @@ private object ChatColors {
 @Composable
 fun ChatScreen(
     navWayObj: NavigationWays,
+    messagesDao: MessagesDao,
 ) {
-    val viewModel = viewModel { ChatScreenController() }
+    val viewModel = viewModel { ChatScreenController(messagesDao) }
     val inputState = rememberTextFieldState()
     val listState = rememberLazyListState()
     val messages = viewModel.messages.collectAsState()
-    val chat by lazy { viewModel.chatDC }
+    val chat by lazy { viewModel.chatDC.value }
+    LaunchedEffect(Unit){
+        viewModel.update()
+    }
 
     LaunchedEffect(messages.value.size) {
         if (messages.value.isNotEmpty()) {
@@ -90,7 +95,7 @@ fun ChatScreen(
             contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(messages.value, key = { it.email }) { message ->
+            items(messages.value) { message ->
                 MessageBubble(message)
             }
         }

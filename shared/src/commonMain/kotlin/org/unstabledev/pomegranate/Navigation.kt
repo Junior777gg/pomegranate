@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
 import org.unstabledev.pomegranate.screen.LoginScreen
@@ -16,7 +17,7 @@ import org.unstabledev.pomegranate.screen.WelcomeScreen
 
 
 @Composable
-fun Navigation(navController: NavHostController, chatDao: ChatDao) {
+fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
     var startDestination: String
     val fistFilePath = remember { "pomegranate${File.sep}auth.txt"}
     if (File(fistFilePath).exists()) {
@@ -60,7 +61,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao) {
                     back = { navController.popBackStack() }
                 )
             }
-            HomeScreen(navWayObj, chatDao)
+            HomeScreen(navWayObj, chatDao, messagesDao)
         }
         composable(Routes.CONTACTS_SCREEN){
             val navWayObj = remember {
@@ -87,7 +88,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao) {
                     back = { navController.navigate(Routes.HOME_SCREEN) }
                 )
             }
-            ChatScreen(navWayObj)
+            ChatScreen(navWayObj, messagesDao)
         }
         composable(Routes.PROFILE_SCREEN_ROUTE){
             val navWayObj = remember {
