@@ -65,7 +65,7 @@ class ChatScreenController(val messagesDao: MessagesDao) : ViewModel() {
             observer.send(message)
             val time = now().toString().split("T")[1].split(":")
             val message = MessageDC(
-                email = Repository.myEmail,
+                email = chatDC.value.partnerEmail,
                 data = message.encodeToByteArray(),
                 type = MessageDC.TEXT,
                 time = "${time[0].toInt() + 3}:${time[1]}",
