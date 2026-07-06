@@ -15,9 +15,19 @@ import org.unstabledev.pomegranate.screen.Profile
 
 class ProfileScreenController : ViewModel() {
     val profile = MutableStateFlow(Profile())
-    fun getProfile(email: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            profile.emit(Gravatar.getProfile(email.sha256()))
+    suspend fun getProfile(email: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            val p = Gravatar.getProfile(email.sha256())
+            if (p != null) {
+                profile.emit(p)
+                true
+            } else false
+        }
+    }
+
+    fun getProfileAsync(email: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            onResult(getProfile(email))
         }
     }
 }

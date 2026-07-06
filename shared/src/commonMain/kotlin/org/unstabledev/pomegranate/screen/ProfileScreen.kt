@@ -1,17 +1,27 @@
 package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.ProfileScreenController
 import org.unstabledev.pomegranate.Repository
@@ -37,86 +48,241 @@ data class Profile(
     @SerialName("background_color") val backgroundColor: String = "#9d7967"
 )
 
-private val Orange = Color(0xFFF57C00)
-private val GrayBg = Color(0xFFF2F2F2)
-private val GrayText = Color(0xFF8A8A8A)
-private val DarkText = Color(0xFF2B2B2B)
+sealed class ProfileState {
+    object Loading : ProfileState()
+    data class Success(val profile: Profile) : ProfileState()
+    object NotFound : ProfileState()
+    data class Error(val message: String) : ProfileState()
+}
 
-// KMP-парсер hex-цвета (android.graphics.Color.parseColor недоступен в common)
-private fun String.toColor(): Color =
-    Color(removePrefix("#").toLong(16) or 0xFF000000)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navWayObj: NavigationWays) {
     val viewModel = viewModel { ProfileScreenController() }
-    viewModel.getProfile(Repository.lastOpponentEmail)
-    val profile = viewModel.profile.collectAsState().value
+    val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GrayBg)
+    val snackbarHostState = remember { SnackbarHostState() }
+    var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
+
+    LaunchedEffect(Unit) {
+        val email = Repository.lastOpponentEmail
+        val hasProfile = viewModel.getProfile(email)
+
+        profileState = if(hasProfile) ProfileState.Success(viewModel.profile.value)
+        else ProfileState.NotFound
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
-
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .fillMaxWidth()
-                .background(profile.backgroundColor.toColor())
-                .padding(top = 48.dp, bottom = 24.dp)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
         ) {
-            AsyncImage(
-                model = profile.avatarUrl,
-                contentDescription = profile.displayName,
-                modifier = Modifier
-                    .size(96.dp)
-                    .clip(CircleShape)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = profile.displayName,
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "${profile.jobTitle} • ${profile.company}",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 14.sp
-            )
-        }
+            IconButton(
+                onClick = { navWayObj.back() },
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Назад",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
 
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Column(Modifier.padding(vertical = 4.dp)) {
-                InfoRow(label = "О себе", value = profile.description)
-                Divider()
-                InfoRow(label = "Локация", value = profile.location)
-                Divider()
-                InfoRow(label = "Ссылка", value = profile.profileUrl, valueColor = Orange)
+            when (val state = profileState) {
+                is ProfileState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                is ProfileState.Success -> {
+                    ProfileContent(state.profile, snackbarHostState)
+                }
+
+                is ProfileState.NotFound -> {
+                    GeneratedProfileCard(email = Repository.lastOpponentEmail, snackbarHostState)
+                }
+
+                is ProfileState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ошибка: ${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun InfoRow(label: String, value: String, valueColor: Color = DarkText) {
-    if (value.isBlank()) return
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostState) {
+    val validAvatar = profile.avatarUrl.isNotBlank()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 24.dp)
+    ) {
+        if(validAvatar)
+            AsyncImage(
+                model = profile.avatarUrl.ifBlank { null },
+                contentDescription = profile.displayName,
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+            )
+        else
+            GeneratedProfileImage(
+                name = profile.displayName,
+                size = 96.dp
+            )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = profile.displayName.ifBlank { "Неизвестный пользователь" },
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        if (profile.jobTitle.isNotBlank() || profile.company.isNotBlank()) {
+            Text(
+                text = "${profile.jobTitle} • ${profile.company}".trim(' ', '•'),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Column(Modifier.padding(vertical = 4.dp)) {
+            if (profile.description.isNotBlank()) {
+                InfoRow(label = "О себе", value = profile.description)
+                Divider()
+            }
+            if (profile.location.isNotBlank()) {
+                InfoRow(label = "Локация", value = profile.location)
+                Divider()
+            }
+            if (profile.profileUrl.isNotBlank()) {
+                InfoRow(
+                    label = "Ссылка",
+                    value = profile.profileUrl,
+                    valueColor = MaterialTheme.colorScheme.primary,
+                    canBeCopied = true,
+                    snackbarHostState = snackbarHostState
+                )
+                Divider()
+            }
+            InfoRow(
+                label = "Email",
+                value = Repository.lastOpponentEmail,
+                canBeCopied = true,
+                snackbarHostState = snackbarHostState
+            )
+        }
+    }
+}
+
+@Composable
+private fun GeneratedProfileCard(email: String, snackbarHostState: SnackbarHostState) {
+    val name = email.substringBefore('@').replaceFirstChar { it.uppercase() }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp)
+    ) {
+        GeneratedProfileImage(
+            name = email,
+            size = 96.dp,
+            fontSize = 36.sp
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = name,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = email,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Профиль не найден",
+                fontSize = 16.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String, snackbarHostState: SnackbarHostState? = null, valueColor: Color = MaterialTheme.colorScheme.onBackground, canBeCopied: Boolean = false) {
+    if(value.isBlank()) return
+    var showSnackbar by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+    val baseMod = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth()
+
+    if (showSnackbar) {
+        LaunchedEffect(Unit) {
+            snackbarHostState?.showSnackbar("Скопировано")
+            showSnackbar = false
+        }
+    }
+
+    Column(if(!canBeCopied) baseMod else baseMod.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+        clipboardManager.setText(AnnotatedString(value))
+        showSnackbar = true
+    }) {
         Text(text = value, color = valueColor, fontSize = 16.sp)
-        Text(text = label, color = GrayText, fontSize = 13.sp)
+        Text(text = label, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
     }
 }
 
 @Composable
 private fun Divider() {
     HorizontalDivider(
-        color = GrayBg,
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.padding(start = 16.dp)
     )
 }

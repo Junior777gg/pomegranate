@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.ChatScreenController
+import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
@@ -77,6 +79,8 @@ fun ChatScreen(
         }
     }
 
+    val displayNewContactWidget = /*messages.value.isNotEmpty() && !messages.value.first().isMine*/ true
+
     Column(modifier = Modifier.fillMaxSize()) {
         ChatHeader(
             chat,
@@ -95,6 +99,13 @@ fun ChatScreen(
             contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            if(displayNewContactWidget) {
+                item {
+                    NewContactWidget(
+                        chat = chat
+                    )
+                }
+            }
             items(messages.value) { message ->
                 MessageBubble(message)
             }
@@ -122,6 +133,7 @@ private fun ChatHeader(
     onDeleteChatClick: () -> Unit
 ) {
     val profile = chat.profile?.deserialize()
+    val validProfile = profile?.profileUrl?.isNotBlank() ?: false
     var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
@@ -140,36 +152,21 @@ private fun ChatHeader(
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
-        if (profile == null) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Util.randomColor(chat.partnerEmail.hashCode(), isSystemInDarkTheme())),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = chat.partnerEmail.take(1).uppercase(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }else{
+        if (validProfile) {
             AsyncImage(
                 model = profile.avatarUrl,
                 contentDescription = profile.displayName,
                 modifier = Modifier
-                    .size(96.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
             )
-        }
+        } else GeneratedProfileImage(chat.partnerEmail)
 
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = chat.partnerEmail,
+                text = if(validProfile) profile.displayName else chat.partnerEmail,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
@@ -307,7 +304,7 @@ private fun MessageInput(
             .padding(
                 horizontal = 8.dp, vertical = if (isMobile) {
                     if (Util.isKeyboardVisible()) 33.dp else 10.dp
-                } else 0.dp
+                } else 10.dp
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -355,9 +352,152 @@ private fun MessageInput(
             Icon(
                 imageVector = Icons.Default.Send,
                 contentDescription = "Отправить",
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = MaterialTheme.colorScheme.background,
                 modifier = Modifier.size(20.dp)
             )
         }
     }
 }
+
+@Composable
+private fun NewContactWidget(
+    chat: ChatDC
+) {
+    val profile = chat.profile?.deserialize()
+    val displayName = if (profile?.displayName?.isNotBlank() == true) {
+        profile.displayName
+    } else {
+        chat.partnerEmail
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 320.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+
+            Text(
+                text = displayName,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Text(
+                text = "Новый контакт",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Страна",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = if(validProfile) {
+                        if (profile.location.isNotEmpty()) "${countryFlags[profile.location]} ${profile.location}"
+                        else "🏴‍☠️ Аноним"
+                    } else "🏴‍☠️ Аноним",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            /*Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Первое сообщение",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "${firstMessage.time}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }*/
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = "Предупреждение",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Не официальный аккаунт",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+        }
+    }
+}
+
+private val countryFlags = mapOf(
+    "Russia" to "🇷🇺",
+    "Ukraine" to "🇺🇦",
+    "Belarus" to "🇧🇾",
+    "Kazakhstan" to "🇰🇿",
+    "USA" to "🇺🇸",
+    "Canada" to "🇨🇦",
+    "Mexico" to "🇲🇽",
+    "Brazil" to "🇧🇷",
+    "Argentina" to "🇦🇷",
+    "UK" to "🇬🇧",
+    "Germany" to "🇩🇪",
+    "France" to "🇫🇷",
+    "Italy" to "🇮🇹",
+    "Spain" to "🇪🇸",
+    "Portugal" to "🇵🇹",
+    "Netherlands" to "🇳🇱",
+    "Belgium" to "🇧🇪",
+    "Switzerland" to "🇨🇭",
+    "Austria" to "🇦🇹",
+    "Poland" to "🇵🇱",
+    "Czech Republic" to "🇨🇿",
+    "Slovakia" to "🇸🇰",
+    "Hungary" to "🇭🇺",
+    "Romania" to "🇷🇴",
+    "Bulgaria" to "🇧🇬",
+    "Serbia" to "🇷🇸",
+    "Croatia" to "🇭🇷",
+    "Greece" to "🇬🇷",
+    "Turkey" to "🇹🇷",
+    "China" to "🇨🇳",
+    "Japan" to "🇯🇵",
+    "South Korea" to "🇰🇷",
+    "India" to "🇮🇳",
+    "Israel" to "🇮🇱",
+    "Saudi Arabia" to "🇸🇦",
+    "UAE" to "🇦🇪",
+    "Australia" to "🇦🇺",
+    "New Zealand" to "🇳🇿",
+    "South Africa" to "🇿🇦",
+    "Nigeria" to "🇳🇬",
+    "Egypt" to "🇪🇬"
+)
+

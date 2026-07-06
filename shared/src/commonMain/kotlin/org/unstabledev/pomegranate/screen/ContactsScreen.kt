@@ -42,7 +42,7 @@ fun ContactsScreen(navWayObj: NavigationWays) {
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    IconButton(onClick = { navWayObj.goTo(Routes.HOME_SCREEN) }) {
+    IconButton(onClick = { navWayObj.back() }) {
         Icon(
             imageVector = Icons.Default.ArrowBack,
             contentDescription = "Назад",

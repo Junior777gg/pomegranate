@@ -15,11 +15,11 @@ class ColorTheme {
         val AccentDark = Color(0xFFF35331)
         val AccentLight = Color(0xFFF34723)
         val BackgroundLight = Color(0xFFF7FAFD)
-        val BackgroundLightSurface = Color(0xFFBDBFC4)
-        val BackgroundLightOnSurface = Color(0xFF313234)
+        val SurfaceLight = Color(0xFFE7EBEF)
+        val OnSurfaceLight = Color(0xFFA3A6A8)
         val BackgroundDark = Color(0xFF181A1C)
-        val BackgroundDarkSurface = Color(0xFF2A2E32)
-        val BackgroundDarkOnSurface = Color(0xFF646A6C)
+        val SurfaceDark = Color(0xFF292B2D)
+        val OnSurfaceDark = Color(0xFF717376)
         val Warning = Color(0xFFFF2929)
         val TextDark = Color(0xFFF9FBFF)
         val TextLight = Color(0xFF151617)
@@ -30,8 +30,8 @@ class ColorTheme {
         onPrimary = TextDark,
         background = BackgroundDark,
         onBackground = TextDark,
-        surface = BackgroundDarkSurface,
-        onSurface = BackgroundDarkOnSurface,
+        surface = SurfaceDark,
+        onSurface = OnSurfaceDark,
         error = Warning
     )
 
@@ -40,8 +40,8 @@ class ColorTheme {
         onPrimary = TextLight,
         background = BackgroundLight,
         onBackground = TextLight,
-        surface = BackgroundLightSurface,
-        onSurface = BackgroundLightOnSurface,
+        surface = SurfaceLight,
+        onSurface = OnSurfaceLight,
         error = Warning
     )
 
