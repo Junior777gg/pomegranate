@@ -10,7 +10,7 @@ import org.unstabledev.pomegranate.screen.Profile
 
 object Gravatar {
     val client = HttpClient()
-    val apiKey = "9502:gk-DeJWwC3OtiKCelboht8NXNftgAWGbDaNeacM09C6CQp9gwpXIf9YwYEDqk5dR"
+    val apiKey = Secrets.gravatarApiKey
     val baseUrl = "https://api.gravatar.com/v3"
     suspend fun getProfile(email : String): Profile? {
         val response = client.get("$baseUrl/profiles/$email"){

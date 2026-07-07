@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 
 
 object Firebase {
-    val url = "https://pomegranate-1372b-default-rtdb.europe-west1.firebasedatabase.app/"
+    val url = Secrets.firebaseLink
     val client = HttpClient()
 
     inline fun <reified T> serializer (value: T): String {
