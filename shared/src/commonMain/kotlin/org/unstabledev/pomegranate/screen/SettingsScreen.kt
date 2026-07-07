@@ -31,7 +31,7 @@ import org.unstabledev.pomegranate.database.ChatDC
 
 @Composable
 fun SettingsScreen(navWayObj: NavigationWays) {
-    IconButton(onClick = {navWayObj.goTo(Routes.HOME_SCREEN)}) {
+    IconButton(onClick = {navWayObj.back()}) {
         Icon(
             imageVector = Icons.Default.ArrowBack,
             contentDescription = "Назад",

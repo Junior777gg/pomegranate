@@ -12,12 +12,13 @@ object Gravatar {
     val client = HttpClient()
     val apiKey = "9502:gk-DeJWwC3OtiKCelboht8NXNftgAWGbDaNeacM09C6CQp9gwpXIf9YwYEDqk5dR"
     val baseUrl = "https://api.gravatar.com/v3"
-    suspend fun getProfile(email : String): Profile {
+    suspend fun getProfile(email : String): Profile? {
         val response = client.get("$baseUrl/profiles/$email"){
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
             }
         }
-        return Json { ignoreUnknownKeys = true }.decodeFromString(Profile.serializer(), response.bodyAsText())
+        if(response.status.value==200) return Json { ignoreUnknownKeys = true }.decodeFromString(Profile.serializer(), response.bodyAsText())
+        return null
     }
 }

@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -51,6 +53,7 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.File
+import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.MainScreenController
 import org.unstabledev.pomegranate.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
@@ -134,15 +137,16 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                /*NavigationDrawerItem(
+                NavigationDrawerItem(
                     label = { Text("Профиль", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        navWayObj.goTo(Routes.SETTINGS_SCREEN)
+                        Repository.lastOpponentEmail=Repository.myEmail
+                        navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )*/
+                )
 
                 NavigationDrawerItem(
                     label = { Text("Настройки", fontSize = 16.sp) },
@@ -195,7 +199,6 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                     Icon(
                         modifier = Modifier
                             .size(26.dp)
-                            .clip(CircleShape)
                             .clickable {
                                 scope.launch { drawerState.open() }
                             },
@@ -203,16 +206,14 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                         contentDescription = "menu",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
-                    Column(
+                    Icon(
                         modifier = Modifier
-                            .height(50.dp)
-                            .width(30.dp)
+                            .size(26.dp)
                             .clickable { navWayObj.goTo(Routes.CONTACTS_SCREEN) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = "+", color = Color.Unspecified, fontSize = 25.sp)
-                    }
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "add",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                     LabeledTextField(searchState, "Поиск", singleLineIn = true)
                 }
             }
@@ -222,7 +223,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(60.dp)
+                                .height(64.dp)
                                 .clickable {
                                     Repository.lastContact = chat to Repository.availableChats[chat]
                                     navWayObj.goTo(Routes.CHAT_SCREEN)
@@ -230,44 +231,25 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                         ) {
                             val partnerName = chat.partnerEmail
                             val profile = chat.profile?.deserialize()
-                            Row(modifier = Modifier.fillMaxWidth().height(60.dp)) {
+                            val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+                            Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
                                     Column(
-                                        modifier = Modifier.width(60.dp).fillMaxHeight(),
+                                        modifier = Modifier.width(64.dp).fillMaxHeight(),
                                         verticalArrangement = Arrangement.Center,
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        if (profile == null) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(50.dp)
-                                                    .clip(CircleShape)
-                                                    .background(
-                                                        Util.randomColor(
-                                                            partnerName.hashCode(),
-                                                            isSystemInDarkTheme()
-                                                        )
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = partnerName.take(1).uppercase(),
-                                                    color = MaterialTheme.colorScheme.onBackground,
-                                                    fontSize = 18.sp,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
-                                        }else{
+                                        if (validProfile) {
                                             AsyncImage(
                                                 model = profile.avatarUrl,
                                                 contentDescription = profile.displayName,
                                                 modifier = Modifier
-                                                    .size(96.dp)
+                                                    .size(60.dp)
                                                     .clip(CircleShape)
                                             )
-                                        }
+                                        } else GeneratedProfileImage(partnerName, size=60.dp)
                                     }
                                 Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
-                                    Text(profile?.displayName ?: chat.partnerEmail, color = MaterialTheme.colorScheme.onBackground)
+                                    Text(if(validProfile) profile.displayName else chat.partnerEmail, color = MaterialTheme.colorScheme.onBackground)
                                     Text(
                                         text = "<последнее сообщение>",
                                         style = TextStyle(

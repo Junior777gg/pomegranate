@@ -19,7 +19,7 @@ fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
     val theme = ColorTheme()
     theme.AppTheme {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
-        Scaffold(Modifier.fillMaxSize().padding(bottom = 12.dp, top = if(isLandscape()) 30.dp else 0.dp).displayCutoutPadding()) {
+        Scaffold(Modifier.fillMaxSize().padding(bottom = if(isMobile) 12.dp else 0.dp, top = if(isLandscape()) 30.dp else 0.dp).displayCutoutPadding()) {
             val navController = rememberNavController()
             Navigation(navController, chatDao, messagesDao)
         }
