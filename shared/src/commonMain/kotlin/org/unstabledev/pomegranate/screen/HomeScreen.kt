@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SignalWifiConnectedNoInternet4
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +37,12 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,13 +56,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.File
+import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.MainScreenController
 import org.unstabledev.pomegranate.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.NetworkWarningHeader
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
@@ -106,6 +116,10 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
+                        .clickable {
+                            Repository.lastOpponentEmail=Repository.myEmail
+                            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                        }
                 ) {
                     Box(
                         modifier = Modifier
@@ -217,6 +231,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                     LabeledTextField(searchState, "Поиск", singleLineIn = true)
                 }
             }
+            NetworkWarningHeader()
             if (filteredChats.isNotEmpty()) {
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
                     items(filteredChats) { chat ->

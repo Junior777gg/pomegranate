@@ -41,10 +41,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.ChatScreenController
+import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.NetworkWarningHeader
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
@@ -69,6 +74,17 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val messages = viewModel.messages.collectAsState()
     val chat by lazy { viewModel.chatDC.value }
+    val settings by AppSettings.state.collectAsState()
+    val isOnline by produceState(initialValue = true) {
+        while (isActive) {
+            value = Firebase.isAvailable()
+            if (value) {
+                delay(10000)
+            } else {
+                delay(4000)
+            }
+        }
+    }
     LaunchedEffect(Unit){
         viewModel.update()
     }
@@ -92,6 +108,7 @@ fun ChatScreen(
             {},
             {}
         )
+        NetworkWarningHeader()
 
         LazyColumn(
             state = listState,
@@ -111,16 +128,18 @@ fun ChatScreen(
             }
         }
 
-        MessageInput(
-            state = inputState,
-            onSend = {
-                val text = inputState.text.toString().trim()
-                if (text.isNotEmpty()) {
-                    viewModel.send(text)
-                    inputState.clearText()
+        if(isOnline || !settings.hideSendBarWhenNoNetwork) {
+            MessageInput(
+                state = inputState,
+                onSend = {
+                    val text = inputState.text.toString().trim()
+                    if (text.isNotEmpty()) {
+                        viewModel.send(text)
+                        inputState.clearText()
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -152,26 +171,26 @@ private fun ChatHeader(
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
-        if (validProfile) {
-            AsyncImage(
-                model = profile.avatarUrl,
-                contentDescription = profile.displayName,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-            )
-        } else GeneratedProfileImage(chat.partnerEmail)
+        Row(Modifier.clickable { onProfileClick() }.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            if (validProfile) {
+                AsyncImage(
+                    model = profile.avatarUrl,
+                    contentDescription = profile.displayName,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                )
+            } else GeneratedProfileImage(chat.partnerEmail)
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = if(validProfile) profile.displayName else chat.partnerEmail,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1
-            )
+            Column {
+                Text(
+                    text = if (validProfile) profile.displayName else chat.partnerEmail,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         Box {

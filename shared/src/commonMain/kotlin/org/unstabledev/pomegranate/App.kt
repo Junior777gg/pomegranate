@@ -17,7 +17,15 @@ import org.unstabledev.pomegranate.database.MessagesDao
 @Composable
 fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
     val theme = ColorTheme()
-    theme.AppTheme {
+    val settings by AppSettings.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        AppSettings.load()
+    }
+
+    setStatusBarIcons(AppSettings.isLightTheme(settings))
+
+    theme.AppTheme(theme = settings.theme) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
         Scaffold(Modifier.fillMaxSize().padding(bottom = if(isMobile) 12.dp else 0.dp, top = if(isLandscape()) 30.dp else 0.dp).displayCutoutPadding()) {
             val navController = rememberNavController()

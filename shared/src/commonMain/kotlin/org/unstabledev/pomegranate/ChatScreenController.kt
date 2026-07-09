@@ -25,18 +25,20 @@ class ChatScreenController(val messagesDao: MessagesDao) : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            chatDC.emit(Repository.lastContact!!.first)
-            if (Repository.lastContact?.second == null) {
-                observer = Observer(
-                    BaseP2P().createConnection(Repository.lastContact!!.first.partnerEmail),
-                    chatDC.value,
-                    messagesDao
-                )
-                Repository.availableChats[chatDC.value] = observer
-            } else {
-                observer = Repository.lastContact!!.second!!
-            }
-            receive()
+            try {
+                chatDC.emit(Repository.lastContact!!.first)
+                if (Repository.lastContact?.second == null) {
+                    observer = Observer(
+                        BaseP2P().createConnection(Repository.lastContact!!.first.partnerEmail),
+                        chatDC.value,
+                        messagesDao
+                    )
+                    Repository.availableChats[chatDC.value] = observer
+                } else {
+                    observer = Repository.lastContact!!.second!!
+                }
+                receive()
+            } catch (_: Exception) { }
         }
     }
 

@@ -8,4 +8,5 @@ object Routes {
     const val PROFILE_SCREEN_ROUTE = "profile"
     const val CONTACTS_SCREEN = "contacts"
     const val SETTINGS_SCREEN = "settings"
+    const val SETTINGS_SELECT_FIREBASE_SCREEN = "select_firebase"
 }

@@ -9,6 +9,7 @@ import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
+import org.unstabledev.pomegranate.screen.FirebaseAddressSelectScreen
 import org.unstabledev.pomegranate.screen.LoginScreen
 import org.unstabledev.pomegranate.screen.HomeScreen
 import org.unstabledev.pomegranate.screen.ProfileScreen
@@ -80,6 +81,15 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                 )
             }
             SettingsScreen(navWayObj)
+        }
+        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN){
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            FirebaseAddressSelectScreen(navWayObj)
         }
         composable(Routes.CHAT_SCREEN) {
             val navWayObj = remember {

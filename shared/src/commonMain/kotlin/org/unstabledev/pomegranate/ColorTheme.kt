@@ -47,13 +47,17 @@ class ColorTheme {
 
     @Composable
     fun AppTheme(
-        colorScheme: ColorScheme = MaterialTheme.colorScheme,
+        theme: ThemeMode = ThemeMode.SYSTEM,
         shapes: Shapes = MaterialTheme.shapes,
         typography: Typography = MaterialTheme.typography,
-        darkTheme: Boolean = isSystemInDarkTheme(),
         dynamicColor: Boolean = false,
         content: @Composable () -> Unit
     ) {
+        val darkTheme = when(theme) {
+            ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+        }
         val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
         MaterialTheme(

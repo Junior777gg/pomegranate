@@ -5,16 +5,20 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
+import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.http.contentType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 
 object Firebase {
-    val url = Secrets.firebaseLink
+    val url: String
+        get() = AppSettings.state.value.selectedFirebaseUrl
     val client = HttpClient()
 
     inline fun <reified T> serializer (value: T): String {
@@ -47,5 +51,36 @@ object Firebase {
 
     suspend fun delete(path: String) {
         client.delete("$url$path.json")
+    }
+
+    suspend fun isAvailable(): Boolean {
+        return try {
+            val response = client.request("$url.json?shallow=true") { method = io.ktor.http.HttpMethod.Head }
+            response.status.value in 200..499
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun isAvailable(address: String): Boolean {
+        val normalizedAddress = address
+            .trim()
+            .removeSuffix(".json")
+            .trimEnd('/')
+
+        if (normalizedAddress.isBlank()) return false
+
+        return try {
+            val response = client.get("$normalizedAddress/.json") {
+                parameter("shallow", "true")
+            }
+
+            response.status.value in 200..299
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
     }
 }

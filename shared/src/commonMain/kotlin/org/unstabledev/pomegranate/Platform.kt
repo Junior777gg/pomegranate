@@ -6,3 +6,6 @@ expect val isMobile: Boolean
 
 @Composable
 expect fun isLandscape(): Boolean
+
+@Composable
+expect fun setStatusBarIcons(lightIcons: Boolean)
