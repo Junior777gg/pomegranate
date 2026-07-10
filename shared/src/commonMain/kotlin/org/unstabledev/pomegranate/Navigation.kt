@@ -9,6 +9,7 @@ import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
+import org.unstabledev.pomegranate.screen.DesktopHomeScreen
 import org.unstabledev.pomegranate.screen.FirebaseAddressSelectScreen
 import org.unstabledev.pomegranate.screen.LoginScreen
 import org.unstabledev.pomegranate.screen.HomeScreen
@@ -62,18 +63,19 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.popBackStack() }
                 )
             }
-            HomeScreen(navWayObj, chatDao, messagesDao)
+            if(isMobile) HomeScreen(navWayObj, chatDao, messagesDao)
+            else DesktopHomeScreen(navWayObj, chatDao, messagesDao)
         }
-        composable(Routes.CONTACTS_SCREEN){
+        composable(Routes.CONTACTS_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
                     back = { navController.popBackStack() }
                 )
             }
-            ContactsScreen(navWayObj)
+            ContactsScreen(navWayObj, chatDao, messagesDao)
         }
-        composable(Routes.SETTINGS_SCREEN){
+        composable(Routes.SETTINGS_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
@@ -82,7 +84,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             }
             SettingsScreen(navWayObj)
         }
-        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN){
+        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
@@ -100,7 +102,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             }
             ChatScreen(navWayObj, messagesDao)
         }
-        composable(Routes.PROFILE_SCREEN_ROUTE){
+        composable(Routes.PROFILE_SCREEN_ROUTE) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },

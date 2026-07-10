@@ -16,11 +16,15 @@ import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
-
 class MainScreenController(val chatDao: ChatDao, messagesDao: MessagesDao) : ViewModel() {
-    private val _chats: MutableStateFlow<MutableList<ChatDC>> = MutableStateFlow(mutableListOf())
-    val chats: StateFlow<MutableList<ChatDC>> = _chats
+    private val _chats: MutableStateFlow<List<ChatDC>> = MutableStateFlow(emptyList())
+    val chats: StateFlow<List<ChatDC>> = _chats
+
     init {
+        viewModelScope.launch(Dispatchers.IO) {
+            _chats.value = chatDao.getAllChats()
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             launch {
                 LoggerImpl().init()
@@ -34,29 +38,32 @@ class MainScreenController(val chatDao: ChatDao, messagesDao: MessagesDao) : Vie
                     val chat = ChatDC(opponent.first, profile?.serialize())
                     val observer = Observer(opponent.second, chat, messagesDao)
                     chatDao.upsertChat(chat)
-                    _chats.value = chatDao.getAllChats().toMutableList()
+                    _chats.value = chatDao.getAllChats()
                     Repository.availableChats[chat] = observer
                 }
             }
+
             launch {
-                var list = chatDao.getAllChats()
                 while (true) {
                     val last = Repository.lastContact
                     if (last != null) {
-                        if (!list.contains(last.first)) {
+                        val currentChats = chatDao.getAllChats()
+                        if (!currentChats.contains(last.first)) {
                             chatDao.upsertChat(last.first)
-                            list = chatDao.getAllChats()
                         }
                         if (Repository.availableChats[last.first] == null && last.second != null) {
                             Repository.availableChats[last.first] = last.second!!
                         }
+
+                        _chats.value = chatDao.getAllChats()
                     }
                     delay(1000)
                 }
             }
         }
     }
+
     suspend fun update() {
-        _chats.value = chatDao.getAllChats().toMutableList()
+        _chats.value = chatDao.getAllChats()
     }
 }

@@ -18,5 +18,4 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 shared/src/commonMain/kotlin/org/unstabledev/pomegranate/Secrets.kt
-pomegranate
-/desktopApp/pomegranate
+/pomegranate/

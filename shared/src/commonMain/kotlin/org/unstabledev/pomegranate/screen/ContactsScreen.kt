@@ -33,16 +33,28 @@ import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
 
 @Composable
-fun ContactsScreen(navWayObj: NavigationWays) {
+fun ContactsScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
+    ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, chatDao, messagesDao)
+}
+
+@Composable
+fun ContactsPanel(
+    onBack: ()->Unit,
+    onAdd: ()->Unit,
+    chatDao: ChatDao? = null,
+    messagesDao: MessagesDao? = null
+) {
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    IconButton(onClick = { navWayObj.back() }) {
+    IconButton(onClick = { onBack() }) {
         Icon(
             imageVector = Icons.Default.ArrowBack,
             contentDescription = "Назад",
@@ -75,11 +87,14 @@ fun ContactsScreen(navWayObj: NavigationWays) {
                 } catch(e: Exception) {
                     null
                 }
-                Repository.lastContact = ChatDC(email, profile?.serialize()) to null
+
+                val chat = ChatDC(email, profile?.serialize())
+
+                chatDao?.upsertChat(chat)
+
+                Repository.lastContact = chat to null
                 withContext(Dispatchers.Main) {
-                    navWayObj.goTo(
-                        Routes.CHAT_SCREEN
-                    )
+                    onAdd()
                 }
             }
         }) {

@@ -31,6 +31,7 @@ import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Routes
+import org.unstabledev.pomegranate.isMobile
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {
