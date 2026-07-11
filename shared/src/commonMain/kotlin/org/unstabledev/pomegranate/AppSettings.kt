@@ -196,6 +196,6 @@ object AppSettings {
 
     @Composable
     fun isLightTheme(settings: AppSettingsState): Boolean {
-        return settings.theme==ThemeMode.LIGHT||(settings.theme==ThemeMode.DARK&&!isSystemInDarkTheme())
+        return settings.theme==ThemeMode.LIGHT||(settings.theme==ThemeMode.SYSTEM&&!isSystemInDarkTheme())
     }
 }
