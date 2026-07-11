@@ -12,33 +12,36 @@ import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
-import org.unstabledev.pomegranate.database.serialize
-import org.unstabledev.pomegranate.screen.Profile
 import kotlin.time.Clock.System.now
 
-class ChatScreenController(val messagesDao: MessagesDao) : ViewModel() {
+class ChatScreenController(
+    val messagesDao: MessagesDao,
+    initialChat: ChatDC,
+    initialObserver: Observer?
+) : ViewModel() {
     private val _messages: MutableStateFlow<List<MessageDC>> = MutableStateFlow(listOf())
     val messages: StateFlow<List<MessageDC>> = _messages
-    private lateinit var observer: Observer
-    val chatDC = MutableStateFlow(ChatDC("", Profile().serialize()))
-    private val receivedMessages = mutableListOf<String>()
+    private var observer: Observer? = initialObserver
+    val chatDC = MutableStateFlow(initialChat)
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                chatDC.emit(Repository.lastContact!!.first)
-                if (Repository.lastContact?.second == null) {
+            _messages.value = messagesDao.getAllByEmail(initialChat.partnerEmail)
+
+            if (observer == null) {
+                try {
                     observer = Observer(
-                        BaseP2P().createConnection(Repository.lastContact!!.first.partnerEmail),
-                        chatDC.value,
+                        BaseP2P().createConnection(initialChat.partnerEmail),
+                        initialChat,
                         messagesDao
                     )
-                    Repository.availableChats[chatDC.value] = observer
-                } else {
-                    observer = Repository.lastContact!!.second!!
+                    Repository.availableChats[initialChat] = observer!!
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-                receive()
-            } catch (_: Exception) { }
+            }
+
+            receive()
         }
     }
 
@@ -64,22 +67,22 @@ class ChatScreenController(val messagesDao: MessagesDao) : ViewModel() {
 
     fun send(message: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            observer.send(message)
+            observer?.send(message)
             val time = now().toString().split("T")[1].split(":")
-            val message = MessageDC(
+            val messageDC = MessageDC(
                 email = chatDC.value.partnerEmail,
                 data = message.encodeToByteArray(),
                 type = MessageDC.TEXT,
                 time = "${time[0].toInt() + 3}:${time[1]}",
                 isMine = true,
             )
-            saveMessages(message)
-            update(message)
+            saveMessages(messageDC)
+            update(messageDC)
         }
     }
 
-    suspend fun receive() {
-        observer.messages.collect {
+    private suspend fun receive() {
+        observer?.messages?.collect {
             update(it)
         }
     }

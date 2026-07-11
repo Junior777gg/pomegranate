@@ -2,7 +2,6 @@ package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -50,6 +49,7 @@ import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.NetworkWarningHeader
+import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
@@ -68,13 +68,21 @@ private object ChatColors {
 fun ChatScreen(
     navWayObj: NavigationWays,
     messagesDao: MessagesDao,
+    chatDC: ChatDC,
+    observer: Observer?,
+    onBackClick: (()->Unit)?=null
 ) {
-    val viewModel = viewModel { ChatScreenController(messagesDao) }
+    // Create ViewModel with the specific chat
+    val viewModel = viewModel(key = chatDC.partnerEmail) {
+        ChatScreenController(messagesDao, chatDC, observer)
+    }
+
     val inputState = rememberTextFieldState()
     val listState = rememberLazyListState()
     val messages = viewModel.messages.collectAsState()
-    val chat by lazy { viewModel.chatDC.value }
+    val chat by viewModel.chatDC.collectAsState()
     val settings by AppSettings.state.collectAsState()
+
     val isOnline by produceState(initialValue = true) {
         while (isActive) {
             value = Firebase.isAvailable()
@@ -85,9 +93,6 @@ fun ChatScreen(
             }
         }
     }
-    LaunchedEffect(Unit){
-        viewModel.update()
-    }
 
     LaunchedEffect(messages.value.size) {
         if (messages.value.isNotEmpty()) {
@@ -95,12 +100,12 @@ fun ChatScreen(
         }
     }
 
-    val displayNewContactWidget = /*messages.value.isNotEmpty() && !messages.value.first().isMine*/ true
+    val displayNewContactWidget = true
 
     Column(modifier = Modifier.fillMaxSize()) {
         ChatHeader(
             chat,
-            { navWayObj.goTo(Routes.HOME_SCREEN) },
+            onBackClick,
             {
                 Repository.lastOpponentEmail = chat.partnerEmail
                 navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
@@ -118,9 +123,7 @@ fun ChatScreen(
         ) {
             if(displayNewContactWidget) {
                 item {
-                    NewContactWidget(
-                        chat = chat
-                    )
+                    NewContactWidget(chat = chat)
                 }
             }
             items(messages.value) { message ->
@@ -146,7 +149,7 @@ fun ChatScreen(
 @Composable
 private fun ChatHeader(
     chat: ChatDC,
-    onBackClick: () -> Unit,
+    onBackClick: (() -> Unit)?,
     onProfileClick: () -> Unit,
     onClearHistoryClick: () -> Unit,
     onDeleteChatClick: () -> Unit
@@ -164,12 +167,14 @@ private fun ChatHeader(
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Назад",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
+        if(onBackClick!=null) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Назад",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
         }
         Row(Modifier.clickable { onProfileClick() }.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             if (validProfile) {

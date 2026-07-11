@@ -144,7 +144,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
         }
     ) {
         SearchableChatsPanel(viewModel, {
-            Repository.lastContact = it to Repository.availableChats[it]
+            Repository.setLastContact(it to Repository.availableChats[it])
             navWayObj.goTo(Routes.CHAT_SCREEN)
         }, {
             navWayObj.goTo(Routes.CONTACTS_SCREEN)

@@ -92,7 +92,7 @@ fun ContactsPanel(
 
                 chatDao?.upsertChat(chat)
 
-                Repository.lastContact = chat to null
+                Repository.setLastContact(chat to null)
                 withContext(Dispatchers.Main) {
                     onAdd()
                 }

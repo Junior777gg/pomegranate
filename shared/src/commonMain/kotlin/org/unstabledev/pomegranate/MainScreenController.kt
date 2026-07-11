@@ -32,7 +32,7 @@ class MainScreenController(val chatDao: ChatDao, messagesDao: MessagesDao) : Vie
                     val opponent = BaseP2P.receiveConnections()
                     val profile = try {
                         Gravatar.getProfile(opponent.first.sha256())
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                     val chat = ChatDC(opponent.first, profile?.serialize())
@@ -44,8 +44,7 @@ class MainScreenController(val chatDao: ChatDao, messagesDao: MessagesDao) : Vie
             }
 
             launch {
-                while (true) {
-                    val last = Repository.lastContact
+                Repository.lastContact.collect { last ->
                     if (last != null) {
                         val currentChats = chatDao.getAllChats()
                         if (!currentChats.contains(last.first)) {

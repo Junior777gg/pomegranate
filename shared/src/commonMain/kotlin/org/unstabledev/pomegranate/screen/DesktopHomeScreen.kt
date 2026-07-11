@@ -60,6 +60,7 @@ private enum class PanelSunScreen {
 @Composable
 fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
     var panelSubScreen by remember { mutableStateOf(PanelSunScreen.CHATS) }
+    val lastContact by Repository.lastContact.collectAsState()
 
     val viewModel = viewModel { MainScreenController(chatDao, messagesDao) }
     val chats by viewModel.chats.collectAsState()
@@ -74,7 +75,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
                     SearchableChatsPanel(
                         viewModel,
                         onChatClick = {
-                            Repository.lastContact = it to Repository.availableChats[it]
+                            Repository.setLastContact(it to Repository.availableChats[it])
                         },
                         onChatAddClick = {
                             panelSubScreen = PanelSunScreen.CONTACTS
@@ -106,7 +107,16 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
             }
         }
         Column(Modifier.weight(1.5f)) {
-            if(Repository.lastOpponentEmail.isNotEmpty()) key(Repository.lastContact) { ChatScreen(navWayObj, messagesDao) }
+            if(lastContact?.first?.partnerEmail?.isNotEmpty() == true) {
+                key(lastContact?.first?.partnerEmail) {
+                    ChatScreen(
+                        navWayObj = navWayObj,
+                        messagesDao = messagesDao,
+                        chatDC = lastContact!!.first,
+                        observer = lastContact!!.second
+                    )
+                }
+            }
         }
     }
 }
@@ -114,30 +124,31 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
 @Composable
 private fun ProfileSettings(userEmail: String, userName: String,
     onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit, onLogOut: ()->Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.primary)
+            .height(54.dp)
+            .padding(horizontal=4.dp).padding(top=16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { onBack() }) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Назад",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
-            .padding(16.dp)
+            .padding(start=16.dp, end=16.dp, bottom=16.dp, top=0.dp)
             .clickable {
                 onProfileClick()
             }
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { onBack() }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
         Box(
             modifier = Modifier
                 .size(70.dp)
@@ -165,8 +176,6 @@ private fun ProfileSettings(userEmail: String, userName: String,
             fontSize = 14.sp
         )
     }
-
-    Text("Work In Progress")
 
     Spacer(modifier = Modifier.height(8.dp))
 

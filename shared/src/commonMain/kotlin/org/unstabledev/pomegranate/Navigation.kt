@@ -1,6 +1,8 @@
 package org.unstabledev.pomegranate
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -60,7 +62,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
+                    back = { }
                 )
             }
             if(isMobile) HomeScreen(navWayObj, chatDao, messagesDao)
@@ -100,7 +102,18 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.navigate(Routes.HOME_SCREEN) }
                 )
             }
-            ChatScreen(navWayObj, messagesDao)
+
+            val lastContact by Repository.lastContact.collectAsState()
+
+            if (lastContact != null) {
+                ChatScreen(
+                    navWayObj = navWayObj,
+                    messagesDao = messagesDao,
+                    chatDC = lastContact!!.first,
+                    observer = lastContact!!.second,
+                    onBackClick = { navWayObj.goTo(Routes.HOME_SCREEN) }
+                )
+            }
         }
         composable(Routes.PROFILE_SCREEN_ROUTE) {
             val navWayObj = remember {
