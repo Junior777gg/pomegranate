@@ -47,7 +47,8 @@ fun SearchableChatsPanel(
     viewModel: MainScreenController,
     onChatClick: (chat: ChatDC)->Unit,
     onChatAddClick: ()->Unit,
-    onSidemenuClick: ()->Unit
+    onSidemenuClick: ()->Unit,
+    modifier: Modifier = Modifier
 ) {
     val chats by viewModel.chats.collectAsState()
     val sufColor = MaterialTheme.colorScheme.surface
@@ -63,7 +64,7 @@ fun SearchableChatsPanel(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .height(50.dp).fillMaxWidth()

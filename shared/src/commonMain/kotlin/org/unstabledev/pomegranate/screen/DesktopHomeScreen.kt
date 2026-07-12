@@ -2,19 +2,19 @@ package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
@@ -36,6 +36,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,7 +58,7 @@ import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
 
-private enum class PanelSunScreen {
+private enum class PanelSubScreen {
     CHATS,
     CONTACTS,
     PROFILE_SETTINGS,
@@ -59,7 +66,7 @@ private enum class PanelSunScreen {
 
 @Composable
 fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
-    var panelSubScreen by remember { mutableStateOf(PanelSunScreen.CHATS) }
+    var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
     val lastContact by Repository.lastContact.collectAsState()
 
     val viewModel = viewModel { MainScreenController(chatDao, messagesDao) }
@@ -68,53 +75,70 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
     val userEmail = "Гранат"
     val userName = Repository.myEmail
 
-    Row {
-        Column(Modifier.weight(1f)) {
-            when (panelSubScreen) {
-                PanelSunScreen.CHATS -> {
-                    SearchableChatsPanel(
-                        viewModel,
-                        onChatClick = {
-                            Repository.setLastContact(it to Repository.availableChats[it])
-                        },
-                        onChatAddClick = {
-                            panelSubScreen = PanelSunScreen.CONTACTS
-                        },
-                        onSidemenuClick = {
-                            panelSubScreen = PanelSunScreen.PROFILE_SETTINGS
-                        })
-                }
-                PanelSunScreen.CONTACTS -> {
-                    ContactsPanel({
-                        panelSubScreen = PanelSunScreen.CHATS
-                    }, {
-                        panelSubScreen = PanelSunScreen.CHATS
-                    }, chatDao, messagesDao)
-                }
-                PanelSunScreen.PROFILE_SETTINGS -> {
-                    ProfileSettings(userEmail, userName, {
-                        panelSubScreen = PanelSunScreen.CHATS
-                    }, {
-                        Repository.lastOpponentEmail = Repository.myEmail
-                        navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
-                    }, {
-                        navWayObj.goTo(Routes.SETTINGS_SCREEN)
-                    }, {
-                        File(fistFilePath).delete()
-                        navWayObj.goTo(Routes.LOGIN_SCREEN)
-                    })
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyUp) {
+                    if(panelSubScreen != PanelSubScreen.CHATS) {
+                        panelSubScreen = PanelSubScreen.CHATS
+                    } else {
+                        Repository.setLastContact(null)
+                    }
+                    true
+                } else {
+                    false
                 }
             }
-        }
-        Column(Modifier.weight(1.5f)) {
-            if(lastContact?.first?.partnerEmail?.isNotEmpty() == true) {
-                key(lastContact?.first?.partnerEmail) {
-                    ChatScreen(
-                        navWayObj = navWayObj,
-                        messagesDao = messagesDao,
-                        chatDC = lastContact!!.first,
-                        observer = lastContact!!.second
-                    )
+    ) {
+        Row {
+            Column(Modifier.weight(1f)) {
+                when (panelSubScreen) {
+                    PanelSubScreen.CHATS -> {
+                        SearchableChatsPanel(
+                            viewModel,
+                            onChatClick = {
+                                Repository.setLastContact(it to Repository.availableChats[it])
+                            },
+                            onChatAddClick = {
+                                panelSubScreen = PanelSubScreen.CONTACTS
+                            },
+                            onSidemenuClick = {
+                                panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
+                            })
+                    }
+                    PanelSubScreen.CONTACTS -> {
+                        ContactsPanel({
+                            panelSubScreen = PanelSubScreen.CHATS
+                        }, {
+                            panelSubScreen = PanelSubScreen.CHATS
+                        }, chatDao, messagesDao)
+                    }
+                    PanelSubScreen.PROFILE_SETTINGS -> {
+                        ProfileSettings(userEmail, userName, {
+                            panelSubScreen = PanelSubScreen.CHATS
+                        }, {
+                            Repository.lastOpponentEmail = Repository.myEmail
+                            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                        }, {
+                            navWayObj.goTo(Routes.SETTINGS_SCREEN)
+                        }, {
+                            File(fistFilePath).delete()
+                            navWayObj.goTo(Routes.LOGIN_SCREEN)
+                        })
+                    }
+                }
+            }
+            Column(Modifier.weight(1.5f)) {
+                if(lastContact?.first?.partnerEmail?.isNotEmpty() == true) {
+                    key(lastContact?.first?.partnerEmail) {
+                        ChatScreen(
+                            navWayObj = navWayObj,
+                            messagesDao = messagesDao,
+                            chatDC = lastContact!!.first,
+                            observer = lastContact!!.second
+                        )
+                    }
                 }
             }
         }
@@ -123,7 +147,8 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
 
 @Composable
 private fun ProfileSettings(userEmail: String, userName: String,
-    onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit, onLogOut: ()->Unit) {
+    onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,7 +166,7 @@ private fun ProfileSettings(userEmail: String, userName: String,
         }
     }
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
             .padding(start=16.dp, end=16.dp, bottom=16.dp, top=0.dp)

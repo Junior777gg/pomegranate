@@ -23,6 +23,16 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "org.unstabledev.pomegranate"
             packageVersion = "1.0.0"
+
+            windows {
+                iconFile.set(project.file("src/resources/pomegranate.ico"))
+            }
+            macOS {
+                iconFile.set(project.file("src/resources/pomegranate.icns"))
+            }
+            linux {
+                iconFile.set(project.file("src/resources/pomegranate.png"))
+            }
         }
     }
 }

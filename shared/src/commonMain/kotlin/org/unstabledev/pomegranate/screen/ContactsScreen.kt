@@ -49,7 +49,8 @@ fun ContactsPanel(
     onBack: ()->Unit,
     onAdd: ()->Unit,
     chatDao: ChatDao? = null,
-    messagesDao: MessagesDao? = null
+    messagesDao: MessagesDao? = null,
+    modifier: Modifier = Modifier
 ) {
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
@@ -62,7 +63,7 @@ fun ContactsPanel(
         )
     }
     Column(
-        modifier = Modifier.fillMaxSize().padding(10.dp),
+        modifier = modifier.fillMaxSize().padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

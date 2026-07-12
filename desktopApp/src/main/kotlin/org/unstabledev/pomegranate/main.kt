@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import org.unstabledev.pomegranate.database.getChatDatabase
@@ -9,6 +10,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "pomegranate",
+        icon = painterResource("pomegranate.png")
     ) {
         val chatBuilder = getChatDatabaseBuilder()
         val chatDatabase = getChatDatabase(chatBuilder)
