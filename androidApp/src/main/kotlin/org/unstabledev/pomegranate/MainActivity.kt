@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
         val messagesBuilder = getMessagesDatabaseBuilder(applicationContext)
         val messagesDatabase = getMessagesDatabase(messagesBuilder)
         val messagesDao = messagesDatabase.messagesDao()
+        baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent{
             App(chatDao, messagesDao)
         }

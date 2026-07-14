@@ -1,0 +1,47 @@
+package org.unstabledev.pomegranate
+
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
+import android.content.Intent
+import android.os.IBinder
+import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.random.Random
+
+class ReceiverService : Service() {
+    override fun onBind(p0: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+
+        val CHANNEL_ID = "1"
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Receiver Service",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Pomegranate")
+            .setContentText("Ожидание входящих соединений")
+            .setSmallIcon(android.R.drawable.stat_notify_chat) // обязательно
+            .setOngoing(true)
+            .build()
+        startForeground(Random.nextInt(), notification)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        GlobalScope.launch {
+            while (true) {
+                println(111111)
+                delay(1000)
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
+}
