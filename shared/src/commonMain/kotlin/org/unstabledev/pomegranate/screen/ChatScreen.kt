@@ -49,7 +49,6 @@ import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.NetworkWarningHeader
-import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
@@ -68,13 +67,11 @@ private object ChatColors {
 fun ChatScreen(
     navWayObj: NavigationWays,
     messagesDao: MessagesDao,
-    chatDC: ChatDC,
-    observer: Observer?,
-    onBackClick: (()->Unit)?=null
 ) {
+    val lastContact by Repository.lastContact.collectAsState()
     // Create ViewModel with the specific chat
-    val viewModel = viewModel(key = chatDC.partnerEmail) {
-        ChatScreenController(messagesDao, chatDC, observer)
+    val viewModel = viewModel(key = lastContact?.partnerEmail) {
+        ChatScreenController(messagesDao, lastContact!!)
     }
 
     val inputState = rememberTextFieldState()
@@ -105,7 +102,7 @@ fun ChatScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         ChatHeader(
             chat,
-            onBackClick,
+            {navWayObj.goTo(Routes.HOME_SCREEN)},
             {
                 Repository.lastOpponentEmail = chat.partnerEmail
                 navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)

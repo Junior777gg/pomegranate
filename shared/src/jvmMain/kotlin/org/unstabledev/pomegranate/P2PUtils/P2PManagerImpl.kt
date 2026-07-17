@@ -1,10 +1,10 @@
 package org.unstabledev.pomegranate.P2PUtils
 
-import P2PChannel
 import P2PManager
+import kotlinx.coroutines.delay
 
 actual class P2PManagerImpl {
-    private lateinit var channel: P2PChannel
+    actual var channel: P2PChannelImpl? = null
     val manager = P2PManager()
     actual suspend fun getAddress(): String? {
         return manager.getAddress()
@@ -23,8 +23,16 @@ actual class P2PManagerImpl {
         remoteLocalAddress: String,
         peerPublicKeyJson: String
     ): P2PChannelImpl {
-        channel = manager.createConnection(remoteAddress, remoteLocalAddress, peerPublicKeyJson)
-        return P2PChannelImpl(channel)
+        val libChannel = manager.createConnection(remoteAddress, remoteLocalAddress, peerPublicKeyJson)
+        while (true) {
+            try {
+                channel = P2PChannelImpl(libChannel)
+                return channel!!
+            }catch (e : NullPointerException){
+
+            }
+            delay(500)
+        }
     }
 
     actual fun breakConnection() {

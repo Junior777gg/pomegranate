@@ -10,4 +10,7 @@ actual class P2PManagerImpl {
         peerPublicKeyJson: String
     ): P2PChannelImpl = P2PChannelImpl()
     actual fun breakConnection() {}
+    actual var channel: P2PChannelImpl?
+        get() = null
+        set(value) {}
 }

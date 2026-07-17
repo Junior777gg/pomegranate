@@ -22,8 +22,9 @@ import org.unstabledev.pomegranate.screen.WelcomeScreen
 
 @Composable
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
+    Repository.messagesDao = messagesDao
     var startDestination: String
-    val fistFilePath = remember { "pomegranate${File.sep}auth.txt"}
+    val fistFilePath = remember { "pomegranate${File.sep}auth.txt" }
     if (File(fistFilePath).exists()) {
         startDestination = if (File(fistFilePath).readText() != "") {
             Routes.HOME_SCREEN
@@ -65,7 +66,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { }
                 )
             }
-            if(isMobile) HomeScreen(navWayObj, chatDao, messagesDao)
+            if (isMobile) HomeScreen(navWayObj, chatDao, messagesDao)
             else DesktopHomeScreen(navWayObj, chatDao, messagesDao)
         }
         composable(Routes.CONTACTS_SCREEN) {
@@ -102,18 +103,10 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.navigate(Routes.HOME_SCREEN) }
                 )
             }
-
-            val lastContact by Repository.lastContact.collectAsState()
-
-            if (lastContact != null) {
-                ChatScreen(
-                    navWayObj = navWayObj,
-                    messagesDao = messagesDao,
-                    chatDC = lastContact!!.first,
-                    observer = lastContact!!.second,
-                    onBackClick = { navWayObj.goTo(Routes.HOME_SCREEN) }
-                )
-            }
+            ChatScreen(
+                navWayObj = navWayObj,
+                messagesDao = messagesDao
+            )
         }
         composable(Routes.PROFILE_SCREEN_ROUTE) {
             val navWayObj = remember {

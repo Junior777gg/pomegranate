@@ -2,7 +2,6 @@ package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +25,6 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -37,18 +35,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.unstabledev.pomegranate.File
-import org.unstabledev.pomegranate.MainScreenController
+import org.unstabledev.pomegranate.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
@@ -69,7 +65,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
     val lastContact by Repository.lastContact.collectAsState()
 
-    val viewModel = viewModel { MainScreenController(chatDao, messagesDao) }
+    val viewModel = viewModel { HomeScreenController(chatDao) }
     val chats by viewModel.chats.collectAsState()
 
     val userEmail = "Гранат"
@@ -98,7 +94,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
                         SearchableChatsPanel(
                             viewModel,
                             onChatClick = {
-                                Repository.setLastContact(it to Repository.availableChats[it])
+                                Repository.setLastContact(it)
                             },
                             onChatAddClick = {
                                 panelSubScreen = PanelSubScreen.CONTACTS
@@ -130,13 +126,11 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
                 }
             }
             Column(Modifier.weight(1.5f)) {
-                if(lastContact?.first?.partnerEmail?.isNotEmpty() == true) {
-                    key(lastContact?.first?.partnerEmail) {
+                if(lastContact?.partnerEmail?.isNotEmpty() == true) {
+                    key(lastContact?.partnerEmail) {
                         ChatScreen(
                             navWayObj = navWayObj,
                             messagesDao = messagesDao,
-                            chatDC = lastContact!!.first,
-                            observer = lastContact!!.second
                         )
                     }
                 }

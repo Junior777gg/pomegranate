@@ -20,6 +20,9 @@ interface MessagesDao {
     @Query("DELETE FROM messages WHERE email = :email")
     suspend fun deleteAllByEmail(email: String)
 
+    @Query("SELECT * FROM messages WHERE data = :data")
+    suspend fun getByData(data: ByteArray) : MessageDC
+
     @Delete
     suspend fun deleteMessage(message: MessageDC)
 }

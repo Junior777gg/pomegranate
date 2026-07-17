@@ -4,43 +4,82 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
+import kotlin.random.Random
 import kotlin.time.Clock.System.now
 
-class Observer(private val channel: P2PChannelImpl, val chatDC: ChatDC, val messagesDao: MessagesDao){
+class Observer(
+    private val manager: P2PManagerImpl,
+    private val channel: P2PChannelImpl,
+    val chatDC: ChatDC,
+    val messagesDao: MessagesDao
+) {
     private var itsReceived = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val messages = MutableSharedFlow<MessageDC>(16)
+    val timeOutMillis = 300000L
+    var lastAction = now().toEpochMilliseconds()
+    var lastData = ByteArray(0)
+    var code = ""
+
     init {
         receive()
+        scope.launch {
+            while (timeOutMillis + lastAction > now().toEpochMilliseconds()) {
+                delay(5000)
+            }
+            manager.breakConnection()
+            scope.cancel()
+            Repository.availableChats.remove(chatDC)
+        }
     }
-    private fun receive(){
-        if(itsReceived) {return}
-        scope.launch{
+
+    private fun receive() {
+        scope.launch {
+            if (itsReceived) return@launch
             itsReceived = true
-            while(true){
+            while (true) {
                 val time = now().toString().split("T")[1].split(":")
                 val data = channel.receive()
-                val message = MessageDC(
-                    email = chatDC.partnerEmail,
-                    data = data,
-                    type = MessageDC.TEXT,
-                    time = "${time[0].toInt() + 3}:${time[1]}",
-                    isMine = false,
-                )
-                messagesDao.insertMessage(message)
-                messages.emit(message)
+                if (data.decodeToString() == code) {
+                    val message = messagesDao.getByData(lastData)
+                    message.isDelivered = true
+                    messagesDao.upsertMessage(message)
+                    lastData = ByteArray(0)
+                    code = ""
+                } else {
+                    val decodeData = data.decodeToString().split("^?^/^*")
+                    send(decodeData[1], true)
+                    lastAction = now().toEpochMilliseconds()
+                    val message = MessageDC(
+                        email = chatDC.partnerEmail,
+                        data = decodeData[0].encodeToByteArray(),
+                        type = MessageDC.TEXT,
+                        time = "${time[0].toInt() + 3}:${time[1]}",
+                        isMine = false,
+                    )
+                    messagesDao.insertMessage(message)
+                }
             }
         }
     }
 
-    fun send(message: String){
-        scope.launch{
-            channel.send(message.encodeToByteArray())
+    fun send(message: String, isTest: Boolean = false) {
+        lastAction = now().toEpochMilliseconds()
+        scope.launch {
+            if (isTest) {
+                channel.send(message.encodeToByteArray())
+            } else {
+                lastData = message.encodeToByteArray()
+                code = Random.nextInt().toString()
+                channel.send("$message^?^/^*$code".encodeToByteArray())
+            }
         }
     }
 }

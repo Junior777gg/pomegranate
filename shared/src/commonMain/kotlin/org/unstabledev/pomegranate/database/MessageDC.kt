@@ -8,6 +8,7 @@ data class MessageDC(
     @PrimaryKey(autoGenerate = true)
     val key: Long = 0,
     val email: String,
+    var isDelivered: Boolean = false,
     val data: ByteArray,
     val type: String,
     val time: String,

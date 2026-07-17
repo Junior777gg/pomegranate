@@ -8,16 +8,20 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.random.Random
 
 class ReceiverService : Service() {
+    companion object {
+        var chatDao: ChatDao? = null
+        var messagesDao: MessagesDao? = null
+    }
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-
         val CHANNEL_ID = "1"
         val channel = NotificationChannel(
             CHANNEL_ID,
@@ -37,10 +41,7 @@ class ReceiverService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         GlobalScope.launch {
-            while (true) {
-                println(111111)
-                delay(1000)
-            }
+            ConnectionReceiver.start(chatDao!!, messagesDao!!)
         }
         return super.onStartCommand(intent, flags, startId)
     }

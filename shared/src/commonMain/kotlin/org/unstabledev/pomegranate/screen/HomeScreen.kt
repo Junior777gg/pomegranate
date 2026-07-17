@@ -37,7 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.SearchableChatsPanel
 import org.unstabledev.pomegranate.File
-import org.unstabledev.pomegranate.MainScreenController
+import org.unstabledev.pomegranate.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
@@ -49,7 +49,7 @@ import org.unstabledev.pomegranate.database.MessagesDao
 @Composable
 fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val viewModel = viewModel { MainScreenController(chatDao, messagesDao) }
+    val viewModel = viewModel { HomeScreenController(chatDao) }
 
     val userEmail = "Гранат"
     val userName = Repository.myEmail
@@ -144,7 +144,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
         }
     ) {
         SearchableChatsPanel(viewModel, {
-            Repository.setLastContact(it to Repository.availableChats[it])
+            Repository.setLastContact(it)
             navWayObj.goTo(Routes.CHAT_SCREEN)
         }, {
             navWayObj.goTo(Routes.CONTACTS_SCREEN)

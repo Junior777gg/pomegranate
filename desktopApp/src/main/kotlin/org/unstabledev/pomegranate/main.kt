@@ -5,6 +5,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
@@ -17,14 +20,8 @@ fun main() {
     val messagesBuilder = getMessagesDatabaseBuilder()
     val messagesDatabase = getMessagesDatabase(messagesBuilder)
     val messagesDao = messagesDatabase.messagesDao()
-    Thread {
-        runBlocking {
-            ConnectionReceiver.start(chatDao, messagesDao)
-        }
-    }.apply {
-        name = "Pomegranate-Receiver"
-        isDaemon = false
-        start()
+    CoroutineScope(Dispatchers.IO).launch {
+        ConnectionReceiver.start(chatDao, messagesDao)
     }
     application {
         Tray(
@@ -46,3 +43,4 @@ fun main() {
         }
     }
 }
+
