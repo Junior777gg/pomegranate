@@ -23,6 +23,9 @@ interface MessagesDao {
     @Query("SELECT * FROM messages WHERE data = :data")
     suspend fun getByData(data: ByteArray) : MessageDC
 
+    @Query("SELECT * FROM messages WHERE email = :email ORDER BY `key` DESC LIMIT 1")
+    suspend fun getLastByEmail(email: String): MessageDC
+
     @Delete
     suspend fun deleteMessage(message: MessageDC)
 }
