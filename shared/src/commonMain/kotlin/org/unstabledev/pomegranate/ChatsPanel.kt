@@ -134,12 +134,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
         items(chats) { chat ->
             val message = remember { mutableStateOf("") }
             scope.launch(Dispatchers.IO) {
-                val l = Repository.messagesDao.getAllByEmail(chat.partnerEmail)
-                if(l.isNotEmpty()) {
-                    val msg = l.last()
-                    message.value = (if (msg.isMine) "Вы: " else "") + msg.data.decodeToString()
-                    println(message.value)
-                }
+                message.value = Repository.messagesDao.getAllByEmail(chat.partnerEmail).last().data.decodeToString()
             }
             Row(
                 modifier = Modifier
