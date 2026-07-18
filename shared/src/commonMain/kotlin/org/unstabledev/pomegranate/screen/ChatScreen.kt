@@ -434,7 +434,7 @@ private fun NewContactWidget(
                 )
                 Text(
                     text = if(validProfile) {
-                        if (profile.location.isNotEmpty()) "${countryFlags[profile.location]} ${profile.location}"
+                        if (profile.location.isNotEmpty()) "${countryFlags[profile.location]?:"🌍"} ${profile.location}"
                         else "🏴‍☠️ Аноним"
                     } else "🏴‍☠️ Аноним",
                     fontSize = 14.sp,

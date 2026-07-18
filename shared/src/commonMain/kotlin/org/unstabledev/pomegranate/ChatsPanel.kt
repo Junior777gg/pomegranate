@@ -24,6 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +37,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.deserialize
@@ -123,8 +129,18 @@ fun SearchableChatsPanel(
 
 @Composable
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
+    val scope = rememberCoroutineScope()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(chats) { chat ->
+            val message = remember { mutableStateOf("") }
+            scope.launch(Dispatchers.IO) {
+                val l = Repository.messagesDao.getAllByEmail(chat.partnerEmail)
+                if(l.isNotEmpty()) {
+                    val msg = l.last()
+                    message.value = (if (msg.isMine) "Вы: " else "") + msg.data.decodeToString()
+                    println(message.value)
+                }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -155,7 +171,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
                     Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
                         Text(if(validProfile) profile.displayName else chat.partnerEmail, color = MaterialTheme.colorScheme.onBackground)
                         Text(
-                            text = "<последнее сообщение>",
+                            text = message.value,
                             style = TextStyle(
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 12.sp
