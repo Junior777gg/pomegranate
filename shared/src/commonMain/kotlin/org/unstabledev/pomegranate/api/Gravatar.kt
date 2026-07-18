@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -6,6 +6,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.headers
 import kotlinx.serialization.json.Json
+import org.unstabledev.pomegranate.Secrets
 import org.unstabledev.pomegranate.screen.Profile
 
 object Gravatar {

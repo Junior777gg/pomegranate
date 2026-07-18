@@ -44,15 +44,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.unstabledev.pomegranate.File
-import org.unstabledev.pomegranate.HomeScreenController
+import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
-import org.unstabledev.pomegranate.SearchableChatsPanel
+import org.unstabledev.pomegranate.components.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.components.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.database.MessagesDao
 
 private enum class PanelSubScreen {
     CHATS,
@@ -61,9 +61,10 @@ private enum class PanelSubScreen {
 }
 
 @Composable
-fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
+fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
     val lastContact by Repository.lastContact.collectAsState()
+    val messagesDao = Repository.messagesDao
 
     val viewModel = viewModel { HomeScreenController(chatDao) }
     val chats by viewModel.chats.collectAsState()
@@ -108,7 +109,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             panelSubScreen = PanelSubScreen.CHATS
-                        }, chatDao, messagesDao)
+                        }, chatDao)
                     }
                     PanelSubScreen.PROFILE_SETTINGS -> {
                         ProfileSettings(userEmail, userName, {
@@ -130,8 +131,12 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: 
                     key(lastContact?.partnerEmail) {
                         ChatScreen(
                             navWayObj = navWayObj,
-                            messagesDao = messagesDao,
+                            canBack = false
                         )
+                    }
+                } else {
+                    Column(addChatBackground()) {
+                        Box(Modifier.fillMaxSize())
                     }
                 }
             }
@@ -164,7 +169,7 @@ private fun ProfileSettings(userEmail: String, userName: String,
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
             .padding(start=16.dp, end=16.dp, bottom=16.dp, top=0.dp)
-            .clickable {
+            .clickable(indication = null, interactionSource = null) {
                 onProfileClick()
             }
     ) {

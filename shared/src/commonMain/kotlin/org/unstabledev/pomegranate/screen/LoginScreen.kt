@@ -1,11 +1,9 @@
 package org.unstabledev.pomegranate.screen
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
@@ -22,16 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.unstabledev.pomegranate.ColorTheme
+import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.File
-import org.unstabledev.pomegranate.LabeledTextField
+import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Routes
-import org.unstabledev.pomegranate.isMobile
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {

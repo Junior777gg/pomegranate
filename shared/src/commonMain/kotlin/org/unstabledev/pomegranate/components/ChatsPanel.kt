@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,23 +24,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.painterResource
+import org.unstabledev.pomegranate.screen.control.HomeScreenController
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
@@ -127,15 +131,36 @@ fun SearchableChatsPanel(
     }
 }
 
+fun getLastMessageTextFlow(email: String): Flow<String> {
+    return Repository.messagesDao.getLastMessageFlowByEmail(email)
+        .map { msg ->
+            if (msg != null) {
+                val decodedText = try {
+                    msg.data.decodeToString()
+                } catch (e: Exception) {
+                    ""
+                }
+                (if(msg.isMine) "Вы: " else "") + decodedText
+            } else ""
+        }
+        .flowOn(Dispatchers.IO)
+}
+
+@Composable
+fun addChatBackground(base: Modifier = Modifier): Modifier {
+    return base.background(Brush.linearGradient(
+        listOf(lerp(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.background, 0.25f), MaterialTheme.colorScheme.primary)
+    ))
+}
+
 @Composable
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
-    val scope = rememberCoroutineScope()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(chats) { chat ->
-            val message = remember { mutableStateOf("") }
-            scope.launch(Dispatchers.IO) {
-                message.value = Repository.messagesDao.getAllByEmail(chat.partnerEmail).last().data.decodeToString()
-            }
+            val message by getLastMessageTextFlow(chat.partnerEmail)
+                .collectAsStateWithLifecycle(initialValue = "")
+            val hasLast = message.isNotEmpty()
+            if(!hasLast) return@items
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,15 +188,19 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
                             )
                         } else GeneratedProfileImage(partnerName, size=60.dp)
                     }
-                    Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
-                        Text(if(validProfile) profile.displayName else chat.partnerEmail, color = MaterialTheme.colorScheme.onBackground)
+                    Column(modifier = Modifier.fillMaxSize().padding(5.dp), verticalArrangement = Arrangement.Center) {
                         Text(
-                            text = message.value,
-                            style = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.sp
-                            )
+                            if(validProfile) profile.displayName else chat.partnerEmail,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
+                        if(hasLast)
+                            Text(
+                                text = message,
+                                style = TextStyle(
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 12.sp
+                                )
+                            )
                     }
                 }
             }

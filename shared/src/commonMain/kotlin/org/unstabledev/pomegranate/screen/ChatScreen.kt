@@ -15,6 +15,8 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -42,19 +44,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import org.unstabledev.pomegranate.components.addChatBackground
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.isMobile
-import org.unstabledev.pomegranate.ChatScreenController
+import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import org.unstabledev.pomegranate.Firebase
-import org.unstabledev.pomegranate.GeneratedProfileImage
+import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
-import org.unstabledev.pomegranate.NetworkWarningHeader
+import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 
 
@@ -66,9 +68,10 @@ private object ChatColors {
 @Composable
 fun ChatScreen(
     navWayObj: NavigationWays,
-    messagesDao: MessagesDao,
+    canBack: Boolean = true,
 ) {
     val lastContact by Repository.lastContact.collectAsState()
+    val messagesDao = Repository.messagesDao
     // Create ViewModel with the specific chat
     val viewModel = viewModel(key = lastContact?.partnerEmail) {
         ChatScreenController(messagesDao, lastContact!!)
@@ -99,10 +102,11 @@ fun ChatScreen(
 
     val displayNewContactWidget = true
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = addChatBackground(Modifier.fillMaxSize())) {
+        val back = {navWayObj.goTo(Routes.HOME_SCREEN)}
         ChatHeader(
             chat,
-            {navWayObj.goTo(Routes.HOME_SCREEN)},
+            if(canBack) back else null,
             {
                 Repository.lastOpponentEmail = chat.partnerEmail
                 navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
@@ -149,7 +153,7 @@ private fun ChatHeader(
     onBackClick: (() -> Unit)?,
     onProfileClick: () -> Unit,
     onClearHistoryClick: () -> Unit,
-    onDeleteChatClick: () -> Unit
+    onDeleteChatClick: () -> Unit,
 ) {
     val profile = chat.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
@@ -173,7 +177,7 @@ private fun ChatHeader(
                 )
             }
         }
-        Row(Modifier.clickable { onProfileClick() }.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             if (validProfile) {
                 AsyncImage(
                     model = profile.avatarUrl,
@@ -307,6 +311,13 @@ private fun MessageBubble(message: MessageDC) {
                         text = message.time,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 11.sp
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    Icon(
+                        modifier = Modifier.size(15.dp),
+                        imageVector = if(message.isDelivered||!message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }

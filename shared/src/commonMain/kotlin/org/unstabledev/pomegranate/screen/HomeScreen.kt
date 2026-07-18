@@ -35,19 +35,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.SearchableChatsPanel
+import org.unstabledev.pomegranate.components.SearchableChatsPanel
 import org.unstabledev.pomegranate.File
-import org.unstabledev.pomegranate.HomeScreenController
+import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.database.MessagesDao
 
 @Composable
-fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
+fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val viewModel = viewModel { HomeScreenController(chatDao) }
 
@@ -68,7 +67,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: Message
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
-                        .clickable {
+                        .clickable(indication = null, interactionSource = null) {
                             Repository.lastOpponentEmail=Repository.myEmail
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }

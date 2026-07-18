@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

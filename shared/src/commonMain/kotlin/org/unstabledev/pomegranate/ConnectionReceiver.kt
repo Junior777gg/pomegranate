@@ -2,6 +2,7 @@ package org.unstabledev.pomegranate
 
 import org.unstabledev.pomegranate.P2PUtils.LoggerImpl
 import org.unstabledev.pomegranate.P2PUtils.Observer
+import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao

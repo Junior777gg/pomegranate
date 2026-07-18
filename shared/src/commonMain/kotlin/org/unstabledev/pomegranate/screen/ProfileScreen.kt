@@ -29,9 +29,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.unstabledev.pomegranate.GeneratedProfileImage
+import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
-import org.unstabledev.pomegranate.ProfileScreenController
+import org.unstabledev.pomegranate.screen.control.ProfileScreenController
 import org.unstabledev.pomegranate.Repository
 
 

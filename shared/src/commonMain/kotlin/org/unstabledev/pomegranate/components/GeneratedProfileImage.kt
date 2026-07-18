@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.Util
 
 @Composable
 fun GeneratedProfileImage(name: String, size: Dp=50.dp, fontSize: TextUnit = 18.sp) {

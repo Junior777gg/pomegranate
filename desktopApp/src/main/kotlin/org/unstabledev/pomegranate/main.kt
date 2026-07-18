@@ -12,7 +12,7 @@ import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 
-fun main() {
+fun main(args: Array<String>) {
     val isOpen = mutableStateOf(true)
     val chatBuilder = getChatDatabaseBuilder()
     val chatDatabase = getChatDatabase(chatBuilder)
@@ -20,17 +20,20 @@ fun main() {
     val messagesBuilder = getMessagesDatabaseBuilder()
     val messagesDatabase = getMessagesDatabase(messagesBuilder)
     val messagesDao = messagesDatabase.messagesDao()
+    val runBg = !args.contains("--no-bg-service")
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start(chatDao, messagesDao)
     }
     application {
-        Tray(
-            icon = painterResource("pomegranate.png"),
-            menu = {
-                Item("Open", onClick = { isOpen.value = true })
-                Item("Exit", onClick = { exitApplication() })
-            }
-        )
+        if (runBg) {
+            Tray(
+                icon = painterResource("pomegranate.png"),
+                menu = {
+                    Item("Открыть", onClick = { isOpen.value = true })
+                    Item("Выйти", onClick = { exitApplication() })
+                }
+            )
+        }
 
         if (isOpen.value) {
             Window(

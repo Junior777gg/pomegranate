@@ -20,28 +20,26 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.unstabledev.pomegranate.ColorTheme
-import org.unstabledev.pomegranate.Gravatar
-import org.unstabledev.pomegranate.LabeledTextField
+import org.unstabledev.pomegranate.components.ColorTheme
+import org.unstabledev.pomegranate.api.Gravatar
+import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
 
 @Composable
-fun ContactsScreen(navWayObj: NavigationWays, chatDao: ChatDao, messagesDao: MessagesDao) {
-    ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, chatDao, messagesDao)
+fun ContactsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
+    ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, chatDao)
 }
 
 @Composable
@@ -49,7 +47,6 @@ fun ContactsPanel(
     onBack: ()->Unit,
     onAdd: ()->Unit,
     chatDao: ChatDao? = null,
-    messagesDao: MessagesDao? = null,
     modifier: Modifier = Modifier
 ) {
     var isErrorVisible by remember { mutableStateOf(false) }

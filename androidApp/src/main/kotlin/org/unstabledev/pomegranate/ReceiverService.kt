@@ -3,6 +3,7 @@ package org.unstabledev.pomegranate
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -30,11 +31,19 @@ class ReceiverService : Service() {
         )
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
+
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: Intent(this,
+            MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP }
+        val pendingIntent = PendingIntent.getActivity(this, 0, launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Pomegranate")
             .setContentText("Ожидание входящих соединений")
-            .setSmallIcon(android.R.drawable.stat_notify_chat) // обязательно
+            .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setSilent(true)
             .setOngoing(true)
+            .setContentIntent(pendingIntent)
             .build()
         startForeground(Random.nextInt(), notification)
     }

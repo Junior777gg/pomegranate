@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MessagesDao {
@@ -24,7 +25,10 @@ interface MessagesDao {
     suspend fun getByData(data: ByteArray) : MessageDC
 
     @Query("SELECT * FROM messages WHERE email = :email ORDER BY `key` DESC LIMIT 1")
-    suspend fun getLastByEmail(email: String): MessageDC
+    suspend fun getLastByEmail(email: String): MessageDC?
+
+    @Query("SELECT * FROM messages WHERE email = :email ORDER BY `key` DESC LIMIT 1")
+    fun getLastMessageFlowByEmail(email: String): Flow<MessageDC?>
 
     @Delete
     suspend fun deleteMessage(message: MessageDC)
