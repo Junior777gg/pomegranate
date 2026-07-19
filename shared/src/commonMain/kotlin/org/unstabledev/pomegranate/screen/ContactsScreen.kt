@@ -31,6 +31,7 @@ import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
+import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.serialize
@@ -39,7 +40,9 @@ import org.unstabledev.pomegranate.database.sha256
 
 @Composable
 fun ContactsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
-    ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, chatDao)
+    Column(applyScreenPadding()) {
+        ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, chatDao)
+    }
 }
 
 @Composable

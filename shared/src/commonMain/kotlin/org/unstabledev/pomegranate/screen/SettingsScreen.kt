@@ -11,63 +11,46 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BrightnessAuto
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LensBlur
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.ShieldMoon
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.Firebase
-import org.unstabledev.pomegranate.FirebaseAddress
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.database.ChatDao
 
 @Composable
-fun SettingsScreen(navWayObj: NavigationWays) {
+fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     val settings by AppSettings.state.collectAsState()
+    val scope = rememberCoroutineScope()
 
     Column(applyScreenPadding()) {
         Row(
@@ -160,12 +143,58 @@ fun SettingsScreen(navWayObj: NavigationWays) {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Link,
-                        contentDescription = "Ссылка",
-                        tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.width(2.dp))
                     Text("Адрес Firebase")
                 }
+            }
+            Spacer(modifier = Modifier.padding(vertical = 10.dp))
+            Text("Хранилище и кэш", fontWeight = FontWeight.SemiBold)
+            val chatCount = produceState(0) { value = chatDao.getAllChats().size }
+            Text("Чатов: ${chatCount.value}")
+            Spacer(modifier = Modifier.padding(vertical = 5.dp))
+            var showDeleteChatsPopup by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
+                showDeleteChatsPopup = true
+            }) {
+                Row(
+                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    Text("Удалить все чаты", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            if (showDeleteChatsPopup) {
+                val onDismiss = {showDeleteChatsPopup = false}
+                AlertDialog(
+                    onDismissRequest = onDismiss,
+                    title = {
+                        Text("Вы уверены что хотите удалить все чаты?")
+                    },
+                    text = {
+                        Text("Это действие безвозвратно!")
+                    },
+                    confirmButton = {
+                        Text("Подтвердить", Modifier.clickable {
+                            scope.launch { chatDao.deleteAllChats() }
+                            showDeleteChatsPopup = false
+                        })
+                    },
+                    dismissButton = {
+                        Text("Отмена", Modifier.clickable {
+                            showDeleteChatsPopup = false
+                        })
+                    }
+                )
             }
         }
     }

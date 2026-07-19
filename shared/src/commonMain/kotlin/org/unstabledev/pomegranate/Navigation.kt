@@ -92,7 +92,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.popBackStack() }
                 )
             }
-            SettingsScreen(navWayObj)
+            SettingsScreen(navWayObj, chatDao)
         }
         composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
             val navWayObj = remember {
