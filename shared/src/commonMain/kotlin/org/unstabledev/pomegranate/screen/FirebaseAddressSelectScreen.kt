@@ -47,12 +47,13 @@ import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.FirebaseAddress
 import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.applyScreenPadding
 
 @Composable
 fun FirebaseAddressSelectScreen(navWayObj: NavigationWays) {
     val settings by AppSettings.state.collectAsState()
 
-    Column {
+    Column(applyScreenPadding()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

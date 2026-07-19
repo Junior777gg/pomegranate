@@ -60,6 +60,8 @@ import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 
 private object ChatColors {
@@ -90,9 +92,9 @@ fun ChatScreen(
         while (isActive) {
             value = Firebase.isAvailable()
             if (value) {
-                delay(10000)
+                delay(10.seconds)
             } else {
-                delay(4000)
+                delay(4.seconds)
             }
         }
     }
@@ -339,7 +341,7 @@ private fun MessageInput(
             .fillMaxWidth()
             .padding(
                 horizontal = 8.dp, vertical = if (isMobile) {
-                    if (Util.isKeyboardVisible()) 33.dp else 10.dp
+                    if (Util.isKeyboardVisible()) 48.dp else 25.dp
                 } else 10.dp
             ),
         verticalAlignment = Alignment.CenterVertically

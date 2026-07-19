@@ -33,6 +33,7 @@ import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.components.ProfileImage
 
 
@@ -72,6 +73,7 @@ fun ProfileScreen(navWayObj: NavigationWays) {
     }
 
     Scaffold(
+        modifier = applyScreenPadding(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {

@@ -63,12 +63,13 @@ import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.FirebaseAddress
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.ThemeMode
+import org.unstabledev.pomegranate.applyScreenPadding
 
 @Composable
 fun SettingsScreen(navWayObj: NavigationWays) {
     val settings by AppSettings.state.collectAsState()
 
-    Column {
+    Column(applyScreenPadding()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -162,6 +163,7 @@ fun SettingsScreen(navWayObj: NavigationWays) {
                         contentDescription = "Ссылка",
                         tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
                     )
+                    Spacer(Modifier.width(2.dp))
                     Text("Адрес Firebase")
                 }
             }

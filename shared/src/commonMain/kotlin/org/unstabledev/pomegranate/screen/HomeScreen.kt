@@ -43,6 +43,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDao
 
 @Composable
@@ -56,6 +57,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
+        modifier = applyScreenPadding(),
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(

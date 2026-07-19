@@ -2,14 +2,11 @@ package org.unstabledev.pomegranate
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDao
@@ -28,7 +25,7 @@ fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
 
     theme.AppTheme(theme = settings.theme) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
-        Scaffold(Modifier.fillMaxSize().padding(bottom = if(isMobile) 12.dp else 0.dp, top = if(isLandscape()) 30.dp else 0.dp).displayCutoutPadding()) {
+        Scaffold(Modifier.fillMaxSize()) {
             val navController = rememberNavController()
             Navigation(navController, chatDao, messagesDao)
         }

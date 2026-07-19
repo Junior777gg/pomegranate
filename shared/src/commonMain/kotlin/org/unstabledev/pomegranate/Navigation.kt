@@ -1,7 +1,11 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,6 +21,11 @@ import org.unstabledev.pomegranate.screen.ProfileScreen
 import org.unstabledev.pomegranate.screen.SettingsScreen
 import org.unstabledev.pomegranate.screen.WelcomeScreen
 
+@Composable
+fun applyScreenPadding(base: Modifier = Modifier): Modifier {
+    val mod = base.padding(bottom = if(isMobile) 12.dp else 0.dp, top = if(isLandscape()) 30.dp else 0.dp)
+    return mod.displayCutoutPadding()
+}
 
 @Composable
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {

@@ -28,45 +28,48 @@ import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Routes
+import org.unstabledev.pomegranate.applyScreenPadding
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {
     val fistFilePath = "pomegranate${File.sep}auth.txt"
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
-    IconButton(onClick = {navWayObj.goTo(Routes.WELCOME_SCREEN)}) {
-        Icon(
-            imageVector = Icons.Default.ArrowBack,
-            contentDescription = "Назад",
-            tint = MaterialTheme.colorScheme.onBackground
-        )
-    }
-    Column(
-        modifier = Modifier.fillMaxSize().padding(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(modifier = Modifier.width(400.dp), text = "Вход", fontSize = 30.sp, textAlign = TextAlign.Left)
-        val state = rememberTextFieldState()
-        LabeledTextField(state, "", "Email")
-        if(isErrorVisible) Text(errorText, color = ColorTheme.Warning)
-        Button(onClick = {
-            val email = state.text.toString().trimIndent()
-            if(email.isEmpty()) {
-                isErrorVisible = true
-                errorText = "Email пустой"
-                return@Button
+    Column(applyScreenPadding()) {
+        IconButton(onClick = {navWayObj.goTo(Routes.WELCOME_SCREEN)}) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Назад",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(modifier = Modifier.width(400.dp), text = "Вход", fontSize = 30.sp, textAlign = TextAlign.Left)
+            val state = rememberTextFieldState()
+            LabeledTextField(state, "", "Email")
+            if(isErrorVisible) Text(errorText, color = ColorTheme.Warning)
+            Button(onClick = {
+                val email = state.text.toString().trimIndent()
+                if(email.isEmpty()) {
+                    isErrorVisible = true
+                    errorText = "Email пустой"
+                    return@Button
+                }
+                /*if(!Util.isValidEmail(email)) {
+                    isErrorVisible = true
+                    errorText = "Некорректный Email"
+                    return@Button
+                }*/
+                val file = File(fistFilePath)
+                file.writeText(email)
+                navWayObj.goTo(Routes.HOME_SCREEN)
+            }){
+                Text("Войти")
             }
-            /*if(!Util.isValidEmail(email)) {
-                isErrorVisible = true
-                errorText = "Некорректный Email"
-                return@Button
-            }*/
-            val file = File(fistFilePath)
-            file.writeText(email)
-            navWayObj.goTo(Routes.HOME_SCREEN)
-        }){
-            Text("Войти")
         }
     }
 }
