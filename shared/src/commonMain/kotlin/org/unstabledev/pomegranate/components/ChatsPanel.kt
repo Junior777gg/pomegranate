@@ -178,15 +178,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (validProfile) {
-                            AsyncImage(
-                                model = profile.avatarUrl,
-                                contentDescription = profile.displayName,
-                                modifier = Modifier
-                                    .size(60.dp)
-                                    .clip(CircleShape)
-                            )
-                        } else GeneratedProfileImage(partnerName, size=60.dp)
+                        ProfileImage(profile, chat)
                     }
                     Column(modifier = Modifier.fillMaxSize().padding(5.dp), verticalArrangement = Arrangement.Center) {
                         Text(

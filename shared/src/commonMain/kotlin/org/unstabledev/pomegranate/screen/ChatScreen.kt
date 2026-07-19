@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.components.addChatBackground
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.isMobile
@@ -55,6 +56,7 @@ import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
@@ -76,6 +78,7 @@ fun ChatScreen(
     val viewModel = viewModel(key = lastContact?.partnerEmail) {
         ChatScreenController(messagesDao, lastContact!!)
     }
+    val scope = rememberCoroutineScope()
 
     val inputState = rememberTextFieldState()
     val listState = rememberLazyListState()
@@ -111,8 +114,17 @@ fun ChatScreen(
                 Repository.lastOpponentEmail = chat.partnerEmail
                 navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
             },
-            {},
-            {}
+            {
+                scope.launch {
+                    Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                }
+            },
+            {
+                scope.launch {
+                    Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                }
+                navWayObj.goTo(Routes.HOME_SCREEN)
+            }
         )
         NetworkWarningHeader()
 
@@ -178,15 +190,7 @@ private fun ChatHeader(
             }
         }
         Row(Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            if (validProfile) {
-                AsyncImage(
-                    model = profile.avatarUrl,
-                    contentDescription = profile.displayName,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                )
-            } else GeneratedProfileImage(chat.partnerEmail)
+            ProfileImage(profile, chat)
 
             Spacer(modifier = Modifier.width(12.dp))
 

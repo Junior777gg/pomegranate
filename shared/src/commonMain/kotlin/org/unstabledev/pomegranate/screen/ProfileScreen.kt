@@ -33,6 +33,7 @@ import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.components.ProfileImage
 
 
 @Serializable
@@ -59,8 +60,6 @@ sealed class ProfileState {
 @Composable
 fun ProfileScreen(navWayObj: NavigationWays) {
     val viewModel = viewModel { ProfileScreenController() }
-    val scope = rememberCoroutineScope()
-
     val snackbarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
 
@@ -135,19 +134,7 @@ private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostStat
             .fillMaxWidth()
             .padding(top = 24.dp, bottom = 24.dp)
     ) {
-        if(validAvatar)
-            AsyncImage(
-                model = profile.avatarUrl.ifBlank { null },
-                contentDescription = profile.displayName,
-                modifier = Modifier
-                    .size(96.dp)
-                    .clip(CircleShape)
-            )
-        else
-            GeneratedProfileImage(
-                name = profile.displayName,
-                size = 96.dp
-            )
+        ProfileImage(profile, profile.displayName, 96.dp)
 
         Spacer(Modifier.height(12.dp))
 
