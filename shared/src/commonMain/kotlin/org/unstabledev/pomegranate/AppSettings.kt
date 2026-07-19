@@ -41,7 +41,8 @@ data class AppSettingsState(
 
     val selectedFirebaseAddressId: String = "default",
 
-    val hideSendBarWhenNoNetwork: Boolean = true
+    val hideSendBarWhenNoNetwork: Boolean = true,
+    val hideEmptyChats: Boolean = true,
 ) {
     val selectedFirebaseUrl: String
         get() = firebaseAddresses
@@ -125,6 +126,10 @@ object AppSettings {
 
     fun setHideSendBarWhenNoNetwork(v: Boolean) {
         _state.value = _state.value.copy(hideSendBarWhenNoNetwork = v)
+    }
+
+    fun setHideEmptyChats(v: Boolean) {
+        _state.value = _state.value.copy(hideEmptyChats = v)
     }
 
     fun addFirebaseAddress(title: String, url: String) {

@@ -42,10 +42,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.ThemeMode
+import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.isMobile
 
 @Composable
 fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
@@ -126,6 +130,10 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     }
                 }
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(settings.hideEmptyChats, { AppSettings.setHideEmptyChats(it) })
+                Text("Скрывать пустые чаты")
+            }
             Spacer(modifier = Modifier.padding(vertical = 10.dp))
             Text("Сеть", fontWeight = FontWeight.SemiBold)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -154,6 +162,10 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
             Text("Хранилище и кэш", fontWeight = FontWeight.SemiBold)
             val chatCount = produceState(0) { value = chatDao.getAllChats().size }
             Text("Чатов: ${chatCount.value}")
+            val chatCacheSize = remember { File("pomegranate${File.sep}chat.db").size() }
+            Text("Размер БД чатов: ${Util.formatBinarySize(chatCacheSize)}")
+            val chatMsgCacheSize = remember { File("pomegranate${File.sep}messages.db").size() }
+            Text("Размер БД сообщений: ${Util.formatBinarySize(chatMsgCacheSize)}")
             Spacer(modifier = Modifier.padding(vertical = 5.dp))
             var showDeleteChatsPopup by remember { mutableStateOf(false) }
             Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {

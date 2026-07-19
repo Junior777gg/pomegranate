@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.painterResource
+import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
@@ -155,12 +156,13 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
 
 @Composable
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
+    val settings by AppSettings.state.collectAsState()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(chats) { chat ->
             val message by getLastMessageTextFlow(chat.partnerEmail)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
-            if(!hasLast) return@items
+            if(!hasLast&&settings.hideEmptyChats) return@items
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

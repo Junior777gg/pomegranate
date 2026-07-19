@@ -1,42 +1,47 @@
 package org.unstabledev.pomegranate
 
-import java.io.File
+import java.io.File as FileAccess
 
 actual class File actual constructor(val path: String) {
-    val currentPath = "${System.getProperty("user.dir")}${File.separator}$path"
+    val currentPath = "${System.getProperty("user.dir")}${FileAccess.separator}$path"
     actual fun createFile() {
-        File(currentPath).createNewFile()
+        FileAccess(currentPath).createNewFile()
     }
 
     actual fun createDirectory() {
-        File(currentPath).mkdir()
+        FileAccess(currentPath).mkdir()
     }
 
     actual fun readText(): String {
-        return File(currentPath).readText()
+        return FileAccess(currentPath).readText()
     }
 
     actual fun writeText(text: String) {
-        File(currentPath).writeText(text)
+        FileAccess(currentPath).writeText(text)
     }
 
     actual fun readBytes(): ByteArray {
-        return File(currentPath).readBytes()
+        return FileAccess(currentPath).readBytes()
     }
 
     actual fun writeBytes(bytes: ByteArray) {
-        File(currentPath).writeBytes(bytes)
+        FileAccess(currentPath).writeBytes(bytes)
     }
 
     actual fun delete() {
-        File(currentPath).delete()
+        FileAccess(currentPath).delete()
     }
 
     actual fun exists(): Boolean {
-        return File(currentPath).exists()
+        return FileAccess(currentPath).exists()
     }
     actual companion object {
         actual val sep: String
-            get() = File.separator
+            get() = FileAccess.separator
+    }
+
+    actual fun size(): Long {
+        val file = FileAccess(path)
+        return if (file.exists() && file.isFile) file.length() else 0L
     }
 }

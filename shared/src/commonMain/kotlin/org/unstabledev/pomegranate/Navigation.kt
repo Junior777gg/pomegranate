@@ -116,7 +116,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.navigate(Routes.HOME_SCREEN) }
+                    back = { navController.popBackStack() }
                 )
             }
             ProfileScreen(navWayObj)

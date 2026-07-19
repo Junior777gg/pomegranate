@@ -12,4 +12,5 @@ expect class File(path: String){
     fun writeBytes(bytes: ByteArray)
     fun delete()
     fun exists(): Boolean
+    fun size(): Long
 }
