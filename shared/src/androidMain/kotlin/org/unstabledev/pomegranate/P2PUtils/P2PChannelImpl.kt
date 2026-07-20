@@ -5,6 +5,7 @@ import P2PChannel
 actual class P2PChannelImpl actual constructor(
     actChannel: Any
 ){
+
     val channel = actChannel as P2PChannel
     actual var remoteIP: String
         get() = channel.remoteIp

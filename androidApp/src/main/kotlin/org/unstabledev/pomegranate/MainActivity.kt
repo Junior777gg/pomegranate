@@ -13,6 +13,7 @@ import org.unstabledev.pomegranate.database.getMessagesDatabase
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        Notifications.context = this
         File.context = this
         super.onCreate(savedInstanceState)
         registerForActivityResult(ActivityResultContracts.RequestPermission(), {}).launch(Manifest.permission.POST_NOTIFICATIONS)

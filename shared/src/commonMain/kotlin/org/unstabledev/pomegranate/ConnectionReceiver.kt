@@ -1,7 +1,10 @@
 package org.unstabledev.pomegranate
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.unstabledev.pomegranate.P2PUtils.LoggerImpl
 import org.unstabledev.pomegranate.P2PUtils.Observer
+import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
@@ -22,7 +25,7 @@ object ConnectionReceiver {
             val chat = ChatDC(opponent.first, profile?.serialize())
             val observer = Observer(opponent.second, opponent.second.channel!!,chat, messagesDao)
             chatDao.upsertChat(chat)
-            Repository.availableChats[chat] = observer
+            availableChats.getOrPut(chat, {MutableSharedFlow(1)}).emit(observer)
         }
     }
 }

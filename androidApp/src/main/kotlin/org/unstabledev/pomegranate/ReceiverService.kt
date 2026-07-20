@@ -50,7 +50,7 @@ class ReceiverService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         GlobalScope.launch {
-            ConnectionReceiver.start(chatDao!!, messagesDao!!)
+            ConnectionReceiver.start(chatDao!!, messagesDao!!,)
         }
         return super.onStartCommand(intent, flags, startId)
     }

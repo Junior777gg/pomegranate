@@ -1,6 +1,7 @@
 package org.unstabledev.pomegranate.P2PUtils
 
 import P2PManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 
 actual class P2PManagerImpl {

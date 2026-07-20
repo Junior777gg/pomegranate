@@ -2,13 +2,14 @@ package org.unstabledev.pomegranate
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberTrayState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 
@@ -22,11 +23,16 @@ fun main(args: Array<String>) {
     val messagesDao = messagesDatabase.messagesDao()
     val runBg = !args.contains("--no-bg-service")
     CoroutineScope(Dispatchers.IO).launch {
-        ConnectionReceiver.start(chatDao, messagesDao)
+        ConnectionReceiver.start(chatDao, messagesDao,)
     }
     application {
+        val trayState = rememberTrayState()
+        Notifications.currentPush = {
+            trayState.sendNotification(Notification("Pomegranate", it))
+        }
         if (runBg) {
             Tray(
+                state = trayState,
                 icon = painterResource("pomegranate.png"),
                 menu = {
                     Item("Открыть", onClick = { isOpen.value = true })

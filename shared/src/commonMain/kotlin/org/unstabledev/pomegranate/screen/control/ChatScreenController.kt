@@ -6,12 +6,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.BaseP2P
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
@@ -23,14 +25,20 @@ class ChatScreenController(
 ) : ViewModel() {
     private val _messages: MutableStateFlow<List<MessageDC>> = MutableStateFlow(listOf())
     val messages: StateFlow<List<MessageDC>> = _messages
-    private var observer: Observer? = Repository.availableChats[initialChat]
+    private var observer: Observer? = null
     val chatDC = MutableStateFlow(initialChat)
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-                while (true) {
-                    _messages.value = messagesDao.getAllByEmail(initialChat.partnerEmail)
-                    delay(1000)
+            launch {
+                availableChats.getOrPut(initialChat, {MutableSharedFlow(1)}).collect {
+                    println(11111111)
+                    observer = it
+                }
+            }
+            while (true) {
+                _messages.value = messagesDao.getAllByEmail(initialChat.partnerEmail)
+                delay(1000)
             }
         }
     }
@@ -55,10 +63,11 @@ class ChatScreenController(
                         initialChat,
                         messagesDao
                     )
-                    Repository.availableChats[initialChat] = observer!!
+                    availableChats.getOrPut(initialChat, {MutableSharedFlow(1)}).emit(observer)
+
                     observer!!.send(message)
 
-                } catch (e: TimeoutCancellationException) {
+                } catch (_: TimeoutCancellationException) {
                     if (Repository.waitedConnection[chatDC.value] == null) {
                         Repository.waitedConnection[chatDC.value] = mutableListOf(message)
                     } else {

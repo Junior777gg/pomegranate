@@ -54,7 +54,7 @@ class BaseP2P {
                     delay(100)
                 }
             }
-        }catch (e: TimeoutCancellationException){
+        } catch (e: TimeoutCancellationException) {
             throw e
         } finally {
             Firebase.delete("p2p/${email.sha256()}")

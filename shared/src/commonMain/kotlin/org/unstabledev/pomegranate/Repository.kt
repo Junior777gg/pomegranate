@@ -6,6 +6,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -22,7 +23,7 @@ object Repository {
     private val _lastContact = MutableStateFlow<ChatDC?>(null)
     val lastContact: StateFlow<ChatDC?> = _lastContact
 
-    val availableChats = mutableMapOf<ChatDC, Observer>()
+    val availableChats = mutableMapOf<ChatDC,MutableSharedFlow<Observer?>>()
     var lastOpponentEmail = ""
 
     val waitedConnection = mutableMapOf<ChatDC, MutableList<String>>()
@@ -39,12 +40,12 @@ object Repository {
                             chatDC,
                             messagesDao
                         )
-                        availableChats[chatDC] = observer
+                        availableChats.getOrPut(chatDC, {MutableSharedFlow(1)}).emit(observer)
                         messages.forEach { message ->
                             observer.send(message)
                         }
                         waitedConnection.remove(chatDC)
-                    }catch (e: TimeoutCancellationException){
+                    }catch (_: TimeoutCancellationException){
 
                     }
                 }

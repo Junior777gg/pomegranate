@@ -1,6 +1,6 @@
 package org.unstabledev.pomegranate.P2PUtils
 
-expect class P2PManagerImpl(){
+expect class P2PManagerImpl() {
     var channel: P2PChannelImpl?
     suspend fun getAddress(): String?
     suspend fun getLocalAddress(): String?
