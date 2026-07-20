@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -92,35 +93,37 @@ fun ProfileScreen(navWayObj: NavigationWays) {
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
-
-            when (val state = profileState) {
-                is ProfileState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+        }
+        when (val state = profileState) {
+            is ProfileState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
+            }
 
-                is ProfileState.Success -> {
-                    ProfileContent(state.profile, snackbarHostState)
-                }
+            is ProfileState.Success -> {
+                ProfileContent(state.profile, snackbarHostState)
+            }
 
-                is ProfileState.NotFound -> {
-                    GeneratedProfileCard(email = Repository.lastOpponentEmail, snackbarHostState)
-                }
+            is ProfileState.NotFound -> {
+                GeneratedProfileCard(
+                    email = Repository.lastOpponentEmail,
+                    snackbarHostState
+                )
+            }
 
-                is ProfileState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Ошибка: ${state.message}",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
+            is ProfileState.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Ошибка: ${state.message}",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -130,64 +133,70 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 @Composable
 private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostState) {
     val validAvatar = profile.avatarUrl.isNotBlank()
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 24.dp, bottom = 24.dp)
-    ) {
-        ProfileImage(profile, profile.displayName, 96.dp)
+    LazyColumn(Modifier.padding(top = 50.dp)) {
+        item {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, bottom = 24.dp)
+            ) {
+                ProfileImage(profile, profile.displayName, 96.dp)
 
-        Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-        Text(
-            text = profile.displayName.ifBlank { "Неизвестный пользователь" },
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        if (profile.jobTitle.isNotBlank() || profile.company.isNotBlank()) {
-            Text(
-                text = "${profile.jobTitle} • ${profile.company}".trim(' ', '•'),
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Column(Modifier.padding(vertical = 4.dp)) {
-            if (profile.description.isNotBlank()) {
-                InfoRow(label = "О себе", value = profile.description)
-                Divider()
-            }
-            if (profile.location.isNotBlank()) {
-                InfoRow(label = "Локация", value = profile.location)
-                Divider()
-            }
-            if (profile.profileUrl.isNotBlank()) {
-                InfoRow(
-                    label = "Ссылка",
-                    value = profile.profileUrl,
-                    valueColor = MaterialTheme.colorScheme.primary,
-                    canBeCopied = true,
-                    snackbarHostState = snackbarHostState
+                Text(
+                    text = profile.displayName.ifBlank { "Неизвестный пользователь" },
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-                Divider()
+
+                if (profile.jobTitle.isNotBlank() || profile.company.isNotBlank()) {
+                    Text(
+                        text = "${profile.jobTitle} • ${profile.company}".trim(' ', '•'),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            InfoRow(
-                label = "Email",
-                value = Repository.lastOpponentEmail,
-                canBeCopied = true,
-                snackbarHostState = snackbarHostState
-            )
+        }
+
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(Modifier.padding(vertical = 4.dp)) {
+                    if (profile.description.isNotBlank()) {
+                        InfoRow(label = "О себе", value = profile.description)
+                        Divider()
+                    }
+                    if (profile.location.isNotBlank()) {
+                        InfoRow(label = "Локация", value = profile.location)
+                        Divider()
+                    }
+                    if (profile.profileUrl.isNotBlank()) {
+                        InfoRow(
+                            label = "Ссылка",
+                            value = profile.profileUrl,
+                            valueColor = MaterialTheme.colorScheme.primary,
+                            canBeCopied = true,
+                            snackbarHostState = snackbarHostState
+                        )
+                        Divider()
+                    }
+                    InfoRow(
+                        label = "Email",
+                        value = Repository.lastOpponentEmail,
+                        canBeCopied = true,
+                        snackbarHostState = snackbarHostState
+                    )
+                }
+            }
         }
     }
 }

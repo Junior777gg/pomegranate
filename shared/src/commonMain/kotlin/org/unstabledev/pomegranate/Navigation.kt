@@ -110,7 +110,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.navigate(Routes.HOME_SCREEN) }
                 )
             }
-            ChatScreen(navWayObj)
+            ChatScreen(navWayObj, chatDao)
         }
         composable(Routes.PROFILE_SCREEN_ROUTE) {
             val navWayObj = remember {

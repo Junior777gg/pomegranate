@@ -2,8 +2,10 @@ package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -15,10 +17,12 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
@@ -41,8 +45,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownTypography
+import com.mikepenz.markdown.model.markdownAnnotator
+import com.mikepenz.markdown.model.markdownAnnotatorConfig
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.components.addChatBackground
@@ -50,7 +58,6 @@ import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import org.unstabledev.pomegranate.Firebase
-import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.Repository
@@ -58,6 +65,7 @@ import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import kotlin.time.Duration.Companion.milliseconds
@@ -72,6 +80,7 @@ private object ChatColors {
 @Composable
 fun ChatScreen(
     navWayObj: NavigationWays,
+    chatDao: ChatDao,
     canBack: Boolean = true,
 ) {
     val lastContact by Repository.lastContact.collectAsState()
@@ -98,65 +107,128 @@ fun ChatScreen(
             }
         }
     }
+    val isAtBottom by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+
+            totalItems == 0 || lastVisibleItem?.index == totalItems - 1
+        }
+    }
+    val justOpened = remember { mutableStateOf(true) }
+    val displayNewContactWidget = remember { mutableStateOf(true) }
 
     LaunchedEffect(messages.value.size) {
-        if (messages.value.isNotEmpty()) {
-            listState.animateScrollToItem(messages.value.size - 1)
+        delay(100.milliseconds)
+        val messageCount = messages.value.size
+        if (messageCount > 0) {
+            if (justOpened.value) {
+                listState.scrollToItem(messageCount-1)
+                justOpened.value = false
+            } else {
+                listState.animateScrollToItem(messageCount-1)
+            }
         }
     }
 
-    val displayNewContactWidget = true
-
-    Column(modifier = addChatBackground(Modifier.fillMaxSize())) {
-        val back = {navWayObj.goTo(Routes.HOME_SCREEN)}
-        ChatHeader(
-            chat,
-            if(canBack) back else null,
-            {
-                Repository.lastOpponentEmail = chat.partnerEmail
-                navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
-            },
-            {
-                scope.launch {
-                    Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
-                }
-            },
-            {
-                scope.launch {
-                    Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
-                }
-                navWayObj.goTo(Routes.HOME_SCREEN)
-            }
-        )
-        NetworkWarningHeader()
-
+    Box(modifier = addChatBackground(Modifier.fillMaxSize())) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = 8.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = 68.dp,
+                bottom = 68.dp,
+                start = 8.dp,
+                end = 8.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            if(displayNewContactWidget) {
-                item {
+            if (displayNewContactWidget.value) {
+                item(key = "new_contact_widget") {
                     NewContactWidget(chat = chat)
                 }
             }
-            items(messages.value) { message ->
+            items(messages.value, key = { message -> message.key }) { message ->
                 MessageBubble(message)
             }
         }
 
-        if(isOnline || !settings.hideSendBarWhenNoNetwork) {
-            MessageInput(
-                state = inputState,
-                onSend = {
-                    val text = inputState.text.toString().trim()
-                    if (text.isNotEmpty()) {
-                        viewModel.send(text)
-                        inputState.clearText()
+        Column(modifier = Modifier.fillMaxWidth()) {
+            val back = { navWayObj.goTo(Routes.HOME_SCREEN) }
+            ChatHeader(
+                chat,
+                if (canBack) back else null,
+                {
+                    Repository.lastOpponentEmail = chat.partnerEmail
+                    navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                },
+                {
+                    scope.launch {
+                        listState.scrollToItem(0)
                     }
+                },
+                {
+                    scope.launch {
+                        Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                    }
+                },
+                {
+                    scope.launch {
+                        Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                        chatDao.deleteChat(chat)
+                    }
+                    navWayObj.goTo(Routes.HOME_SCREEN)
                 }
             )
+            NetworkWarningHeader()
+        }
+
+        if(!isAtBottom && messages.value.isNotEmpty()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 64.dp)
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Box(Modifier.clip(CircleShape)) {
+                    IconButton(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                        onClick = {
+                            scope.launch {
+                                listState.animateScrollToItem(messages.value.size - 1)
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDownward,
+                            contentDescription = "К последнему сообщению",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+            }
+        }
+
+        if (isOnline || !settings.hideSendBarWhenNoNetwork) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+            ) {
+                MessageInput(
+                    state = inputState,
+                    onSend = {
+                        val text = inputState.text.toString().trim()
+                        if (text.isNotEmpty()) {
+                            viewModel.send(text)
+                            inputState.clearText()
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -166,6 +238,7 @@ private fun ChatHeader(
     chat: ChatDC,
     onBackClick: (() -> Unit)?,
     onProfileClick: () -> Unit,
+    onScrollToTopClick: () -> Unit,
     onClearHistoryClick: () -> Unit,
     onDeleteChatClick: () -> Unit,
 ) {
@@ -237,6 +310,22 @@ private fun ChatHeader(
 
                 DropdownMenuItem(
                     text = {
+                        Text("В начало", color = MaterialTheme.colorScheme.onBackground)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardDoubleArrowUp,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onScrollToTopClick()
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = {
                         Text("Очистить историю", color = MaterialTheme.colorScheme.onBackground)
                     },
                     leadingIcon = {
@@ -279,6 +368,7 @@ private fun ChatHeader(
 
 @Composable
 private fun MessageBubble(message: MessageDC) {
+    val settings by AppSettings.state.collectAsState()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -303,12 +393,34 @@ private fun MessageBubble(message: MessageDC) {
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = message.data.decodeToString(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 15.sp,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
+                if(settings.parseMarkdown) {
+                    Markdown(
+                        annotator = markdownAnnotator(
+                            config = markdownAnnotatorConfig(
+                                eolAsNewLine = true
+                            )
+                        ),
+                        typography = markdownTypography(
+                            h1 = TextStyle(fontSize = 25.sp),
+                            h2 = TextStyle(fontSize = 23.sp),
+                            h3 = TextStyle(fontSize = 21.5.sp),
+                            h4 = TextStyle(fontSize = 19.sp),
+                            h5 = TextStyle(fontSize = 17.5.sp),
+                            text = TextStyle(fontSize = 15.sp),
+                            inlineCode = TextStyle(fontSize = 15.sp),
+                            code = TextStyle(fontSize = 15.sp),
+                        ),
+                        content = message.data.decodeToString(),
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                } else {
+                    Text(
+                        text = message.data.decodeToString(),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 15.sp,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically

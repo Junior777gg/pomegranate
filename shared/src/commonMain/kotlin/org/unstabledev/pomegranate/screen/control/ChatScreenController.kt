@@ -32,7 +32,6 @@ class ChatScreenController(
         viewModelScope.launch(Dispatchers.IO) {
             launch {
                 availableChats.getOrPut(initialChat, {MutableSharedFlow(1)}).collect {
-                    println(11111111)
                     observer = it
                 }
             }

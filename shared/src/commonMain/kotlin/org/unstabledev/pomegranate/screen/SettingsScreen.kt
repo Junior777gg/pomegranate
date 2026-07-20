@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -82,131 +83,139 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                 fontWeight = FontWeight.SemiBold
             )
         }
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
-            Text("Внешний вид", fontWeight = FontWeight.SemiBold)
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(32.dp)).height(64.dp)
-            ) {
-                Box(
-                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize()
-                ) {
+        LazyColumn {
+            item {
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
+                    Text("Внешний вид", fontWeight = FontWeight.SemiBold)
                     Row(
-                        Modifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
+                            .clip(RoundedCornerShape(32.dp)).height(64.dp)
                     ) {
-                        IconButton(onClick = { AppSettings.setTheme(ThemeMode.SYSTEM) }) {
-                            Icon(
-                                imageVector = Icons.Default.BrightnessAuto,
-                                contentDescription = "Системная тема",
-                                tint = if (settings.theme == ThemeMode.SYSTEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        VerticalDivider(
-                            color = MaterialTheme.colorScheme.background,
-                            thickness = 3.dp,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
-                        IconButton(onClick = { AppSettings.setTheme(ThemeMode.LIGHT) }) {
-                            Icon(
-                                imageVector = Icons.Default.LightMode,
-                                contentDescription = "Светлая тема",
-                                tint = if (settings.theme == ThemeMode.LIGHT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        VerticalDivider(
-                            color = MaterialTheme.colorScheme.background,
-                            thickness = 3.dp,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
-                        IconButton(onClick = { AppSettings.setTheme(ThemeMode.DARK) }) {
-                            Icon(
-                                imageVector = Icons.Default.DarkMode,
-                                contentDescription = "Тёмная тема",
-                                tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                            )
+                        Box(
+                            Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize()
+                        ) {
+                            Row(
+                                Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                IconButton(onClick = { AppSettings.setTheme(ThemeMode.SYSTEM) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.BrightnessAuto,
+                                        contentDescription = "Системная тема",
+                                        tint = if (settings.theme == ThemeMode.SYSTEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                                VerticalDivider(
+                                    color = MaterialTheme.colorScheme.background,
+                                    thickness = 3.dp,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                                IconButton(onClick = { AppSettings.setTheme(ThemeMode.LIGHT) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.LightMode,
+                                        contentDescription = "Светлая тема",
+                                        tint = if (settings.theme == ThemeMode.LIGHT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                                VerticalDivider(
+                                    color = MaterialTheme.colorScheme.background,
+                                    thickness = 3.dp,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                                IconButton(onClick = { AppSettings.setTheme(ThemeMode.DARK) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.DarkMode,
+                                        contentDescription = "Тёмная тема",
+                                        tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                            }
                         }
                     }
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(settings.hideEmptyChats, { AppSettings.setHideEmptyChats(it) })
-                Text("Скрывать пустые чаты")
-            }
-            Spacer(modifier = Modifier.padding(vertical = 10.dp))
-            Text("Сеть", fontWeight = FontWeight.SemiBold)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(settings.hideSendBarWhenNoNetwork, { AppSettings.setHideSendBarWhenNoNetwork(it) })
-                Text("Отключать отправку без интернета")
-            }
-            Spacer(modifier = Modifier.padding(vertical = 5.dp))
-            Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
-                navWayObj.goTo("select_firebase")
-            }) {
-                Row(
-                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Link,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(Modifier.width(2.dp))
-                    Text("Адрес Firebase")
-                }
-            }
-            Spacer(modifier = Modifier.padding(vertical = 10.dp))
-            Text("Хранилище и кэш", fontWeight = FontWeight.SemiBold)
-            val chatCount = produceState(0) { value = chatDao.getAllChats().size }
-            Text("Чатов: ${chatCount.value}")
-            val chatCacheSize = remember { File("pomegranate${File.sep}chat.db").size() }
-            Text("Размер БД чатов: ${Util.formatBinarySize(chatCacheSize)}")
-            val chatMsgCacheSize = remember { File("pomegranate${File.sep}messages.db").size() }
-            Text("Размер БД сообщений: ${Util.formatBinarySize(chatMsgCacheSize)}")
-            Spacer(modifier = Modifier.padding(vertical = 5.dp))
-            var showDeleteChatsPopup by remember { mutableStateOf(false) }
-            Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
-                showDeleteChatsPopup = true
-            }) {
-                Row(
-                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.width(2.dp))
-                    Text("Удалить все чаты", color = MaterialTheme.colorScheme.error)
-                }
-            }
-            if (showDeleteChatsPopup) {
-                val onDismiss = {showDeleteChatsPopup = false}
-                AlertDialog(
-                    onDismissRequest = onDismiss,
-                    title = {
-                        Text("Вы уверены что хотите удалить все чаты?")
-                    },
-                    text = {
-                        Text("Это действие безвозвратно!")
-                    },
-                    confirmButton = {
-                        Text("Подтвердить", Modifier.clickable {
-                            scope.launch { chatDao.deleteAllChats() }
-                            showDeleteChatsPopup = false
-                        })
-                    },
-                    dismissButton = {
-                        Text("Отмена", Modifier.clickable {
-                            showDeleteChatsPopup = false
-                        })
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(settings.hideEmptyChats, { AppSettings.setHideEmptyChats(it) })
+                        Text("Скрывать пустые чаты")
                     }
-                )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(settings.parseMarkdown, { AppSettings.setParseMarkdown(it) })
+                        Text("Парсить Markdown")
+                    }
+                    Spacer(modifier = Modifier.padding(vertical = 10.dp))
+                    Text("Сеть", fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(settings.hideSendBarWhenNoNetwork, { AppSettings.setHideSendBarWhenNoNetwork(it) })
+                        Text("Отключать отправку без интернета")
+                    }
+                    Spacer(modifier = Modifier.padding(vertical = 5.dp))
+                    Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
+                        navWayObj.goTo("select_firebase")
+                    }) {
+                        Row(
+                            Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(Modifier.width(2.dp))
+                            Text("Адрес Firebase")
+                        }
+                    }
+                    Spacer(modifier = Modifier.padding(vertical = 10.dp))
+                    Text("Хранилище и кэш", fontWeight = FontWeight.SemiBold)
+                    val chatCount = produceState(0) { value = chatDao.getAllChats().size }
+                    Text("Чатов: ${chatCount.value}")
+                    val chatCacheSize = remember { File("pomegranate${File.sep}chat.db").size() }
+                    Text("Размер БД чатов: ${Util.formatBinarySize(chatCacheSize)}")
+                    val chatMsgCacheSize = remember { File("pomegranate${File.sep}messages.db").size() }
+                    Text("Размер БД сообщений: ${Util.formatBinarySize(chatMsgCacheSize)}")
+                    Spacer(modifier = Modifier.padding(vertical = 5.dp))
+                    var showDeleteChatsPopup by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
+                        showDeleteChatsPopup = true
+                    }) {
+                        Row(
+                            Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.width(2.dp))
+                            Text("Удалить все чаты", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    if (showDeleteChatsPopup) {
+                        val onDismiss = {showDeleteChatsPopup = false}
+                        AlertDialog(
+                            onDismissRequest = onDismiss,
+                            title = {
+                                Text("Вы уверены что хотите удалить все чаты?")
+                            },
+                            text = {
+                                Text("Это действие безвозвратно!")
+                            },
+                            confirmButton = {
+                                Text("Подтвердить", Modifier.clickable {
+                                    scope.launch { chatDao.deleteAllChats() }
+                                    showDeleteChatsPopup = false
+                                })
+                            },
+                            dismissButton = {
+                                Text("Отмена", Modifier.clickable {
+                                    showDeleteChatsPopup = false
+                                })
+                            }
+                        )
+                    }
+                }
             }
         }
     }

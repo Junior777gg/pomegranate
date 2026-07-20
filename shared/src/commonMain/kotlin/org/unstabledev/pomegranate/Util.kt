@@ -71,5 +71,39 @@ class Util {
                 "$roundedNumberString ${"KMGTPE"[zeroBitCount - 1]}iB"
             }
         }
+
+        fun String.stripMarkdown(): String {
+            var result = this
+            //Replace bold text
+            result = result.replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
+            result = result.replace(Regex("__(.+?)__"), "$1")
+            //Replace italicized text
+            result = result.replace(Regex("_(.+?)_"), "$1")
+            result = result.replace(Regex("\\*(.+?)\\*"), "$1")
+            //Replace strikethrough text
+            result = result.replace(Regex("~~(.+?)~~"), "$1")
+            //Replace inline code blocks
+            result = result.replace(Regex("`(.+?)`"), "$1")
+            //Replace code blocks
+            result = result.replace(Regex("```[\\s\\S]*?```"), "")
+            result = result.replace(Regex("```[\\s\\S]*?```"), "")
+            //Remove links
+            result = result.replace(Regex("\\[(.+?)\\]\\((.+?)\\)"), "$1")
+            //Remove images
+            result = result.replace(Regex("!\\[(.+?)\\]\\((.+?)\\)"), "")
+            //Remove headings
+            result = result.replace(Regex("^#+\\s+(.+?)\\s*$", RegexOption.MULTILINE), "$1")
+            result = result.replace(Regex("^\\s*=+\\s*$", RegexOption.MULTILINE), "")
+            result = result.replace(Regex("^\\s*-+\\s*$", RegexOption.MULTILINE), "")
+            //Remove blockquotes
+            result = result.replace(Regex("^\\s*>\\s+(.+?)\\s*$", RegexOption.MULTILINE), "$1")
+            //Remove lists
+            //result = result.replace(Regex("^\\s*[\\*+-]\\s+(.+?)\\s*$", RegexOption.MULTILINE), "")
+            //result = result.replace(Regex("^\\s*\\d+\\.\\s+(.+?)\\s*$", RegexOption.MULTILINE), "")
+            //Remove horizontal lines
+            result = result.replace(Regex("^\\s*[-*_]{3,}\\s*$", RegexOption.MULTILINE), "")
+
+            return result
+        }
     }
 }

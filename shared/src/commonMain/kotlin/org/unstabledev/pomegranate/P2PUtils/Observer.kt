@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Notifications
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
+import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
@@ -74,7 +75,7 @@ class Observer(
                         )
                         Notifications().push(
                             (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
-                            decodeData[0]
+                            decodeData[0].stripMarkdown()
                         )
                         messagesDao.insertMessage(message)
                     }

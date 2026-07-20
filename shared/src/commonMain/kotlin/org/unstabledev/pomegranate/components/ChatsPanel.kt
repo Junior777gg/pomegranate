@@ -37,6 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
+import com.mikepenz.markdown.model.markdownAnnotator
+import com.mikepenz.markdown.model.markdownAnnotatorConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +51,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
@@ -137,7 +143,7 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
         .map { msg ->
             if (msg != null) {
                 val decodedText = try {
-                    msg.data.decodeToString()
+                    msg.data.decodeToString().stripMarkdown()
                 } catch (e: Exception) {
                     ""
                 }
@@ -187,14 +193,13 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
                             if(validProfile) profile.displayName else chat.partnerEmail,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        if(hasLast)
+                        if(hasLast) {
                             Text(
                                 text = message,
-                                style = TextStyle(
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 12.sp
-                                )
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 12.sp
                             )
+                        }
                     }
                 }
             }

@@ -131,6 +131,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     key(lastContact?.partnerEmail) {
                         ChatScreen(
                             navWayObj = navWayObj,
+                            chatDao = chatDao,
                             canBack = false
                         )
                     }
