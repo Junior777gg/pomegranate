@@ -52,7 +52,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
+                    back = {  }
                 )
             }
             WelcomeScreen(navWayObj)
@@ -61,7 +61,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
+                    back = { navController.navigate(Routes.WELCOME_SCREEN) }
                 )
             }
             LoginScreen(navWayObj)

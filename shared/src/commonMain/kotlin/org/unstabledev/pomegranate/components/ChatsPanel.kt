@@ -162,13 +162,12 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
 
 @Composable
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
-    val settings by AppSettings.state.collectAsState()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(chats) { chat ->
             val message by getLastMessageTextFlow(chat.partnerEmail)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
-            if(!hasLast&&settings.hideEmptyChats) return@items
+            if(!hasLast) return@items
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

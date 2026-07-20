@@ -43,7 +43,10 @@ fun main(args: Array<String>) {
 
         if (isOpen.value) {
             Window(
-                onCloseRequest = { isOpen.value = false },
+                onCloseRequest = {
+                    AppSettings.save()
+                    isOpen.value = false
+                },
                 title = "pomegranate",
                 icon = painterResource("pomegranate.png")
             ) {

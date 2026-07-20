@@ -2,16 +2,19 @@ package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -28,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,10 +43,15 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
@@ -64,13 +73,15 @@ private enum class PanelSubScreen {
 fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
     val lastContact by Repository.lastContact.collectAsState()
-    val messagesDao = Repository.messagesDao
-
+    val settings by AppSettings.state.collectAsState()
     val viewModel = viewModel { HomeScreenController(chatDao) }
-    val chats by viewModel.chats.collectAsState()
 
     val userEmail = "Гранат"
     val userName = Repository.myEmail
+
+    var splitPosition by remember { mutableFloatStateOf(settings.desktopHomeSplit) }
+    val minLeftWidth = 0.5f
+    val maxLeftWidth = 2.0f
 
     Box(
         modifier = Modifier
@@ -89,7 +100,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
             }
     ) {
         Row {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(splitPosition)) {
                 when (panelSubScreen) {
                     PanelSubScreen.CHATS -> {
                         SearchableChatsPanel(
@@ -126,6 +137,26 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     }
                 }
             }
+            Box(
+                modifier = Modifier
+                    .width(2.dp)
+                    .fillMaxHeight()
+                    .pointerHoverIcon(PointerIcon.Crosshair)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { },
+                            onDragEnd = { AppSettings.setDesktopHomeSplit(splitPosition) },
+                            onDragCancel = { }
+                        ) { change, dragAmount ->
+                            change.consume()
+                            val newPosition = (splitPosition*500 + dragAmount)/500
+                            splitPosition = newPosition.coerceIn(minLeftWidth, maxLeftWidth)
+                        }
+                    }
+                    .background(
+                        MaterialTheme.colorScheme.surface
+                    )
+            )
             Column(Modifier.weight(1.5f)) {
                 if(lastContact?.partnerEmail?.isNotEmpty() == true) {
                     key(lastContact?.partnerEmail) {

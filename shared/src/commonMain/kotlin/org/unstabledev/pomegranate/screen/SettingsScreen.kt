@@ -134,10 +134,6 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(settings.hideEmptyChats, { AppSettings.setHideEmptyChats(it) })
-                        Text("Скрывать пустые чаты")
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(settings.parseMarkdown, { AppSettings.setParseMarkdown(it) })
                         Text("Парсить Markdown")
                     }
@@ -197,7 +193,7 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         AlertDialog(
                             onDismissRequest = onDismiss,
                             title = {
-                                Text("Вы уверены что хотите удалить все чаты?")
+                                Text("Вы уверены что хотите удалить все чаты?", color = MaterialTheme.colorScheme.onBackground)
                             },
                             text = {
                                 Text("Это действие безвозвратно!")

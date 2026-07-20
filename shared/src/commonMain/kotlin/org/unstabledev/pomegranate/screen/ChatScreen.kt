@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -85,7 +86,6 @@ fun ChatScreen(
 ) {
     val lastContact by Repository.lastContact.collectAsState()
     val messagesDao = Repository.messagesDao
-    // Create ViewModel with the specific chat
     val viewModel = viewModel(key = lastContact?.partnerEmail) {
         ChatScreenController(messagesDao, lastContact!!)
     }
@@ -118,13 +118,15 @@ fun ChatScreen(
     }
     val justOpened = remember { mutableStateOf(true) }
     val displayNewContactWidget = remember { mutableStateOf(true) }
+    var showClearChatPopup by remember { mutableStateOf(false) }
+    var showDeleteChatPopup by remember { mutableStateOf(false) }
 
     LaunchedEffect(messages.value.size) {
-        delay(100.milliseconds)
         val messageCount = messages.value.size
         if (messageCount > 0) {
             if (justOpened.value) {
-                listState.scrollToItem(messageCount-1)
+                delay(50.milliseconds)
+                listState.requestScrollToItem(messageCount-1)
                 justOpened.value = false
             } else {
                 listState.animateScrollToItem(messageCount-1)
@@ -155,7 +157,10 @@ fun ChatScreen(
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            val back = { navWayObj.goTo(Routes.HOME_SCREEN) }
+            val back = {
+                if(messages.value.isEmpty()) scope.launch { chatDao.deleteChat(chat) }
+                navWayObj.goTo(Routes.HOME_SCREEN)
+            }
             ChatHeader(
                 chat,
                 if (canBack) back else null,
@@ -169,16 +174,10 @@ fun ChatScreen(
                     }
                 },
                 {
-                    scope.launch {
-                        Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
-                    }
+                    showClearChatPopup = true
                 },
                 {
-                    scope.launch {
-                        Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
-                        chatDao.deleteChat(chat)
-                    }
-                    navWayObj.goTo(Routes.HOME_SCREEN)
+                    showDeleteChatPopup = true
                 }
             )
             NetworkWarningHeader()
@@ -230,6 +229,59 @@ fun ChatScreen(
                 )
             }
         }
+    }
+
+    if(showClearChatPopup) {
+        AlertDialog(
+            onDismissRequest = { showClearChatPopup = false },
+            title = {
+                Text("Вы уверены что хотите очистить чат?", color = MaterialTheme.colorScheme.onBackground)
+            },
+            text = {
+                Text("Это действие безвозвратно!")
+            },
+            confirmButton = {
+                Text("Подтвердить", Modifier.clickable {
+                    scope.launch {
+                        Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                    }
+                    showClearChatPopup = false
+                })
+            },
+            dismissButton = {
+                Text("Отмена", Modifier.clickable {
+                    showClearChatPopup = false
+                })
+            }
+        )
+    }
+    if(showDeleteChatPopup) {
+        AlertDialog(
+            onDismissRequest = { showDeleteChatPopup = false },
+            title = {
+                Text("Вы уверены что хотите удалить чат?", color = MaterialTheme.colorScheme.onBackground)
+            },
+            text = {
+                Text("Это действие безвозвратно!")
+            },
+            confirmButton = {
+                Text("Подтвердить", Modifier.clickable {
+                    scope.launch {
+                        Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                        chatDao.deleteChat(chat)
+                    }
+                    Repository.lastOpponentEmail = ""
+                    Repository.setLastContact(null)
+                    if(isMobile) navWayObj.goTo(Routes.HOME_SCREEN)
+                    showDeleteChatPopup = false
+                })
+            },
+            dismissButton = {
+                Text("Отмена", Modifier.clickable {
+                    showDeleteChatPopup = false
+                })
+            }
+        )
     }
 }
 

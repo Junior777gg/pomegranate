@@ -42,8 +42,8 @@ data class AppSettingsState(
     val selectedFirebaseAddressId: String = "default",
 
     val hideSendBarWhenNoNetwork: Boolean = true,
-    val hideEmptyChats: Boolean = true,
     val parseMarkdown: Boolean = true,
+    val desktopHomeSplit: Float = 1.0f,
 ) {
     val selectedFirebaseUrl: String
         get() = firebaseAddresses
@@ -65,13 +65,13 @@ object AppSettings {
     init {
         snapshotFlow { state.value }
             .debounce(500)
-            .onEach { save() }
             .launchIn(GlobalScope)
     }
 
     fun save() {
         try {
             File(FILE_PATH).writeText(json.encodeToString(state.value))
+            println("Saved app config")
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -89,6 +89,8 @@ object AppSettings {
             val ensured = ensureDefaultFirebase(loaded)
 
             _state.value = ensured
+
+            println("Loaded app config")
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -129,12 +131,12 @@ object AppSettings {
         _state.value = _state.value.copy(hideSendBarWhenNoNetwork = v)
     }
 
-    fun setHideEmptyChats(v: Boolean) {
-        _state.value = _state.value.copy(hideEmptyChats = v)
-    }
-
     fun setParseMarkdown(v: Boolean) {
         _state.value = _state.value.copy(parseMarkdown = v)
+    }
+
+    fun setDesktopHomeSplit(v: Float) {
+        _state.value = _state.value.copy(desktopHomeSplit = v)
     }
 
     fun addFirebaseAddress(title: String, url: String) {
