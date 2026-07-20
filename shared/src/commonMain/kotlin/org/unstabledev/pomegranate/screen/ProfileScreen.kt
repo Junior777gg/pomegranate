@@ -78,52 +78,54 @@ fun ProfileScreen(navWayObj: NavigationWays) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-        ) {
-            IconButton(
-                onClick = { navWayObj.back() },
-                modifier = Modifier.padding(8.dp)
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
-        when (val state = profileState) {
-            is ProfileState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = { navWayObj.back() },
+                    modifier = Modifier.padding(8.dp)
                 ) {
-                    CircularProgressIndicator()
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Назад",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                 }
             }
+            when (val state = profileState) {
+                is ProfileState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-            is ProfileState.Success -> {
-                ProfileContent(state.profile, snackbarHostState)
-            }
+                is ProfileState.Success -> {
+                    ProfileContent(state.profile, snackbarHostState)
+                }
 
-            is ProfileState.NotFound -> {
-                GeneratedProfileCard(
-                    email = Repository.lastOpponentEmail,
-                    snackbarHostState
-                )
-            }
-
-            is ProfileState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Ошибка: ${state.message}",
-                        color = MaterialTheme.colorScheme.error
+                is ProfileState.NotFound -> {
+                    GeneratedProfileCard(
+                        email = Repository.lastOpponentEmail,
+                        snackbarHostState
                     )
+                }
+
+                is ProfileState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ошибка: ${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }

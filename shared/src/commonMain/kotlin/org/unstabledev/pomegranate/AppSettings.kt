@@ -62,12 +62,6 @@ object AppSettings {
         encodeDefaults = true
     }
 
-    init {
-        snapshotFlow { state.value }
-            .debounce(500)
-            .launchIn(GlobalScope)
-    }
-
     fun save() {
         try {
             File(FILE_PATH).writeText(json.encodeToString(state.value))

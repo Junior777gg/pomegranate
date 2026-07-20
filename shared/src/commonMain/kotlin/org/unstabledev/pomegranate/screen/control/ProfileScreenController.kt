@@ -16,6 +16,7 @@ class ProfileScreenController : ViewModel() {
     val profile = MutableStateFlow(Profile())
     suspend fun getProfile(email: String): Boolean {
         return withContext(Dispatchers.IO) {
+            if(!email.contains("@")||!email.contains(".")) false
             val p = Gravatar.getProfile(email.sha256())
             if (p != null) {
                 profile.emit(p)
