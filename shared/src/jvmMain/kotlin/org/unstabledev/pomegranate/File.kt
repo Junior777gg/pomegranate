@@ -45,3 +45,12 @@ actual class File actual constructor(val path: String) {
         return if (file.exists() && file.isFile) file.length() else 0L
     }
 }
+
+actual class ChooseFiles actual constructor(){
+    companion object{
+        lateinit var choose : () -> List<Pair<ByteArray, String>>
+    }
+    actual fun getFiles(): List<Pair<ByteArray, String>> {
+        return choose()
+    }
+}

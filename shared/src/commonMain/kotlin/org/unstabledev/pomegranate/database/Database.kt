@@ -10,7 +10,7 @@ import kotlinx.coroutines.IO
 
 @Database(
     entities = [ChatDC::class],
-    version = 4,
+    version = 6,
 )
 @ConstructedBy(ChatDatabaseConstructor::class)
 abstract class ChatDatabase: RoomDatabase() {
@@ -31,7 +31,7 @@ fun getChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
 
 @Database(
     entities = [MessageDC::class],
-    version = 6,
+    version = 10,
 )
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {

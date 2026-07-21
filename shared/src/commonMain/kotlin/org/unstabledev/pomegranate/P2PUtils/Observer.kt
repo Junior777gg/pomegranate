@@ -9,6 +9,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Notifications
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
@@ -28,7 +30,7 @@ class Observer(
 ) {
     private var itsReceived = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val timeOutMillis = 15000L
+    val timeOutMillis = 30000L
     var lastAction = now().toEpochMilliseconds()
     var lastData = ByteArray(0)
     var code = ""
@@ -54,7 +56,6 @@ class Observer(
                 if (itsReceived) return@launch
                 itsReceived = true
                 while (true) {
-                    val time = now().toString().split("T")[1].split(":")
                     val data = channel.receive()
                     if (data.decodeToString() == code) {
                         val message = messagesDao.getByData(lastData)
@@ -64,36 +65,34 @@ class Observer(
                         code = ""
                     } else {
                         val decodeData = data.decodeToString().split("^?^/^*")
-                        send(decodeData[1], true)
+                        send(MessageDC(data = decodeData[1].encodeToByteArray()), true)
                         lastAction = now().toEpochMilliseconds()
-                        val message = MessageDC(
-                            email = chatDC.partnerEmail,
-                            data = decodeData[0].encodeToByteArray(),
-                            type = MessageDC.TEXT,
-                            time = "${time[0].toInt() + 3}:${time[1]}",
-                            isMine = false,
-                        )
+                        val message = Json.decodeFromString(MessageDC.serializer(), decodeData[0])
+                        message.isMine = false
+                        message.email = chatDC.partnerEmail
                         Notifications().push(
                             (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
-                            decodeData[0].stripMarkdown()
+                            message.data.decodeToString().stripMarkdown()
                         )
                         messagesDao.insertMessage(message)
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
-    fun send(message: String, isTest: Boolean = false) {
+    fun send(message: MessageDC, isTest: Boolean = false) {
         lastAction = now().toEpochMilliseconds()
         scope.launch {
             if (isTest) {
-                channel.send(message.encodeToByteArray())
+                channel.send(message.data)
             } else {
-                lastData = message.encodeToByteArray()
+                val json = Json.encodeToString(message)
+                lastData = message.data
                 code = Random.nextInt().toString()
-                channel.send("$message^?^/^*$code".encodeToByteArray())
+                channel.send("$json^?^/^*$code".encodeToByteArray())
             }
         }
     }

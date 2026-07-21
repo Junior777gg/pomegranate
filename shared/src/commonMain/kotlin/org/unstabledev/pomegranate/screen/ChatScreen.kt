@@ -17,11 +17,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Warning
@@ -43,16 +46,18 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mikepenz.markdown.m3.Markdown
-import com.mikepenz.markdown.m3.markdownTypography
-import com.mikepenz.markdown.model.markdownAnnotator
-import com.mikepenz.markdown.model.markdownAnnotatorConfig
+//import com.mikepenz.markdown.m3.Markdown
+//import com.mikepenz.markdown.m3.markdownTypography
+//import com.mikepenz.markdown.model.markdownAnnotator
+//import com.mikepenz.markdown.model.markdownAnnotatorConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.components.addChatBackground
 import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.ChooseFiles
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import org.unstabledev.pomegranate.Firebase
@@ -216,13 +221,7 @@ fun ChatScreen(
             ) {
                 MessageInput(
                     state = inputState,
-                    onSend = {
-                        val text = inputState.text.toString().trim()
-                        if (text.isNotEmpty()) {
-                            viewModel.send(text)
-                            inputState.clearText()
-                        }
-                    }
+                    viewModel
                 )
             }
         }
@@ -443,7 +442,7 @@ private fun MessageBubble(message: MessageDC) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 if(settings.parseMarkdown) {
-                    Markdown(
+                    /*Markdown(
                         annotator = markdownAnnotator(
                             config = markdownAnnotatorConfig(
                                 eolAsNewLine = true
@@ -461,7 +460,7 @@ private fun MessageBubble(message: MessageDC) {
                         ),
                         content = message.data.decodeToString(),
                         modifier = Modifier.weight(1f, fill = false)
-                    )
+                    )*/
                 } else {
                     Text(
                         text = message.data.decodeToString(),
@@ -495,7 +494,7 @@ private fun MessageBubble(message: MessageDC) {
 @Composable
 private fun MessageInput(
     state: TextFieldState,
-    onSend: () -> Unit
+    viewModel: ChatScreenController
 ) {
     Row(
         modifier = Modifier
@@ -507,6 +506,26 @@ private fun MessageInput(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(ChatColors.Accent)
+                .clickable {
+                    viewModel.send(files = ChooseFiles().getFiles())
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Attachment,
+                contentDescription = "Отправить",
+                tint = MaterialTheme.colorScheme.background,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -545,7 +564,13 @@ private fun MessageInput(
                 .size(44.dp)
                 .clip(CircleShape)
                 .background(ChatColors.Accent)
-                .clickable { onSend() },
+                .clickable {
+                    val text = state.text.toString().trim()
+                    if (text.isNotEmpty()) {
+                        viewModel.send(text)
+                        state.clearText()
+                    }
+                },
             contentAlignment = Alignment.Center
         ) {
             Icon(

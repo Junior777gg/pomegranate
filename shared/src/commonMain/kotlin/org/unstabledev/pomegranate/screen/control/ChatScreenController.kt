@@ -31,67 +31,75 @@ class ChatScreenController(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             launch {
-                availableChats.getOrPut(initialChat, {MutableSharedFlow(1)}).collect {
+                availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).collect {
                     observer = it
                 }
             }
-            while (true) {
-                _messages.value = messagesDao.getAllByEmail(initialChat.partnerEmail)
-                delay(1000)
-            }
-        }
-    }
-
-    fun startMessaging(message: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (observer == null) {
-                try {
-                    val time = now().toString().split("T")[1].split(":")
-                    val messageDC = MessageDC(
-                        email = chatDC.value.partnerEmail,
-                        data = message.encodeToByteArray(),
-                        type = MessageDC.TEXT,
-                        time = "${time[0].toInt() + 3}:${time[1]}",
-                        isMine = true,
-                    )
-                    messagesDao.insertMessage(messageDC)
-                    val manager = BaseP2P().createConnection(initialChat.partnerEmail)
-                    observer = Observer(
-                        manager,
-                        manager.channel!!,
-                        initialChat,
-                        messagesDao
-                    )
-                    availableChats.getOrPut(initialChat, {MutableSharedFlow(1)}).emit(observer)
-
-                    observer!!.send(message)
-
-                } catch (_: TimeoutCancellationException) {
-                    if (Repository.waitedConnection[chatDC.value] == null) {
-                        Repository.waitedConnection[chatDC.value] = mutableListOf(message)
-                    } else {
-                        Repository.waitedConnection[chatDC.value]!!.add(message)
-                    }
+            launch {
+                while (true) {
+                    _messages.value = messagesDao.getAllByEmail(initialChat.partnerEmail)
+                    delay(1000)
                 }
             }
         }
     }
 
-    fun send(message: String) {
+    fun startMessaging(message: String? = null, files: List<Pair<ByteArray, String>>? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val messages = mutableListOf<MessageDC>()
+            if (message != null) {
+                val messageDC = Repository.createMessage(initialChat, message)
+                messagesDao.insertMessage(messageDC)
+                messages.add(messageDC)
+            }
+            if (files != null) {
+                files.forEach { file ->
+                    val messageDC = Repository.createMessage(initialChat, file = file)
+                    messagesDao.insertMessage(messageDC)
+                    messages.add(messageDC)
+                }
+            }
+            try {
+                val manager = BaseP2P().createConnection(initialChat.partnerEmail)
+                observer = Observer(
+                    manager,
+                    manager.channel!!,
+                    initialChat,
+                    messagesDao
+                )
+                availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).emit(observer)
+                messages.forEach {
+                    observer?.send(it)
+                }
+
+            } catch (_: TimeoutCancellationException) {
+                if (Repository.waitedConnection[chatDC.value] == null) {
+                    Repository.waitedConnection[chatDC.value] = messages
+                } else {
+                    Repository.waitedConnection[chatDC.value]!!.addAll(messages)
+                }
+            }
+        }
+    }
+
+    fun send(message: String? = null, files: List<Pair<ByteArray, String>>? = null) {
         if (observer == null) {
-            startMessaging(message)
+            startMessaging(message, files)
         } else {
             viewModelScope.launch(Dispatchers.IO) {
-                val time = now().toString().split("T")[1].split(":")
-                val messageDC = MessageDC(
-                    email = chatDC.value.partnerEmail,
-                    data = message.encodeToByteArray(),
-                    type = MessageDC.TEXT,
-                    time = "${time[0].toInt() + 3}:${time[1]}",
-                    isMine = true,
-                )
-                messagesDao.insertMessage(messageDC)
-                observer?.send(message)
+                if (message != null) {
+                    val messageDC = Repository.createMessage(initialChat, message)
+                    messagesDao.insertMessage(messageDC)
+                    observer!!.send(messageDC)
+
+                }
+                if (files != null) {
+                    files.forEach { file ->
+                        val messageDC = Repository.createMessage(initialChat, file = file)
+                        messagesDao.insertMessage(messageDC)
+                        observer!!.send(messageDC)
+                    }
+                }
             }
         }
     }

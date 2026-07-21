@@ -14,3 +14,7 @@ expect class File(path: String){
     fun exists(): Boolean
     fun size(): Long
 }
+
+expect class ChooseFiles(){
+    fun getFiles(): List<Pair<ByteArray, String>>
+}

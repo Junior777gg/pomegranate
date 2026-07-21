@@ -12,6 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
+import java.awt.FileDialog
+import java.awt.Frame
 
 fun main(args: Array<String>) {
     val isOpen = mutableStateOf(true)
@@ -25,10 +27,20 @@ fun main(args: Array<String>) {
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start(chatDao, messagesDao,)
     }
+    ChooseFiles.choose = {
+        val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)
+        dialog.isMultipleMode = true
+        dialog.isVisible = true
+        val bytes = mutableListOf<Pair<ByteArray, String>>()
+        dialog.files.toList().forEach {
+            bytes.add(it.readBytes() to it.extension)
+        }
+        bytes
+    }
     application {
         val trayState = rememberTrayState()
-        Notifications.currentPush = {
-            trayState.sendNotification(Notification("Pomegranate", it))
+        Notifications.currentPush = { title, message ->
+            trayState.sendNotification(Notification(title, message))
         }
         if (runBg) {
             Tray(

@@ -73,8 +73,8 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation("com.mikepenz:multiplatform-markdown-renderer:0.43.0")
-            implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.43.0")
+            //implementation("com.mikepenz:multiplatform-markdown-renderer:0.43.0")
+            //implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.43.0")
         }
         iosArm64Main.dependencies {
             implementation(libs.ktor.client.darwin)

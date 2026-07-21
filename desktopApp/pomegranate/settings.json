@@ -1,1 +1,1 @@
-{"theme":"SYSTEM","firebaseAddresses":[{"id":"default","title":"Гранат","url":"https://pomegranate-1372b-default-rtdb.europe-west1.firebasedatabase.app/"}],"selectedFirebaseAddressId":"default","hideSendBarWhenNoNetwork":true,"hideEmptyChats":true}
+{"theme":"SYSTEM","firebaseAddresses":[{"id":"default","title":"Гранат","url":"https://pomegranate-1372b-default-rtdb.europe-west1.firebasedatabase.app/"}],"selectedFirebaseAddressId":"default","hideSendBarWhenNoNetwork":false,"parseMarkdown":false,"desktopHomeSplit":1.0}
