@@ -46,7 +46,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -113,7 +112,11 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                             },
                             onSidemenuClick = {
                                 panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
-                            })
+                            },
+                            onOpenProfileClick = {
+                                Repository.lastOpponentEmail = it.partnerEmail
+                                navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                            }, chatDao)
                     }
                     PanelSubScreen.CONTACTS -> {
                         ContactsPanel({

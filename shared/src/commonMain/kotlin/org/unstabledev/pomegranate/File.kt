@@ -17,8 +17,13 @@ expect class File(path: String){
     fun size(): Long
 }
 
+expect class FileSaver() {
+    suspend fun saveBitmapImage(bitmap: ImageBitmap, fileName: String): Boolean
+    suspend fun saveBytes(bytes: ByteArray, fileName: String): Boolean
+}
+
 expect class ChooseFiles(){
-    fun getFiles(): List<Pair<ByteArray, String>>
+    fun getFiles(onResult: (List<Pair<ByteArray, String>>) -> Unit)
 }
 
 expect fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap

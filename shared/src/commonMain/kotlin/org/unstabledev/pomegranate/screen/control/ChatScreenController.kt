@@ -51,12 +51,10 @@ class ChatScreenController(
                 messagesDao.insertMessage(messageDC)
                 messages.add(messageDC)
             }
-            if (files != null) {
-                files.forEach { file ->
-                    val messageDC = Repository.createMessage(initialChat, file = file)
-                    messagesDao.insertMessage(messageDC)
-                    messages.add(messageDC)
-                }
+            files?.forEach { file ->
+                val messageDC = Repository.createMessage(initialChat, file = file)
+                messagesDao.insertMessage(messageDC)
+                messages.add(messageDC)
             }
             try {
                 val manager = BaseP2P().createConnection(initialChat.partnerEmail)
@@ -92,12 +90,10 @@ class ChatScreenController(
                     observer!!.send(messageDC)
 
                 }
-                if (files != null) {
-                    files.forEach { file ->
-                        val messageDC = Repository.createMessage(initialChat, file = file)
-                        messagesDao.insertMessage(messageDC)
-                        observer!!.send(messageDC)
-                    }
+                files?.forEach { file ->
+                    val messageDC = Repository.createMessage(initialChat, file = file)
+                    messagesDao.insertMessage(messageDC)
+                    observer!!.send(messageDC)
                 }
             }
         }

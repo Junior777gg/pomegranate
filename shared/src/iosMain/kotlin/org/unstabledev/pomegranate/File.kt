@@ -1,8 +1,5 @@
 package org.unstabledev.pomegranate
 
-import platform.Foundation.NSFileManager
-import platform.Foundation.NSNumber
-
 actual class File actual constructor(path: String) {
     actual fun createFile() {}
     actual fun createDirectory() {}

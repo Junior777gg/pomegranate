@@ -2,6 +2,7 @@ package org.unstabledev.pomegranate.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,40 +15,45 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
-import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
@@ -59,6 +65,8 @@ fun SearchableChatsPanel(
     onChatClick: (chat: ChatDC) -> Unit,
     onChatAddClick: () -> Unit,
     onSidemenuClick: () -> Unit,
+    onOpenProfileClick: (chat: ChatDC) -> Unit,
+    chatDao: ChatDao,
     modifier: Modifier = Modifier
 ) {
     val chats by viewModel.chats.collectAsState()
@@ -115,7 +123,7 @@ fun SearchableChatsPanel(
         }
         NetworkWarningHeader()
         if (filteredChats.isNotEmpty()) {
-            ChatsList(filteredChats, onChatClick)
+            ChatsList(filteredChats, onChatClick, onOpenProfileClick, chatDao)
         } else {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -141,9 +149,9 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
                 val decodedText = try {
                     when (msg.type) {
                         MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
-                        MessageDC.IMAGE -> "Image"
-                        MessageDC.FILE -> "File"
-                        else -> "Unknown"
+                        MessageDC.IMAGE -> "Изображение"
+                        MessageDC.FILE -> "Файл"
+                        else -> "Неизвестно"
                     }
                 } catch (_: Exception) {
                     ""
@@ -168,9 +176,11 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
 }
 
 @Composable
-fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit) {
+fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenProfileClick: (chat: ChatDC) -> Unit, chatDao: ChatDao) {
+    val scope = rememberCoroutineScope()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(chats) { chat ->
+            val menuExpanded = remember { mutableStateOf(false) }
             val message by getLastMessageTextFlow(chat.partnerEmail)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
@@ -179,11 +189,13 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .clickable {
-                        onChatClick(chat)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = { menuExpanded.value = true },
+                            onTap = { onChatClick(chat) }
+                        )
                     }
             ) {
-                val partnerName = chat.partnerEmail
                 val profile = chat.profile?.deserialize()
                 val validProfile = profile?.profileUrl?.isNotBlank() ?: false
                 Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
@@ -207,6 +219,47 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit) {
                             )
                         }
                     }
+                }
+                DropdownMenu(
+                    expanded = menuExpanded.value,
+                    onDismissRequest = { menuExpanded.value = false },
+                    modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            onOpenProfileClick(chat)
+                            menuExpanded.value = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text("Удалить", color = MaterialTheme.colorScheme.error)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            scope.launch {
+                                Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                                chatDao.deleteChat(chat)
+                            }
+                            menuExpanded.value = false
+                        }
+                    )
                 }
             }
         }

@@ -27,15 +27,12 @@ fun main(args: Array<String>) {
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start(chatDao, messagesDao,)
     }
-    ChooseFiles.choose = {
+    ChooseFiles.choose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)
         dialog.isMultipleMode = true
         dialog.isVisible = true
-        val bytes = mutableListOf<Pair<ByteArray, String>>()
-        dialog.files.toList().forEach {
-            bytes.add(it.readBytes() to it.extension)
-        }
-        bytes
+        val bytes = dialog.files.toList().map { it.readBytes() to it.extension }
+        onResult(bytes)
     }
     application {
         val trayState = rememberTrayState()

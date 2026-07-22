@@ -72,7 +72,12 @@ class Observer(
                         message.email = chatDC.partnerEmail
                         Notifications().push(
                             (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
-                            message.data.decodeToString().stripMarkdown()
+                            when(message.type) {
+                                MessageDC.TEXT->message.data.decodeToString().stripMarkdown()
+                                MessageDC.IMAGE->"🖼 Изображение"
+                                MessageDC.FILE->"📁 Файл"
+                                else -> "Unknown"
+                            }
                         )
                         messagesDao.insertMessage(message)
                     }

@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import coil3.Bitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 
 import java.io.File as FileAccess
@@ -52,12 +54,56 @@ actual class File actual constructor(val path: String) {
     }
 }
 
-actual class ChooseFiles actual constructor(){
-    companion object{
-        lateinit var choose : () -> List<Pair<ByteArray, String>>
+actual class FileSaver {
+    actual suspend fun saveBitmapImage(bitmap: ImageBitmap, fileName: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val skiaBitmap = bitmap.asSkiaBitmap()
+            val skiaImage = Image.makeFromBitmap(skiaBitmap)
+            val encodedData = skiaImage.encodeToData() ?: return@withContext false
+            val bytes = encodedData.bytes
+
+            val userHome = System.getProperty("user.home") ?: return@withContext false
+            val downloadsDir = FileAccess(userHome, "Downloads")
+
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs()
+            }
+
+            val targetFile = FileAccess(downloadsDir, "$fileName")
+            targetFile.writeBytes(bytes)
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
-    actual fun getFiles(): List<Pair<ByteArray, String>> {
-        return choose()
+    actual suspend fun saveBytes(bytes: ByteArray, fileName: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val userHome = System.getProperty("user.home") ?: return@withContext false
+            val downloadsDir = FileAccess(userHome, "Downloads")
+
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs()
+            }
+
+            val targetFile = FileAccess(downloadsDir, "$fileName")
+            targetFile.writeBytes(bytes)
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+}
+
+actual class ChooseFiles actual constructor(){
+    companion object {
+        lateinit var choose: (onResult: (List<Pair<ByteArray, String>>) -> Unit) -> Unit
+    }
+    actual fun getFiles(onResult: (List<Pair<ByteArray, String>>) -> Unit) {
+        choose(onResult)
     }
 }
 

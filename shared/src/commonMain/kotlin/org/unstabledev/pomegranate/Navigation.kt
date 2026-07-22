@@ -1,5 +1,9 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -103,7 +107,11 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             }
             FirebaseAddressSelectScreen(navWayObj)
         }
-        composable(Routes.CHAT_SCREEN) {
+        composable(
+            Routes.CHAT_SCREEN,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(400)) },
+            exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
+        ) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },

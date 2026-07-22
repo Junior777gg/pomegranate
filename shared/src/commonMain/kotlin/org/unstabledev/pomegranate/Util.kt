@@ -68,7 +68,7 @@ class Util {
                     if (fractionString.isEmpty()) wholeString else "$wholeString.$fractionString"
                 }
                 val roundedNumberString = if(isNegative) "-$absRoundedNumberString" else absRoundedNumberString
-                "$roundedNumberString ${"KMGTPE"[zeroBitCount - 1]}iB"
+                "$roundedNumberString ${"KMGTPE"[zeroBitCount - 1]}B"
             }
         }
 

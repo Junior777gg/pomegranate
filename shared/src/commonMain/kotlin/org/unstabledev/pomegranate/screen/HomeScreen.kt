@@ -144,13 +144,20 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
             }
         }
     ) {
-        SearchableChatsPanel(viewModel, {
+        SearchableChatsPanel(viewModel,
+        onChatClick = {
             Repository.setLastContact(it)
             navWayObj.goTo(Routes.CHAT_SCREEN)
-        }, {
+        },
+        onChatAddClick = {
             navWayObj.goTo(Routes.CONTACTS_SCREEN)
-        }, {
+        },
+        onSidemenuClick = {
             scope.launch { drawerState.open() }
-        })
+        },
+        onOpenProfileClick = {
+            Repository.lastOpponentEmail = it.partnerEmail
+            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+        }, chatDao)
     }
 }
