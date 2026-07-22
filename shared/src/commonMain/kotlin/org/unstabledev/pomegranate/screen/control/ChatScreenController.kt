@@ -36,9 +36,8 @@ class ChatScreenController(
                 }
             }
             launch {
-                while (true) {
-                    _messages.value = messagesDao.getAllByEmail(initialChat.partnerEmail)
-                    delay(1000)
+                messagesDao.getAllByEmail(initialChat.partnerEmail).collect {
+                    _messages.value = it
                 }
             }
         }

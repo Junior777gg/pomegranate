@@ -48,6 +48,7 @@ import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.menu
@@ -55,9 +56,9 @@ import pomegranate.shared.generated.resources.menu
 @Composable
 fun SearchableChatsPanel(
     viewModel: HomeScreenController,
-    onChatClick: (chat: ChatDC)->Unit,
-    onChatAddClick: ()->Unit,
-    onSidemenuClick: ()->Unit,
+    onChatClick: (chat: ChatDC) -> Unit,
+    onChatAddClick: () -> Unit,
+    onSidemenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val chats by viewModel.chats.collectAsState()
@@ -138,11 +139,17 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
         .map { msg ->
             if (msg != null) {
                 val decodedText = try {
-                    msg.data.decodeToString().stripMarkdown()
-                } catch (e: Exception) {
+                    when (msg.type) {
+                        MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
+                        MessageDC.IMAGE -> "Image"
+                        MessageDC.FILE -> "File"
+                        else -> "Unknown"
+                    }
+                } catch (_: Exception) {
                     ""
                 }
-                (if(msg.isMine) "Вы: " else "") + decodedText
+
+                (if (msg.isMine) "Вы: " else "") + decodedText
             } else ""
         }
         .flowOn(Dispatchers.IO)
@@ -150,19 +157,24 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
 
 @Composable
 fun addChatBackground(base: Modifier = Modifier): Modifier {
-    return base.background(Brush.linearGradient(
-        listOf(lerp(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.background, 0.25f), MaterialTheme.colorScheme.primary)
-    ))
+    return base.background(
+        Brush.linearGradient(
+            listOf(
+                lerp(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.background, 0.25f),
+                MaterialTheme.colorScheme.primary
+            )
+        )
+    )
 }
 
 @Composable
-fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
+fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(chats) { chat ->
             val message by getLastMessageTextFlow(chat.partnerEmail)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
-            if(!hasLast) return@items
+            if (!hasLast) return@items
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -184,10 +196,10 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC)->Unit) {
                     }
                     Column(modifier = Modifier.fillMaxSize().padding(5.dp), verticalArrangement = Arrangement.Center) {
                         Text(
-                            if(validProfile) profile.displayName else chat.partnerEmail,
+                            if (validProfile) profile.displayName else chat.partnerEmail,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        if(hasLast) {
+                        if (hasLast) {
                             Text(
                                 text = message,
                                 color = MaterialTheme.colorScheme.onSurface,

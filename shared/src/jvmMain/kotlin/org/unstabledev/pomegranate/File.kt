@@ -1,5 +1,11 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import coil3.Bitmap
+import org.jetbrains.skia.Image
+
 import java.io.File as FileAccess
 
 actual class File actual constructor(val path: String) {
@@ -54,3 +60,5 @@ actual class ChooseFiles actual constructor(){
         return choose()
     }
 }
+
+actual fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap = Image.makeFromEncoded(bytes).toComposeImageBitmap()

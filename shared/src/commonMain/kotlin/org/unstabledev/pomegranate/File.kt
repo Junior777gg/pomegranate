@@ -1,5 +1,7 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.ui.graphics.ImageBitmap
+
 expect class File(path: String){
     companion object{
         val sep: String
@@ -18,3 +20,5 @@ expect class File(path: String){
 expect class ChooseFiles(){
     fun getFiles(): List<Pair<ByteArray, String>>
 }
+
+expect fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap

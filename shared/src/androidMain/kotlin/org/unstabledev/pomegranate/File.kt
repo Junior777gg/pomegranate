@@ -1,6 +1,10 @@
 package org.unstabledev.pomegranate
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import coil3.Bitmap
 import java.io.File as FileAccess
 
 actual class File actual constructor(val path: String) {
@@ -51,10 +55,13 @@ actual class File actual constructor(val path: String) {
 }
 
 actual class ChooseFiles actual constructor() {
-    companion object{
-        lateinit var choose : () -> List<Pair<ByteArray, String>>
+    companion object {
+        lateinit var choose: () -> List<Pair<ByteArray, String>>
     }
+
     actual fun getFiles(): List<Pair<ByteArray, String>> {
         return choose()
     }
 }
+
+actual fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()

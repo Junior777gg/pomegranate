@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -48,6 +49,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.Bitmap
+import coil3.BitmapImage
+import coil3.Image
+import coil3.asImage
 //import com.mikepenz.markdown.m3.Markdown
 //import com.mikepenz.markdown.m3.markdownTypography
 //import com.mikepenz.markdown.model.markdownAnnotator
@@ -71,6 +76,7 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.getBitmapFromBytes
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -128,10 +134,10 @@ fun ChatScreen(
         if (messageCount > 0) {
             if (justOpened.value) {
                 delay(50.milliseconds)
-                listState.requestScrollToItem(messageCount-1)
+                listState.requestScrollToItem(messageCount - 1)
                 justOpened.value = false
             } else {
-                listState.animateScrollToItem(messageCount-1)
+                listState.animateScrollToItem(messageCount - 1)
             }
         }
     }
@@ -160,7 +166,7 @@ fun ChatScreen(
 
         Column(modifier = Modifier.fillMaxWidth()) {
             val back = {
-                if(messages.value.isEmpty()) scope.launch { chatDao.deleteChat(chat) }
+                if (messages.value.isEmpty()) scope.launch { chatDao.deleteChat(chat) }
                 navWayObj.goTo(Routes.HOME_SCREEN)
             }
             ChatHeader(
@@ -185,12 +191,12 @@ fun ChatScreen(
             NetworkWarningHeader()
         }
 
-        if(!isAtBottom && messages.value.isNotEmpty()) {
+        if (!isAtBottom && messages.value.isNotEmpty()) {
             Row(
                 Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = if(isMobile) 75.dp else 64.dp)
+                    .padding(bottom = if (isMobile) 75.dp else 64.dp)
                     .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.End
             ) {
@@ -227,7 +233,7 @@ fun ChatScreen(
         }
     }
 
-    if(showClearChatPopup) {
+    if (showClearChatPopup) {
         AlertDialog(
             onDismissRequest = { showClearChatPopup = false },
             title = {
@@ -251,7 +257,7 @@ fun ChatScreen(
             }
         )
     }
-    if(showDeleteChatPopup) {
+    if (showDeleteChatPopup) {
         AlertDialog(
             onDismissRequest = { showDeleteChatPopup = false },
             title = {
@@ -268,7 +274,7 @@ fun ChatScreen(
                     }
                     Repository.lastOpponentEmail = ""
                     Repository.setLastContact(null)
-                    if(isMobile) navWayObj.goTo(Routes.HOME_SCREEN)
+                    if (isMobile) navWayObj.goTo(Routes.HOME_SCREEN)
                     showDeleteChatPopup = false
                 })
             },
@@ -303,7 +309,7 @@ private fun ChatHeader(
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if(onBackClick!=null) {
+        if (onBackClick != null) {
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
@@ -312,7 +318,10 @@ private fun ChatHeader(
                 )
             }
         }
-        Row(Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             ProfileImage(profile, chat)
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -441,34 +450,30 @@ private fun MessageBubble(message: MessageDC) {
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if(settings.parseMarkdown) {
-                    /*Markdown(
-                        annotator = markdownAnnotator(
-                            config = markdownAnnotatorConfig(
-                                eolAsNewLine = true
-                            )
-                        ),
-                        typography = markdownTypography(
-                            h1 = TextStyle(fontSize = 25.sp),
-                            h2 = TextStyle(fontSize = 23.sp),
-                            h3 = TextStyle(fontSize = 21.5.sp),
-                            h4 = TextStyle(fontSize = 19.sp),
-                            h5 = TextStyle(fontSize = 17.5.sp),
-                            text = TextStyle(fontSize = 15.sp),
-                            inlineCode = TextStyle(fontSize = 15.sp),
-                            code = TextStyle(fontSize = 15.sp),
-                        ),
-                        content = message.data.decodeToString(),
-                        modifier = Modifier.weight(1f, fill = false)
-                    )*/
-                } else {
-                    Text(
-                        text = message.data.decodeToString(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 15.sp,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+                when (message.type) {
+                    MessageDC.TEXT -> {
+                        Text(
+                            text = message.data.decodeToString(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 15.sp,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+
+                    MessageDC.IMAGE -> {
+                        val bitmap = getBitmapFromBytes(message.data)
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = null,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+
+                    MessageDC.FILE -> {
+
+                    }
                 }
+
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -481,7 +486,7 @@ private fun MessageBubble(message: MessageDC) {
                     Spacer(Modifier.width(2.dp))
                     Icon(
                         modifier = Modifier.size(15.dp),
-                        imageVector = if(message.isDelivered||!message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
+                        imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onBackground
                     )
@@ -636,8 +641,8 @@ private fun NewContactWidget(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = if(validProfile) {
-                        if (profile.location.isNotEmpty()) "${countryFlags[profile.location]?:"🌍"} ${profile.location}"
+                    text = if (validProfile) {
+                        if (profile.location.isNotEmpty()) "${countryFlags[profile.location] ?: "🌍"} ${profile.location}"
                         else "🏴‍☠️ Аноним"
                     } else "🏴‍☠️ Аноним",
                     fontSize = 14.sp,

@@ -15,8 +15,9 @@ interface MessagesDao {
     @Upsert
     suspend fun upsertMessage(message: MessageDC)
 
+    //вернуть на flow
     @Query("SELECT * FROM messages WHERE email = :email")
-    suspend fun getAllByEmail(email: String): List<MessageDC>
+    fun getAllByEmail(email: String): Flow<List<MessageDC>>
 
     @Query("DELETE FROM messages WHERE email = :email")
     suspend fun deleteAllByEmail(email: String)

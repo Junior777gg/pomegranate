@@ -30,7 +30,7 @@ class Observer(
 ) {
     private var itsReceived = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val timeOutMillis = 30000L
+    val timeOutMillis = 120000L
     var lastAction = now().toEpochMilliseconds()
     var lastData = ByteArray(0)
     var code = ""
