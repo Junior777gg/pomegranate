@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         var pendingFileResult: ((List<Pair<ByteArray, String>>) -> Unit)? = null
         val pick = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             val selectedBytes = mutableListOf<Pair<ByteArray, String>>()
-            uris?.forEach { uri ->
+            uris.forEach { uri ->
                 try {
                     contentResolver.takePersistableUriPermission(
                         uri,

@@ -44,7 +44,7 @@ object Repository {
                         )
                         availableChats.getOrPut(chatDC, { MutableSharedFlow(1) }).emit(observer)
                         messages.forEach { message ->
-                            observer.send(message)
+                            observer.sendMessage(message)
                         }
                         waitedConnection.remove(chatDC)
                     } catch (_: TimeoutCancellationException) {

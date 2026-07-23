@@ -42,6 +42,7 @@ class BaseP2P {
     }
 
     suspend fun createConnection(email: String): P2PManagerImpl {
+        Firebase.delete("p2p/${email.sha256()}")
         try {
             Firebase.put("p2p/${email.sha256()}", myEmail)
         } catch (e: Exception) {

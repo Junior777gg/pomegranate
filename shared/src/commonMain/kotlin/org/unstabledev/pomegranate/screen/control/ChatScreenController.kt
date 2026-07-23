@@ -66,7 +66,7 @@ class ChatScreenController(
                 )
                 availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).emit(observer)
                 messages.forEach {
-                    observer?.send(it)
+                    observer?.sendMessage(it)
                 }
 
             } catch (_: TimeoutCancellationException) {
@@ -87,13 +87,13 @@ class ChatScreenController(
                 if (message != null) {
                     val messageDC = Repository.createMessage(initialChat, message)
                     messagesDao.insertMessage(messageDC)
-                    observer!!.send(messageDC)
+                    observer!!.sendMessage(messageDC)
 
                 }
                 files?.forEach { file ->
                     val messageDC = Repository.createMessage(initialChat, file = file)
                     messagesDao.insertMessage(messageDC)
-                    observer!!.send(messageDC)
+                    observer!!.sendMessage(messageDC)
                 }
             }
         }

@@ -11,7 +11,7 @@ data class MessageDC(
     val key: Long = 0,
     var email: String = "",
     var isDelivered: Boolean = false,
-    val data: ByteArray,
+    var data: ByteArray,
     val type: String = "",
     val time: String = "",
     var isMine: Boolean = false,
