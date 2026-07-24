@@ -18,12 +18,11 @@ object ConnectionReceiver {
         while (true) {
             val opponent = BaseP2P.receiveConnections()
             val profile = try {
-                if(!opponent.first.contains("@")||!opponent.first.contains(".")) null
                 Gravatar.getProfile(opponent.first.sha256())
             } catch (_: Exception) {
                 null
             }
-            val chat = ChatDC(opponent.first, profile?.serialize())
+            val chat = ChatDC(opponent.first, null, profile?.serialize())
             val observer = Observer(opponent.second, opponent.second.channel!!,chat, messagesDao)
             chatDao.upsertChat(chat)
             availableChats.getOrPut(chat, {MutableSharedFlow(1)}).emit(observer)

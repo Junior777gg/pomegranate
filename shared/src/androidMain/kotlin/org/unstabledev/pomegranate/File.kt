@@ -1,18 +1,37 @@
 package org.unstabledev.pomegranate
 
+import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.mimeTypes
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
 import coil3.Bitmap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
+import kotlin.io.outputStream
 import java.io.File as FileAccess
 
 actual class File actual constructor(val path: String) {
@@ -139,6 +158,80 @@ actual class ChooseFiles actual constructor() {
     actual fun getFiles(onResult: (List<Pair<ByteArray, String>>) -> Unit) {
         return choose(onResult)
     }
+}
+
+actual suspend fun DroppedFile.readBytes(): ByteArray = withContext(Dispatchers.IO) {
+    val context = FileSaver.context
+    val uri = Uri.parse(uriString)
+
+    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+        inputStream.readBytes()
+    } ?: throw IllegalStateException("Could not resolve content URI: $uriString")
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+@Composable
+actual fun Modifier.fileDropArea(
+    onFilesDropped: (List<DroppedFile>) -> Unit,
+    onStarted: () -> Unit,
+    onExited: () -> Unit,
+): Modifier {
+    val context  = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+    val scope    = rememberCoroutineScope()
+    val dropped by rememberUpdatedState(onFilesDropped)
+    val entered by rememberUpdatedState(onStarted)
+    val left    by rememberUpdatedState(onExited)
+
+    val target = remember {
+        object : DragAndDropTarget {
+            override fun onEntered(event: DragAndDropEvent) = entered()
+            override fun onExited(event: DragAndDropEvent)  = left()
+            override fun onEnded(event: DragAndDropEvent)   = left()
+
+            override fun onDrop(event: DragAndDropEvent): Boolean {
+                left()
+                val act = activity ?: run { println("drop: no activity"); return false }
+                val dragEvent = event.toAndroidDragEvent()
+                val perms = ActivityCompat.requestDragAndDropPermissions(act, dragEvent)
+                    ?: run { println("drop: permission denied"); return false }
+
+                val clip = dragEvent.clipData ?: run { perms.release(); return false }
+                val uris = (0 until clip.itemCount).mapNotNull { clip.getItemAt(it).uri }
+                if (uris.isEmpty()) { perms.release(); return false }
+
+                scope.launch {
+                    val files = withContext(Dispatchers.IO) {
+                        val cr = act.contentResolver
+                        uris.mapIndexedNotNull { i, uri ->
+                            runCatching {
+                                val name = "file_$i"
+                                val out = FileAccess(act.cacheDir, "drop_${System.nanoTime()}_$name")
+                                cr.openInputStream(uri)!!.use { input ->
+                                    out.outputStream().use { input.copyTo(it) }
+                                }
+                                DroppedFile(
+                                    name = name,
+                                    mimeType = cr.getType(uri) ?: "application/octet-stream",
+                                    uriString = Uri.fromFile(out).toString()
+                                )
+                            }.onFailure { it.printStackTrace() }.getOrNull()
+                        }
+                    }
+                    perms.release()
+                    if (files.isNotEmpty()) dropped(files)
+                }
+                return true
+            }
+        }
+    }
+
+    return dragAndDropTarget(shouldStartDragAndDrop = { true }, target = target)
 }
 
 actual fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()

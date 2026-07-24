@@ -18,29 +18,25 @@ class HomeScreenController(val chatDao: ChatDao) : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            _chats.value = chatDao.getAllChats()
+            chatDao.getAllChatsFlow().collect { _chats.value = it }
             launch {
                 while (true) {
-                    _chats.value = chatDao.getAllChats()
+                    chatDao.getAllChatsFlow().collect { _chats.value = it }
                     delay(1000)
                 }
             }
             launch {
                 Repository.lastContact.collect { last ->
                     if (last != null) {
-                        val currentChats = chatDao.getAllChats()
+                        val currentChats = _chats.value
                         if (!currentChats.contains(last)) {
                             chatDao.upsertChat(last)
                         }
-                        _chats.value = chatDao.getAllChats()
+                        chatDao.getAllChatsFlow().collect { _chats.value = it }
                     }
                     delay(1000)
                 }
             }
         }
-    }
-
-    suspend fun update() {
-        _chats.value = chatDao.getAllChats()
     }
 }

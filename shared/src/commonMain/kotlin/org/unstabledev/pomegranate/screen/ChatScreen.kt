@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
@@ -47,6 +48,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +85,8 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.components.addChatBackground
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.ChooseFiles
+import org.unstabledev.pomegranate.DroppedFile
+import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
@@ -99,7 +103,9 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.fileDropArea
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.readBytes
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -120,7 +126,7 @@ fun ChatScreen(
     val lastContact by Repository.lastContact.collectAsState()
     val messagesDao = Repository.messagesDao
     val viewModel = viewModel(key = lastContact?.partnerEmail) {
-        ChatScreenController(messagesDao, lastContact!!)
+        ChatScreenController(messagesDao, chatDao, lastContact!!)
     }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -144,7 +150,9 @@ fun ChatScreen(
     val displayNewContactWidget = remember { mutableStateOf(true) }
     var showClearChatPopup by remember { mutableStateOf(false) }
     var showDeleteChatPopup by remember { mutableStateOf(false) }
+    var showNicknameEditPopup by remember { mutableStateOf(false) }
     val messagePreview = remember { mutableStateOf<MessageDC?>(null) }
+    val areFilesBeingDraggedOver = remember { mutableStateOf(false) }
 
     LaunchedEffect(listState, messages.value.size) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
@@ -170,7 +178,23 @@ fun ChatScreen(
         if (messagePreview.value != null) {
             ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackbarHostState)
         } else {
-            Box(modifier = addChatBackground(Modifier.fillMaxSize())) {
+            Box(modifier = addChatBackground(Modifier.fillMaxSize()).fileDropArea({ dropped ->
+                println("got drag-and-drop event")
+                areFilesBeingDraggedOver.value = false
+                scope.launch {
+                    try {
+                        val preparedFiles: List<Pair<ByteArray, String>> = dropped.map { file ->
+                            val fileBytes = file.readBytes()
+                            Pair(fileBytes, file.name)
+                        }
+
+                        println("processed ${preparedFiles.size} dropped-in files")
+                        viewModel.send(files = preparedFiles)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }, { areFilesBeingDraggedOver.value = true }, { areFilesBeingDraggedOver.value = false })) {
                 Column {
                     val back = {
                         if (messages.value.isEmpty()) scope.launch {
@@ -195,6 +219,9 @@ fun ChatScreen(
                             showClearChatPopup = true
                         },
                         {
+                            showNicknameEditPopup = true
+                        },
+                        {
                             showDeleteChatPopup = true
                         }
                     )
@@ -202,7 +229,7 @@ fun ChatScreen(
                     LazyColumn(
                         state = listState,
                         reverseLayout = true,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = addChatBackground(Modifier.fillMaxSize()),
                         contentPadding = PaddingValues(
                             top = 10.dp,
                             bottom = 86.dp,
@@ -243,6 +270,13 @@ fun ChatScreen(
                             viewModel
                         )
                     }
+                }
+            }
+
+            if (areFilesBeingDraggedOver.value) {
+                Column(Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)),
+                    verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Отпустите, чтобы отправить файлы")
                 }
             }
 
@@ -304,6 +338,35 @@ fun ChatScreen(
                     }
                 )
             }
+            if (showNicknameEditPopup) {
+                val newNicknameState = rememberTextFieldState()
+                AlertDialog(
+                    onDismissRequest = { showNicknameEditPopup = false },
+                    title = {
+                        Text(
+                            "Изменить никнейм",
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    },
+                    text = {
+                        TextField(newNicknameState)
+                    },
+                    confirmButton = {
+                        Text("Подтвердить", Modifier.clickable {
+                            scope.launch {
+                                val updatedChat = chat.copy(nickname = newNicknameState.text.toString().takeIf { it.isNotBlank() })
+                                chatDao.upsertChat(updatedChat)
+                            }
+                            showNicknameEditPopup = false
+                        })
+                    },
+                    dismissButton = {
+                        Text("Отмена", Modifier.clickable {
+                            showNicknameEditPopup = false
+                        })
+                    }
+                )
+            }
         }
     }
 }
@@ -315,6 +378,7 @@ private fun ChatHeader(
     onProfileClick: () -> Unit,
     onScrollToTopClick: () -> Unit,
     onClearHistoryClick: () -> Unit,
+    onNicknameEditClick: () -> Unit,
     onDeleteChatClick: () -> Unit,
 ) {
     val profile = chat.profile?.deserialize()
@@ -348,8 +412,9 @@ private fun ChatHeader(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
+                val displayName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
                 Text(
-                    text = if (validProfile) profile.displayName else chat.partnerEmail,
+                    text = displayName,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Medium
                 )
@@ -399,6 +464,22 @@ private fun ChatHeader(
                     onClick = {
                         menuExpanded.value = false
                         onScrollToTopClick()
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = {
+                        Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.EditNote,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        menuExpanded.value = false
+                        onNicknameEditClick()
                     }
                 )
 

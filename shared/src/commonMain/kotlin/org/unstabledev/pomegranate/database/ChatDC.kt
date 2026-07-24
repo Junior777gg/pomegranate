@@ -12,6 +12,7 @@ import org.unstabledev.pomegranate.screen.Profile
 @Entity(tableName = "chat")
 data class ChatDC(
     @PrimaryKey val partnerEmail: String,
+    val nickname: String?,
     val profile: String?
 ){
 }

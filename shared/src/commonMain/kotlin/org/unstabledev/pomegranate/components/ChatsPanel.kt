@@ -19,12 +19,15 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -178,6 +181,8 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
 @Composable
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenProfileClick: (chat: ChatDC) -> Unit, chatDao: ChatDao) {
     val scope = rememberCoroutineScope()
+    val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
+    var showNicknameEditPopup = remember { mutableStateOf(false) }
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(items = chats, key = { it.partnerEmail }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
@@ -207,8 +212,9 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
                         ProfileImage(profile, chat)
                     }
                     Column(modifier = Modifier.fillMaxSize().padding(5.dp), verticalArrangement = Arrangement.Center) {
+                        val displayName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
                         Text(
-                            if (validProfile) profile.displayName else chat.partnerEmail,
+                            displayName,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         if (hasLast) {
@@ -243,6 +249,23 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
 
                     DropdownMenuItem(
                         text = {
+                            Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.EditNote,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            menuExpanded.value = false
+                            showNicknameEditPopup.value = true
+                            selectedChat.value = chat
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
                             Text("Удалить", color = MaterialTheme.colorScheme.error)
                         },
                         leadingIcon = {
@@ -263,5 +286,35 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
                 }
             }
         }
+    }
+    if (showNicknameEditPopup.value&&selectedChat.value!=null) {
+        val newNicknameState = rememberTextFieldState()
+        AlertDialog(
+            onDismissRequest = { showNicknameEditPopup.value = false },
+            title = {
+                Text(
+                    "Изменить никнейм",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            text = {
+                TextField(newNicknameState)
+            },
+            confirmButton = {
+                Text("Подтвердить", Modifier.clickable {
+                    scope.launch {
+                        val updatedChat = selectedChat.value!!.copy(nickname = newNicknameState.text.toString().takeIf { it.isNotBlank() })
+                        chatDao.upsertChat(updatedChat)
+                        selectedChat.value=updatedChat
+                    }
+                    showNicknameEditPopup.value = false
+                })
+            },
+            dismissButton = {
+                Text("Отмена", Modifier.clickable {
+                    showNicknameEditPopup.value = false
+                })
+            }
+        )
     }
 }

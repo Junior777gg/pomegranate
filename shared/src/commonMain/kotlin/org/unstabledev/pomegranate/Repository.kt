@@ -76,9 +76,7 @@ object Repository {
         if (file != null) {
             val time = now().toString().split("T")[1].split(":")
             val type = when (file.second) {
-                "png" -> MessageDC.IMAGE
-                "jpg" -> MessageDC.IMAGE
-                "jpeg" -> MessageDC.IMAGE
+                "png", "jpg", "jpeg", "gif", "webp" -> MessageDC.IMAGE
                 else -> MessageDC.FILE
             }
             val messageDC = MessageDC(

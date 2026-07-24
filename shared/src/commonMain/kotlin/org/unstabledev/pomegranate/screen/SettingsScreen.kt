@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.File
@@ -163,7 +164,9 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     }
                     Spacer(modifier = Modifier.padding(vertical = 10.dp))
                     Text("Хранилище и кэш", fontWeight = FontWeight.SemiBold)
-                    val chatCount = produceState(0) { value = chatDao.getAllChats().size }
+                    val chatCount = produceState(0) { chatDao.getAllChatsFlow().collect {
+                        value = it.size
+                    } }
                     Text("Чатов: ${chatCount.value}")
                     val chatCacheSize = remember { File("pomegranate${File.sep}chat.db").size() }
                     Text("Размер БД чатов: ${Util.formatBinarySize(chatCacheSize)}")

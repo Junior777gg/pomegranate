@@ -89,7 +89,7 @@ fun ContactsPanel(
                     null
                 }
 
-                val chat = ChatDC(email, profile?.serialize())
+                val chat = ChatDC(email, null, profile?.serialize())
 
                 chatDao?.upsertChat(chat)
 

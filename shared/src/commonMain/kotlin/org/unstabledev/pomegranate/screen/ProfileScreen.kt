@@ -146,8 +146,11 @@ private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostStat
 
                 Spacer(Modifier.height(12.dp))
 
+                val chat = Repository.lastContact.value!!
+                val displayName = chat.nickname?:profile.displayName.ifBlank { "Неизвестный пользователь" }
+
                 Text(
-                    text = profile.displayName.ifBlank { "Неизвестный пользователь" },
+                    text = displayName,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -204,7 +207,8 @@ private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostStat
 
 @Composable
 private fun GeneratedProfileCard(email: String, snackbarHostState: SnackbarHostState) {
-    val name = email.substringBefore('@').replaceFirstChar { it.uppercase() }
+    val chat = Repository.lastContact.value!!
+    val displayName = chat.nickname?:chat.partnerEmail
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -221,7 +225,7 @@ private fun GeneratedProfileCard(email: String, snackbarHostState: SnackbarHostS
         Spacer(Modifier.height(12.dp))
 
         Text(
-            text = name,
+            text = displayName,
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground

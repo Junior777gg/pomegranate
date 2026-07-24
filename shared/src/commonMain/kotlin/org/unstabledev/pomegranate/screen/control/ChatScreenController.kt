@@ -19,12 +19,14 @@ import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.time.Clock.System.now
 
 class ChatScreenController(
     val messagesDao: MessagesDao,
+    val chatDao: ChatDao,
     val initialChat: ChatDC,
 ) : ViewModel() {
     private val PAGE_SIZE_STEP = 40
@@ -40,8 +42,15 @@ class ChatScreenController(
             started = SharingStarted.Lazily,
             initialValue = emptyList()
         )
+
     private var observer: Observer? = null
-    val chatDC = MutableStateFlow(initialChat)
+
+    val chatDC: StateFlow<ChatDC> = chatDao.getChatByEmailFlow(initialChat.partnerEmail)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Lazily,
+            initialValue = initialChat
+        )
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -57,26 +66,27 @@ class ChatScreenController(
 
     fun startMessaging(message: String? = null, files: List<Pair<ByteArray, String>>? = null) {
         viewModelScope.launch(Dispatchers.IO) {
+            val currentChat = chatDC.value
             val messagesList = mutableListOf<MessageDC>()
             if (message != null) {
-                val messageDC = Repository.createMessage(initialChat, message)
+                val messageDC = Repository.createMessage(currentChat, message)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
             files?.forEach { file ->
-                val messageDC = Repository.createMessage(initialChat, file = file)
+                val messageDC = Repository.createMessage(currentChat, file = file)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
             try {
-                val manager = BaseP2P().createConnection(initialChat.partnerEmail)
+                val manager = BaseP2P().createConnection(currentChat.partnerEmail)
                 observer = Observer(
                     manager,
                     manager.channel!!,
-                    initialChat,
+                    currentChat,
                     messagesDao
                 )
-                availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).emit(observer)
+                availableChats.getOrPut(currentChat, { MutableSharedFlow(1) }).emit(observer)
                 messagesList.forEach {
                     observer?.sendMessage(it)
                 }
@@ -96,13 +106,14 @@ class ChatScreenController(
             startMessaging(message, files)
         } else {
             viewModelScope.launch(Dispatchers.IO) {
+                val currentChat = chatDC.value
                 if (message != null) {
-                    val messageDC = Repository.createMessage(initialChat, message)
+                    val messageDC = Repository.createMessage(currentChat, message)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
                 files?.forEach { file ->
-                    val messageDC = Repository.createMessage(initialChat, file = file)
+                    val messageDC = Repository.createMessage(currentChat, file = file)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
