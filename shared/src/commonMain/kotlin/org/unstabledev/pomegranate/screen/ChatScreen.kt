@@ -155,12 +155,16 @@ fun ChatScreen(
     val areFilesBeingDraggedOver = remember { mutableStateOf(false) }
 
     LaunchedEffect(listState, messages.value.size) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-            .collect { lastVisibleIndex ->
-                if (lastVisibleIndex != null && lastVisibleIndex >= messages.value.size - 5) {
-                    viewModel.loadMore()
+        try {
+            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+                .collect { lastVisibleIndex ->
+                    if (lastVisibleIndex != null && lastVisibleIndex >= messages.value.size - 5) {
+                        viewModel.loadMore()
+                    }
                 }
-            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         val messageCount = messages.value.size
         if (messageCount > 0) {
             listState.animateScrollToItem(0)

@@ -21,6 +21,9 @@ interface ChatDao {
     @Query("SELECT * FROM chat WHERE partnerEmail = :email LIMIT 1")
     fun getChatByEmailFlow(email: String): Flow<ChatDC>
 
+    @Query("SELECT * FROM chat WHERE partnerEmail = :email LIMIT 1")
+    fun tryGetChatByEmailFlow(email: String): Flow<ChatDC?>
+
     @Query("DELETE FROM chat")
     suspend fun deleteAllChats()
 
