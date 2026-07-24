@@ -179,12 +179,12 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenProfileClick: (chat: ChatDC) -> Unit, chatDao: ChatDao) {
     val scope = rememberCoroutineScope()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
-        items(chats) { chat ->
+        items(items = chats, key = { it.partnerEmail }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
             val message by getLastMessageTextFlow(chat.partnerEmail)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
-            if (!hasLast) return@items
+            //if (!hasLast) return@items
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

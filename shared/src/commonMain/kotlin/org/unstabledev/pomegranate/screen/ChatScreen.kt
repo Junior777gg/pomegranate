@@ -1,11 +1,13 @@
 package org.unstabledev.pomegranate.screen
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -68,6 +72,7 @@ import coil3.BitmapImage
 import coil3.Image
 import coil3.asImage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 //import com.mikepenz.markdown.m3.Markdown
 //import com.mikepenz.markdown.m3.markdownTypography
 //import com.mikepenz.markdown.model.markdownAnnotator
@@ -136,34 +141,27 @@ fun ChatScreen(
             }
         }
     }
-    val isAtBottom by remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val totalItems = layoutInfo.totalItemsCount
-            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-
-            totalItems == 0 || lastVisibleItem?.index == totalItems - 1
-        }
-    }
-    val justOpened = remember { mutableStateOf(true) }
     val displayNewContactWidget = remember { mutableStateOf(true) }
     var showClearChatPopup by remember { mutableStateOf(false) }
     var showDeleteChatPopup by remember { mutableStateOf(false) }
     val messagePreview = remember { mutableStateOf<MessageDC?>(null) }
 
-    LaunchedEffect(messages.value.size) {
+    LaunchedEffect(listState, messages.value.size) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex != null && lastVisibleIndex >= messages.value.size - 5) {
+                    viewModel.loadMore()
+                }
+            }
         val messageCount = messages.value.size
         if (messageCount > 0) {
-            if (justOpened.value) {
-                delay(50.milliseconds)
-                listState.requestScrollToItem(messageCount - 1)
-                justOpened.value = false
-            } else {
-                listState.animateScrollToItem(messageCount - 1)
-            }
+            listState.animateScrollToItem(0)
         }
     }
 
+    val onImagePreviewClick: (MessageDC) -> Unit = remember {
+        { msg -> messagePreview.value = msg }
+    }
     Scaffold(
         modifier = applyScreenPadding(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -190,7 +188,7 @@ fun ChatScreen(
                         },
                         {
                             scope.launch {
-                                listState.scrollToItem(0)
+                                listState.scrollToItem(messages.value.size - 1)
                             }
                         },
                         {
@@ -203,6 +201,7 @@ fun ChatScreen(
                     NetworkWarningHeader()
                     LazyColumn(
                         state = listState,
+                        reverseLayout = true,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             top = 10.dp,
@@ -212,43 +211,25 @@ fun ChatScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        items(messages.value, key = { message -> message.key }) { message ->
+                            MessageBubble(message, onImagePreviewClick, scope, snackbarHostState)
+                        }
                         if (displayNewContactWidget.value) {
                             item {
                                 NewContactWidget(chat = chat)
                             }
                         }
-                        items(messages.value, key = { message -> message.key }) { message ->
-                            MessageBubble(message, { messagePreview.value = it }, scope, snackbarHostState)
-                        }
                     }
                 }
 
-                if (!isAtBottom && messages.value.isNotEmpty()) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = if (isMobile) 75.dp else 64.dp)
-                            .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Box(Modifier.clip(CircleShape)) {
-                            IconButton(
-                                modifier = Modifier.background(MaterialTheme.colorScheme.background),
-                                onClick = {
-                                    scope.launch {
-                                        listState.animateScrollToItem(messages.value.size - 1)
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDownward,
-                                    contentDescription = "К последнему сообщению",
-                                    tint = MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                        }
-                    }
+                if (messages.value.isNotEmpty()) {
+                    ScrollToBottomButton(
+                        listState = listState,
+                        messagesSize = messages.value.size,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(bottom = if (isMobile) 75.dp else 64.dp, end = 8.dp)
+                    )
                 }
 
                 if (isOnline || !settings.hideSendBarWhenNoNetwork) {
@@ -464,7 +445,12 @@ private fun ChatHeader(
 }
 
 @Composable
-private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit, scope: CoroutineScope, snackbarHostState: SnackbarHostState) {
+private fun MessageBubble(
+    message: MessageDC,
+    setImagePreview: (MessageDC) -> Unit,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState
+) {
     val menuOpen = remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     Row(
@@ -473,13 +459,13 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
             .padding(horizontal = 8.dp),
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
     ) {
-        val needPadding=message.type!=MessageDC.IMAGE
+        val needPadding = message.type != MessageDC.IMAGE
         Box(
             modifier = Modifier
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = { menuOpen.value = true },
-                        onTap = { if(message.type==MessageDC.IMAGE) { setImagePreview(message) }}
+                        onTap = { if (message.type == MessageDC.IMAGE) { setImagePreview(message) } }
                     )
                 }
                 .widthIn(max = 280.dp)
@@ -492,21 +478,18 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                     )
                 )
                 .background(if (message.isMine) ChatColors.MyBubble else MaterialTheme.colorScheme.surface)
-                .padding(horizontal = if(needPadding) 12.dp else 0.dp, vertical = if(needPadding) 8.dp else 0.dp)
-                .pointerHoverIcon(if(message.type==MessageDC.IMAGE) PointerIcon.Hand else PointerIcon.Default)
+                .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
+                .pointerHoverIcon(if (message.type == MessageDC.IMAGE) PointerIcon.Hand else PointerIcon.Default)
         ) {
             Row(
-                Modifier.pointerInput(Unit) { detectTapGestures(
-                    onLongPress = { menuOpen.value = true },
-                    onTap = { if(message.type==MessageDC.IMAGE) { setImagePreview(message) }}
-                ) },
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 when (message.type) {
                     MessageDC.TEXT -> {
+                        val decodedText = remember(message.data) { message.data.decodeToString() }
                         Text(
-                            text = message.data.decodeToString(),
+                            text = decodedText,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 15.sp,
                             modifier = Modifier.weight(1f, fill = false)
@@ -514,26 +497,66 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                     }
 
                     MessageDC.IMAGE -> {
-                        val bitmap = getBitmapFromBytes(message.data)
-                        Box(Modifier.size(100.dp)) {
-                            Image(
-                                bitmap = bitmap,
-                                contentDescription = null
-                            )
-                            Box(modifier = Modifier.align(Alignment.BottomEnd).padding(2.dp).clip(RoundedCornerShape(16.dp))) {
+                        var bitmap by remember(message.key) {
+                            mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+                        }
+                        var ratio by remember(message.key) {
+                            mutableStateOf<Float?>(null)
+                        }
+
+                        LaunchedEffect(message.key) {
+                            val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
+                                getBitmapFromBytes(message.data)
+                            }
+                            bitmap = bmp
+                            ratio = bmp.width.toFloat() / bmp.height.toFloat()
+                        }
+
+                        val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+
+                        Box(
+                            modifier = Modifier
+                                .widthIn(min = 120.dp, max = 260.dp)
+                                .aspectRatio(clampedRatio)
+                                .animateContentSize()
+                        ) {
+                            if (bitmap != null) {
+                                Image(
+                                    bitmap = bitmap!!,
+                                    contentDescription = null,
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Gray.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.background(Color.Black.copy(alpha = 0.2f)).padding(horizontal = 7.5.dp, vertical = 2.dp)
+                                    modifier = Modifier
+                                        .background(Color.Black.copy(alpha = 0.4f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text(
-                                        text = message.time,
-                                        color = Color.White,
-                                        fontSize = 11.sp
-                                    )
+                                    Text(message.time, color = Color.White, fontSize = 11.sp)
                                     Spacer(Modifier.width(2.dp))
                                     Icon(
-                                        modifier = Modifier.size(15.dp),
-                                        imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
+                                        modifier = Modifier.size(14.dp),
+                                        imageVector = if (message.isDelivered || !message.isMine)
+                                            Icons.Default.Check
+                                        else Icons.Default.ArrowOutward,
                                         contentDescription = null,
                                         tint = Color.White
                                     )
@@ -544,21 +567,29 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
 
                     MessageDC.FILE -> {
                         val savedAlready = remember { mutableStateOf(false) }
-                        Box(Modifier.clip(RoundedCornerShape(10.dp)).clickable {
-                            scope.launch {
-                                FileSaver().saveBytes(
-                                    message.data,
-                                    "${message.hashCode() + Clock.System.now().hashCode()}.bin"
-                                )
-                                snackbarHostState.showSnackbar("Файл сохранён")
-                                savedAlready.value = true
-                            }
-                        }) {
-                            Row(Modifier.background(MaterialTheme.colorScheme.background.copy(alpha = 0.2f))
-                                .padding(vertical = 8.dp, horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    scope.launch {
+                                        FileSaver().saveBytes(
+                                            message.data,
+                                            "${message.hashCode() + Clock.System.now().hashCode()}.bin"
+                                        )
+                                        snackbarHostState.showSnackbar("Файл сохранён")
+                                        savedAlready.value = true
+                                    }
+                                }
+                        ) {
+                            Row(
+                                Modifier
+                                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.2f))
+                                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(
                                     modifier = Modifier.size(20.dp),
-                                    imageVector = if(savedAlready.value) Icons.Default.Check else Icons.Default.FileDownload,
+                                    imageVector = if (savedAlready.value) Icons.Default.Check else Icons.Default.FileDownload,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onBackground
                                 )
@@ -570,7 +601,7 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                     }
                 }
 
-                if(message.type!=MessageDC.IMAGE) {
+                if (message.type != MessageDC.IMAGE) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -590,7 +621,8 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                 }
             }
         }
-        if(menuOpen.value) {
+
+        if (menuOpen.value) {
             DropdownMenu(
                 expanded = menuOpen.value,
                 onDismissRequest = { menuOpen.value = false },
@@ -598,11 +630,9 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                     .width(230.dp)
                     .background(MaterialTheme.colorScheme.surface)
             ) {
-                if(message.type==MessageDC.TEXT) {
+                if (message.type == MessageDC.TEXT) {
                     DropdownMenuItem(
-                        text = {
-                            Text("Скопировать", color = MaterialTheme.colorScheme.onBackground)
-                        },
+                        text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
@@ -619,9 +649,7 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                     )
                 } else {
                     DropdownMenuItem(
-                        text = {
-                            Text("Сохранить", color = MaterialTheme.colorScheme.onBackground)
-                        },
+                        text = { Text("Сохранить", color = MaterialTheme.colorScheme.onBackground) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.FileDownload,
@@ -631,10 +659,10 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                         },
                         onClick = {
                             scope.launch {
-                                if(message.type== MessageDC.FILE) {
+                                if (message.type == MessageDC.FILE) {
                                     FileSaver().saveBytes(
                                         message.data,
-                                        "${message.hashCode() + Clock.System.now().hashCode()}.bin"
+                                        "file${message.hashCode() + Clock.System.now().hashCode()}.bin"
                                     )
                                 } else {
                                     val bitmap = getBitmapFromBytes(message.data)
@@ -643,16 +671,14 @@ private fun MessageBubble(message: MessageDC, setImagePreview: (MessageDC)->Unit
                                         "img${bitmap.hashCode() + Clock.System.now().hashCode()}.png"
                                     )
                                 }
-                                snackbarHostState.showSnackbar(if(message.type==MessageDC.IMAGE) "Изображение сохранено" else "Файл сохранён")
+                                snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE) "Изображение сохранено" else "Файл сохранён")
                             }
                             menuOpen.value = false
                         }
                     )
                 }
                 DropdownMenuItem(
-                    text = {
-                        Text("Удалить", color = MaterialTheme.colorScheme.error)
-                    },
+                    text = { Text("Удалить", color = MaterialTheme.colorScheme.error) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -862,6 +888,41 @@ private fun NewContactWidget(
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Normal
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ScrollToBottomButton(listState: LazyListState, messagesSize: Int, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    val isAtBottom by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            if (totalItems == 0) true
+            else {
+                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                lastVisibleItem != null && lastVisibleItem.index <= 1
+            }
+        }
+    }
+
+    if (!isAtBottom && messagesSize > 0) {
+        Box(modifier = modifier) {
+            IconButton(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.background),
+                onClick = {
+                    scope.launch { listState.animateScrollToItem(0) }
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowDownward,
+                    contentDescription = "К последнему сообщению",
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }

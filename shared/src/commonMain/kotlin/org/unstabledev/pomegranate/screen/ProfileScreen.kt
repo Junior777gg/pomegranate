@@ -134,7 +134,6 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 
 @Composable
 private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostState) {
-    val validAvatar = profile.avatarUrl.isNotBlank()
     LazyColumn(Modifier.padding(top = 50.dp)) {
         item {
             Column(
