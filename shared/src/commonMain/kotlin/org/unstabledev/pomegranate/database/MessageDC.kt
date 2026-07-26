@@ -19,6 +19,7 @@ data class MessageDC(
     companion object{
         const val TEXT = "text"
         const val IMAGE = "image"
+        const val ANIMATED_IMAGE = "anim_img"
         const val FILE = "file"
     }
 }

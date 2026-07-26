@@ -99,8 +99,9 @@ class Observer(
                                         when(messageDC.type) {
                                             MessageDC.TEXT->messageDC.data.decodeToString().stripMarkdown()
                                             MessageDC.IMAGE->"🖼 Изображение"
+                                            MessageDC.ANIMATED_IMAGE->"🖼 Изображение"
                                             MessageDC.FILE->"📁 Файл"
-                                            else -> "Unknown"
+                                            else -> "Неизвестно"
                                         }
                                     )
                                     messagesDao.insertMessage(messageDC)

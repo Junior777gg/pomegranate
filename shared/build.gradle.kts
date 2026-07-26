@@ -73,13 +73,14 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation("io.github.panpf.sketch4:sketch-compose:4.4.0")
+            implementation("io.github.panpf.sketch4:sketch-animated-gif:4.4.0")
+            implementation("io.github.panpf.sketch4:sketch-animated-webp:4.4.0")
+            implementation("com.fleeksoft.ksoup:ksoup:0.2.6")
+            implementation("com.fleeksoft.ksoup:ksoup-network:0.2.6")
             if(android.compileSdk!!>=37) {
                 //implementation("com.mikepenz:multiplatform-markdown-renderer:0.43.0")
                 //implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.43.0")
-                implementation("org.jetbrains:markdown:0.7.3")
-                implementation("io.github.panpf.sketch4:sketch-compose:4.6.0")
-                implementation("io.github.panpf.sketch4:sketch-animated-gif:4.6.0")
-                implementation("io.github.panpf.sketch4:sketch-animated-webp:4.6.0")
             }
         }
         iosArm64Main.dependencies {

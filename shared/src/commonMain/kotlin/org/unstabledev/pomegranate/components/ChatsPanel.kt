@@ -182,7 +182,7 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
 fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenProfileClick: (chat: ChatDC) -> Unit, chatDao: ChatDao) {
     val scope = rememberCoroutineScope()
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
-    var showNicknameEditPopup = remember { mutableStateOf(false) }
+    val showNicknameEditPopup = remember { mutableStateOf(false) }
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(items = chats, key = { it.partnerEmail }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }

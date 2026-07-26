@@ -23,6 +23,9 @@ class ColorTheme {
         val Warning = Color(0xFFFF2929)
         val TextDark = Color(0xFFF9FBFF)
         val TextLight = Color(0xFF151617)
+
+        val MyMessageBubble = Color(0xFF8BFF1A)
+        val MessageAccent = Color(0xFF3390EC)
     }
 
     private val DarkColorScheme = darkColorScheme(
