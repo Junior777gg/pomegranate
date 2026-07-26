@@ -159,6 +159,11 @@ fun ChatScreen(
     val onImagePreviewClick: (MessageDC) -> Unit = remember {
         { msg -> messagePreview.value = msg }
     }
+    if (messagePreview.value == null && isMobile) {
+        Box(Modifier.fillMaxSize().padding(top=100.dp)) {
+            Box(addChatBackground().fillMaxSize())
+        }
+    }
     Scaffold(
         modifier = applyScreenPadding(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -167,7 +172,7 @@ fun ChatScreen(
         if (messagePreview.value != null) {
             ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackbarHostState)
         } else {
-            Box(modifier = addChatBackground(Modifier.fillMaxSize()).fileDropArea({ dropped ->
+            var m = Modifier.fillMaxSize().fileDropArea({ dropped ->
                 println("got drag-and-drop event")
                 areFilesBeingDraggedOver.value = false
                 scope.launch {
@@ -183,7 +188,9 @@ fun ChatScreen(
                         e.printStackTrace()
                     }
                 }
-            }, { areFilesBeingDraggedOver.value = true }, { areFilesBeingDraggedOver.value = false })) {
+            }, { areFilesBeingDraggedOver.value = true }, { areFilesBeingDraggedOver.value = false })
+            if (!isMobile) m = addChatBackground(m);
+            Box(modifier = m) {
                 Column {
                     val back = {
                         if (messages.value.isEmpty()) scope.launch {
@@ -228,7 +235,7 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(messages.value, key = { message -> message.key }) { message ->
-                            MessageBubble(message, onImagePreviewClick, scope, snackbarHostState)
+                            MessageBubble(message, onImagePreviewClick, scope, snackbarHostState, settings.parseMarkdown)
                         }
                         if (displayNewContactWidget.value) {
                             item {

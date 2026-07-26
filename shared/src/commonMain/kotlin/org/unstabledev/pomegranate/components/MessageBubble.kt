@@ -1,9 +1,9 @@
 package org.unstabledev.pomegranate.components
 
-//import com.mikepenz.markdown.m3.Markdown
-//import com.mikepenz.markdown.m3.markdownTypography
-//import com.mikepenz.markdown.model.markdownAnnotator
-//import com.mikepenz.markdown.model.markdownAnnotatorConfig
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownTypography
+import com.mikepenz.markdown.model.markdownAnnotator
+import com.mikepenz.markdown.model.markdownAnnotatorConfig
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,6 +52,10 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,7 +76,8 @@ fun MessageBubble(
     message: MessageDC,
     setImagePreview: (MessageDC) -> Unit,
     scope: CoroutineScope,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    renderMarkdown: Boolean
 ) {
     val menuOpen = remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
@@ -112,11 +117,36 @@ fun MessageBubble(
                     MessageDC.TEXT -> {
                         val decodedText = remember(message.data) { message.data.decodeToString() }
                         Column(Modifier.weight(1f, fill = false)) {
-                            Text(
-                                text = decodedText,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = 15.sp,
-                            )
+                            if (renderMarkdown) {
+                                Markdown(
+                                    annotator = markdownAnnotator(
+                                        config = markdownAnnotatorConfig(
+                                            eolAsNewLine = true
+                                        )
+                                    ),
+                                    typography = markdownTypography(
+                                        h1 = TextStyle(fontSize = 25.sp),
+                                        h2 = TextStyle(fontSize = 23.sp),
+                                        h3 = TextStyle(fontSize = 21.5.sp),
+                                        h4 = TextStyle(fontSize = 19.sp),
+                                        h5 = TextStyle(fontSize = 17.5.sp),
+                                        text = TextStyle(fontSize = 15.sp),
+                                        inlineCode = TextStyle(fontSize = 15.sp),
+                                        code = TextStyle(fontSize = 15.sp),
+                                        textLink = TextLinkStyles(
+                                            style = SpanStyle(fontSize = 15.sp, color = ColorTheme.MessageAccent, textDecoration = TextDecoration.Underline)
+                                        )
+                                    ),
+                                    content = decodedText,
+                                    modifier = Modifier
+                                )
+                            } else {
+                                Text(
+                                    text = decodedText,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 15.sp,
+                                )
+                            }
                             val previewableUrl = remember { Regex("https?://\\S+").find(decodedText)?.value }
                             val descriptor by produceState<OpenGraphDescriptor?>(null) {
                                 if (previewableUrl!=null) {

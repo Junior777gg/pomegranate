@@ -138,6 +138,10 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         Checkbox(settings.parseMarkdown, { AppSettings.setParseMarkdown(it) })
                         Text("Парсить Markdown")
                     }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(settings.chatTripleColumn, { AppSettings.setChatTripleColumn(it) })
+                        Text("Три линии предпросмотра чата")
+                    }
                     Spacer(modifier = Modifier.padding(vertical = 10.dp))
                     Text("Сеть", fontWeight = FontWeight.SemiBold)
                     Row(verticalAlignment = Alignment.CenterVertically) {

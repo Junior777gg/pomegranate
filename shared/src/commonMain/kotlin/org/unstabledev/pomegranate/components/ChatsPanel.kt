@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +53,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
+import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -183,6 +185,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
     val scope = rememberCoroutineScope()
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
     val showNicknameEditPopup = remember { mutableStateOf(false) }
+    val settings by AppSettings.state.collectAsState()
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(items = chats, key = { it.partnerEmail }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
@@ -221,7 +224,9 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
                             Text(
                                 text = message,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                maxLines = if(settings.chatTripleColumn) 2 else 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

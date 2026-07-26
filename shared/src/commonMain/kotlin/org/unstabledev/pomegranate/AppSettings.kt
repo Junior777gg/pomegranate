@@ -43,6 +43,7 @@ data class AppSettingsState(
 
     val hideSendBarWhenNoNetwork: Boolean = true,
     val parseMarkdown: Boolean = true,
+    val chatTripleColumn: Boolean = false,
     val desktopHomeSplit: Float = 1.0f,
 ) {
     val selectedFirebaseUrl: String
@@ -127,6 +128,10 @@ object AppSettings {
 
     fun setParseMarkdown(v: Boolean) {
         _state.value = _state.value.copy(parseMarkdown = v)
+    }
+
+    fun setChatTripleColumn(v: Boolean) {
+        _state.value = _state.value.copy(chatTripleColumn = v)
     }
 
     fun setDesktopHomeSplit(v: Float) {
