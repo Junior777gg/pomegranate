@@ -1,6 +1,7 @@
 package org.unstabledev.pomegranate.P2PUtils
 
 import P2PChannel
+import kotlinx.coroutines.flow.Flow
 
 actual class P2PChannelImpl actual constructor(actChannel: Any) {
     val channel = actChannel as P2PChannel
