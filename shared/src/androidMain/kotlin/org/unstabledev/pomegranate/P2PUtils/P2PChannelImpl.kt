@@ -19,12 +19,13 @@ actual class P2PChannelImpl actual constructor(
             channel.remotePort = value
         }
 
-    actual suspend fun send(data: ByteArray) {
-        channel.send(data)
+    actual suspend fun send(isPath: Boolean, data: ByteArray) {
+        channel.send(isPath, data)
     }
 
-    actual suspend fun receive(): ByteArray {
+    actual suspend fun receive(): Pair<Boolean, ByteArray> {
         return channel.receive()
     }
+
 
 }

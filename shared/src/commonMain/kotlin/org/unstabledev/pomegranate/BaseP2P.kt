@@ -7,6 +7,9 @@ import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
 import org.unstabledev.pomegranate.database.sha256
 
 class BaseP2P {
+    init {
+        File("${File.currentPath}pomegranate${File.sep}temp").createDirectory()
+    }
     val myEmail = File(Repository.fistFilePath).readText()
 
     companion object {
@@ -36,7 +39,7 @@ class BaseP2P {
                 delay(100)
             }
             val splitAnswer = answer.split("&")
-            manager.createConnection(splitAnswer[0], splitAnswer[1], splitAnswer[2])
+            manager.createConnection(splitAnswer[0], "${File.currentPath}pomegranate${File.sep}temp",splitAnswer[1], splitAnswer[2])
             return email to manager
         }
     }
@@ -67,7 +70,7 @@ class BaseP2P {
             Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", answer)
         } catch (e: Exception) {
         }
-        manager.createConnection(splitOffer[0], splitOffer[1], splitOffer[2])
+        manager.createConnection(splitOffer[0], "${File.currentPath}pomegranate${File.sep}temp",splitOffer[1], splitOffer[2])
         return manager
     }
 }

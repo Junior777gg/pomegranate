@@ -9,13 +9,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ByteArraySerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.Notifications
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessageDC.Companion.TEXT
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 import kotlin.random.Random
@@ -50,7 +55,7 @@ class Observer(
     private fun receive() {
         scope.launch {
             try {
-                val flow = MutableSharedFlow<ByteArray>(2)
+                val flow = MutableSharedFlow<Pair<Boolean,ByteArray>>(2)
                 launch {
                     while (true) {
                         val data = channel.receive()
@@ -62,15 +67,15 @@ class Observer(
                     val map = mutableMapOf<Byte, MutableList<ByteArray>>()
                     launch {
                         flow.collect {
-                            if (it.size == 1) {
-                                val message = messagesDao.getByData(deliverMap[it[0]]!!)
+                            if (it.second.size == 1) {
+                                val message = messagesDao.getByData(deliverMap[it.second[0]]!!)
                                 message.isDelivered = true
                                 messagesDao.upsertMessage(message)
-                                deliverMap.remove(it[0])
+                                deliverMap.remove(it.second[0])
                             } else {
-                                val code = it.last()
+                                val code = it.second.last()
                                 map.getOrPut(code, { mutableListOf() })
-                                    .add(it.copyOfRange(0, it.size - 1))
+                                    .add(it.second.copyOfRange(0, it.second.size - 1))
                             }
                         }
                     }
@@ -89,6 +94,12 @@ class Observer(
                                             Json.decodeFromString(MessageDC.serializer(), list[1].decodeToString())
                                         json.data = list[0]
                                         json
+                                    }
+                                    if (messageDC.havePath){
+                                        File(messageDC.data.decodeToString()).apply {
+                                            val bytes = this.readBytes()
+                                            this.writeBytes(bytes.copyOfRange(0, bytes.size - 1))
+                                        }
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -126,14 +137,21 @@ class Observer(
             val code = Random.nextInt(1, 255).toByte()
             deliverMap[code] = data
             val json = Json.encodeToString(msg)
-            channel.send(json.encodeToByteArray() + code)
-            channel.send(data + code)
+            channel.send(false, json.encodeToByteArray() + code)
+            if (message.havePath){
+                File(data.decodeToString()).apply {
+                    this.writeBytes(this.readBytes() + code)
+                }
+                channel.send(true, data)
+            }else{
+                channel.send(false, data + code)
+            }
         }
     }
 
     fun sendCode(code: Byte) {
         scope.launch {
-            channel.send(byteArrayOf(code))
+            channel.send(false, byteArrayOf(code))
         }
     }
 }

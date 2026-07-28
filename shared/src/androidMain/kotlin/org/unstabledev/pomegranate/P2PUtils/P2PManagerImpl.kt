@@ -21,10 +21,11 @@ actual class P2PManagerImpl {
 
     actual suspend fun createConnection(
         remoteAddress: String,
+        dirPath: String,
         remoteLocalAddress: String,
         peerPublicKeyJson: String
     ): P2PChannelImpl {
-        val libChannel = manager.createConnection(remoteAddress, remoteLocalAddress, peerPublicKeyJson)
+        val libChannel = manager.createConnection(dirPath, remoteAddress, remoteLocalAddress, peerPublicKeyJson)
         while (true) {
             try {
                 channel = P2PChannelImpl(libChannel)

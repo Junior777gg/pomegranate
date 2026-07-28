@@ -172,9 +172,9 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         value = it.size
                     } }
                     Text("Чатов: ${chatCount.value}")
-                    val chatCacheSize = remember { File("pomegranate${File.sep}chat.db").size() }
+                    val chatCacheSize = remember { File("${File.currentPath}pomegranate${File.sep}chat.db").size() }
                     Text("Размер БД чатов: ${Util.formatBinarySize(chatCacheSize)}")
-                    val chatMsgCacheSize = remember { File("pomegranate${File.sep}messages.db").size() }
+                    val chatMsgCacheSize = remember { File("${File.currentPath}pomegranate${File.sep}messages.db").size() }
                     Text("Размер БД сообщений: ${Util.formatBinarySize(chatMsgCacheSize)}")
                     Spacer(modifier = Modifier.padding(vertical = 5.dp))
                     var showDeleteChatsPopup by remember { mutableStateOf(false) }

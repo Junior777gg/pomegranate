@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 
 expect class File(path: String){
     companion object{
+        val currentPath : String
         val sep: String
     }
     fun createFile()

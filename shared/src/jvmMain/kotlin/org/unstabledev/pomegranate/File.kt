@@ -11,7 +11,6 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import coil3.Bitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
@@ -22,39 +21,41 @@ import java.net.URI
 import java.io.File as FileAccess
 
 actual class File actual constructor(val path: String) {
-    val currentPath = "${System.getProperty("user.dir")}${FileAccess.separator}$path"
     actual fun createFile() {
-        FileAccess(currentPath).createNewFile()
+        val file = FileAccess(path)
+        file.createNewFile()
     }
 
     actual fun createDirectory() {
-        FileAccess(currentPath).mkdir()
+        FileAccess(path).mkdir()
     }
 
     actual fun readText(): String {
-        return FileAccess(currentPath).readText()
+        return FileAccess(path).readText()
     }
 
     actual fun writeText(text: String) {
-        FileAccess(currentPath).writeText(text)
+        FileAccess(path).writeText(text)
     }
 
     actual fun readBytes(): ByteArray {
-        return FileAccess(currentPath).readBytes()
+        return FileAccess(path).readBytes()
     }
 
     actual fun writeBytes(bytes: ByteArray) {
-        FileAccess(currentPath).writeBytes(bytes)
+        FileAccess(path).writeBytes(bytes)
     }
 
     actual fun delete() {
-        FileAccess(currentPath).delete()
+        FileAccess(path).delete()
     }
 
     actual fun exists(): Boolean {
-        return FileAccess(currentPath).exists()
+        return FileAccess(path).exists()
     }
+
     actual companion object {
+        actual val currentPath = "${System.getProperty("user.dir")}${FileAccess.separator}"
         actual val sep: String
             get() = FileAccess.separator
     }

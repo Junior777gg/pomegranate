@@ -57,7 +57,7 @@ object AppSettings {
     private val _state = MutableStateFlow(AppSettingsState())
     val state: StateFlow<AppSettingsState> = _state
 
-    private val FILE_PATH = "pomegranate${File.sep}settings.json"
+    private val FILE_PATH = "${File.currentPath}pomegranate${File.sep}settings.json"
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true

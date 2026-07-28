@@ -35,48 +35,48 @@ import kotlin.io.outputStream
 import java.io.File as FileAccess
 
 actual class File actual constructor(val path: String) {
-    val currentPath = "${context.filesDir}${FileAccess.separator}$path"
     actual fun createFile() {
-        val file = FileAccess(currentPath)
+        val file = FileAccess(path)
         file.createNewFile()
     }
 
     actual fun createDirectory() {
-        FileAccess(currentPath).mkdir()
+        FileAccess(path).mkdir()
     }
 
     actual fun readText(): String {
-        return FileAccess(currentPath).readText()
+        return FileAccess(path).readText()
     }
 
     actual fun writeText(text: String) {
-        FileAccess(currentPath).writeText(text)
+        FileAccess(path).writeText(text)
     }
 
     actual fun readBytes(): ByteArray {
-        return FileAccess(currentPath).readBytes()
+        return FileAccess(path).readBytes()
     }
 
     actual fun writeBytes(bytes: ByteArray) {
-        FileAccess(currentPath).writeBytes(bytes)
+        FileAccess(path).writeBytes(bytes)
     }
 
     actual fun delete() {
-        FileAccess(currentPath).delete()
+        FileAccess(path).delete()
     }
 
     actual fun exists(): Boolean {
-        return FileAccess(currentPath).exists()
+        return FileAccess(path).exists()
     }
 
     actual companion object {
         lateinit var context: Context
+        actual val currentPath by lazy {  "${context.filesDir}${FileAccess.separator}"}
         actual val sep: String
             get() = FileAccess.separator
     }
 
     actual fun size(): Long {
-        val file = FileAccess(currentPath)
+        val file = FileAccess(path)
         return if (file.exists() && file.isFile) file.length() else 0L
     }
 }

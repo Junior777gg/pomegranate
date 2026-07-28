@@ -18,7 +18,7 @@ import kotlin.time.Clock.System.now
 
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val fistFilePath = "pomegranate${File.sep}auth.txt"
+    val fistFilePath = "${File.currentPath}pomegranate${File.sep}auth.txt"
     val myEmail by lazy { File(fistFilePath).readText() }
     lateinit var messagesDao: MessagesDao
 

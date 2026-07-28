@@ -35,7 +35,7 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
     Repository.messagesDao = messagesDao
     var startDestination: String
-    val fistFilePath = remember { "pomegranate${File.sep}auth.txt" }
+    val fistFilePath = remember { "${File.currentPath}pomegranate${File.sep}auth.txt" }
     if (File(fistFilePath).exists()) {
         startDestination = if (File(fistFilePath).readText() != "") {
             Routes.HOME_SCREEN
@@ -43,10 +43,10 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             Routes.WELCOME_SCREEN
         }
     } else {
-        if (File("pomegranate").exists()) {
+        if (File("${File.currentPath}pomegranate").exists()) {
             File(fistFilePath).createFile()
         } else {
-            File("pomegranate").createDirectory()
+            File("${File.currentPath}pomegranate").createDirectory()
             File(fistFilePath).createFile()
         }
         startDestination = Routes.WELCOME_SCREEN

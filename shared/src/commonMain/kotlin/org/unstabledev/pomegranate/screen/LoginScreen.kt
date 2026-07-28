@@ -32,7 +32,7 @@ import org.unstabledev.pomegranate.applyScreenPadding
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {
-    val fistFilePath = "pomegranate${File.sep}auth.txt"
+    val fistFilePath = "${File.currentPath}pomegranate${File.sep}auth.txt"
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
     Column(applyScreenPadding()) {
