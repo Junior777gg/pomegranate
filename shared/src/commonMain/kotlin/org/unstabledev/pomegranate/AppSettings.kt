@@ -2,13 +2,8 @@ package org.unstabledev.pomegranate
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -57,7 +52,7 @@ object AppSettings {
     private val _state = MutableStateFlow(AppSettingsState())
     val state: StateFlow<AppSettingsState> = _state
 
-    private val FILE_PATH = "${File.currentPath}pomegranate${File.sep}settings.json"
+    private val FILE_PATH = "${Repository.pomegranatePath}settings.json"
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -65,7 +60,7 @@ object AppSettings {
 
     fun save() {
         try {
-            File(FILE_PATH).writeText(json.encodeToString(state.value))
+            KMPFile(FILE_PATH).writeText(json.encodeToString(state.value))
             println("Saved app config")
         } catch (e: Exception) {
             e.printStackTrace()
@@ -73,7 +68,7 @@ object AppSettings {
     }
 
     fun load() {
-        val file = File(FILE_PATH)
+        val file = KMPFile(FILE_PATH)
         try {
             if (!file.exists()) return
 

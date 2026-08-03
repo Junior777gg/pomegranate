@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.File
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
@@ -134,7 +134,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         }, {
                             navWayObj.goTo(Routes.SETTINGS_SCREEN)
                         }, {
-                            File(fistFilePath).delete()
+                            KMPFile(fistFilePath).delete()
                             navWayObj.goTo(Routes.LOGIN_SCREEN)
                         })
                     }

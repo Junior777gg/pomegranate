@@ -14,14 +14,32 @@ import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
+import kotlin.getValue
 import kotlin.time.Clock.System.now
 
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val fistFilePath = "${File.currentPath}pomegranate${File.sep}auth.txt"
-    val myEmail by lazy { File(fistFilePath).readText() }
-    lateinit var messagesDao: MessagesDao
+    val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
+    val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
 
+    init {
+        if (KMPFile(fistFilePath).exists()) {
+            KMPFile("$pomegranatePath${separator}temp").mkdir()
+
+        } else {
+            if (KMPFile(pomegranatePath).exists()) {
+                KMPFile("$pomegranatePath${separator}temp").mkdir()
+                KMPFile(fistFilePath).createNewFile()
+            } else {
+                KMPFile(pomegranatePath).mkdir()
+                KMPFile("$pomegranatePath${separator}temp").mkdir()
+                KMPFile(fistFilePath).createNewFile()
+            }
+        }
+    }
+
+    val myEmail by lazy { KMPFile(fistFilePath).readText() }
+    lateinit var messagesDao: MessagesDao
     private val _lastContact = MutableStateFlow<ChatDC?>(null)
     val lastContact: StateFlow<ChatDC?> = _lastContact
 

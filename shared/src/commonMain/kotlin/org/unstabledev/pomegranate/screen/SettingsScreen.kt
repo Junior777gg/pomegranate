@@ -41,17 +41,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.File
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.isMobile
 
 @Composable
 fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
@@ -172,9 +170,9 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         value = it.size
                     } }
                     Text("Чатов: ${chatCount.value}")
-                    val chatCacheSize = remember { File("${File.currentPath}pomegranate${File.sep}chat.db").size() }
+                    val chatCacheSize = remember { KMPFile("${Repository.pomegranatePath}chat.db").length()}
                     Text("Размер БД чатов: ${Util.formatBinarySize(chatCacheSize)}")
-                    val chatMsgCacheSize = remember { File("${File.currentPath}pomegranate${File.sep}messages.db").size() }
+                    val chatMsgCacheSize = remember { KMPFile("${Repository.pomegranatePath}messages.db").length() }
                     Text("Размер БД сообщений: ${Util.formatBinarySize(chatMsgCacheSize)}")
                     Spacer(modifier = Modifier.padding(vertical = 5.dp))
                     var showDeleteChatsPopup by remember { mutableStateOf(false) }

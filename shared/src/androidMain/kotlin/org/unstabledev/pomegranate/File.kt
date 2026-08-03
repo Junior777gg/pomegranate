@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -19,67 +18,57 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
-import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
-import coil3.Bitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.nio.charset.Charset
 import kotlin.io.outputStream
 import java.io.File as FileAccess
 
-actual class File actual constructor(val path: String) {
-    actual fun createFile() {
-        val file = FileAccess(path)
-        file.createNewFile()
-    }
 
-    actual fun createDirectory() {
-        FileAccess(path).mkdir()
-    }
+var context: Context? = null
+actual val rootDirectory by lazy {
+    while (context == null){}
+    context!!.cacheDir?.absolutePath ?: ""}
+actual val separator : String = FileAccess.separator
+actual typealias KMPFile = FileAccess
+actual fun KMPFile.readBytes(): ByteArray = readBytes()
 
-    actual fun readText(): String {
-        return FileAccess(path).readText()
-    }
+actual fun KMPFile.readText(charset: String): String =
+    readText(Charset.forName(charset))
 
-    actual fun writeText(text: String) {
-        FileAccess(path).writeText(text)
-    }
+actual fun KMPFile.readLines(charset: String): List<String> =
+    readLines(Charset.forName(charset))
 
-    actual fun readBytes(): ByteArray {
-        return FileAccess(path).readBytes()
-    }
+actual fun KMPFile.writeBytes(data: ByteArray): Unit = writeBytes(data)
 
-    actual fun writeBytes(bytes: ByteArray) {
-        FileAccess(path).writeBytes(bytes)
-    }
+actual fun KMPFile.appendBytes(data: ByteArray): Unit = appendBytes(data)
 
-    actual fun delete() {
-        FileAccess(path).delete()
-    }
+actual fun KMPFile.writeText(text: String, charset: String) =
+    writeText(text, Charset.forName(charset))
 
-    actual fun exists(): Boolean {
-        return FileAccess(path).exists()
-    }
+actual fun KMPFile.appendText(text: String, charset: String) =
+    appendText(text, Charset.forName(charset))
 
-    actual companion object {
-        lateinit var context: Context
-        actual val currentPath by lazy {  "${context.filesDir}${FileAccess.separator}"}
-        actual val sep: String
-            get() = FileAccess.separator
-    }
-
-    actual fun size(): Long {
-        val file = FileAccess(path)
-        return if (file.exists() && file.isFile) file.length() else 0L
-    }
-}
+actual typealias KMPInputStream = InputStream
+actual typealias KMPOutputStream = OutputStream
+actual typealias KMPByteArrayInputStream = ByteArrayInputStream
+actual typealias KMPByteArrayOutputStream = ByteArrayOutputStream
+actual fun KMPFile.inputStream(): KMPInputStream = FileInputStream(this)
+actual fun KMPFile.outputStream(): KMPOutputStream = FileOutputStream(this)
+actual fun ByteArray.inputStream(): KMPInputStream = ByteArrayInputStream(this)
 
 actual class FileSaver {
     companion object {

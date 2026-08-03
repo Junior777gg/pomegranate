@@ -12,15 +12,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
+import java.io.ByteArrayInputStream
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        context = this
         Notifications.context = this
         FileSaver.context = this
-        File.context = this
         super.onCreate(savedInstanceState)
-
         registerForActivityResult(
             ActivityResultContracts.RequestPermission(),
             {}).launch(Manifest.permission.POST_NOTIFICATIONS)

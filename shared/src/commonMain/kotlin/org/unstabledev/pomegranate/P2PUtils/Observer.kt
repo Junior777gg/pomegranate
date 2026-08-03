@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate.P2PUtils
 
+import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -9,20 +10,25 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.ByteArraySerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import org.unstabledev.pomegranate.File
+import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.KMPInputStream
 import org.unstabledev.pomegranate.Notifications
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
+import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessageDC.Companion.TEXT
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.inputStream
+import org.unstabledev.pomegranate.outputStream
+import org.unstabledev.pomegranate.readBytes
+import org.unstabledev.pomegranate.separator
+import org.unstabledev.pomegranate.writeBytes
+import kotlin.math.ceil
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 
@@ -55,7 +61,7 @@ class Observer(
     private fun receive() {
         scope.launch {
             try {
-                val flow = MutableSharedFlow<Pair<Boolean,ByteArray>>(2)
+                val flow = MutableSharedFlow<Data>(100)
                 launch {
                     while (true) {
                         val data = channel.receive()
@@ -64,18 +70,32 @@ class Observer(
                     }
                 }
                 launch {
-                    val map = mutableMapOf<Byte, MutableList<ByteArray>>()
+                    val map = mutableMapOf<Byte, MutableList<Data>>()
                     launch {
                         flow.collect {
-                            if (it.second.size == 1) {
-                                val message = messagesDao.getByData(deliverMap[it.second[0]]!!)
+                            println("collect got: ${it::class.simpleName}")
+
+                            if (it is Data.Bytes) {
+                                println("bytes size=${it.bytes.size} code=${it.code}")
+                            }
+                            if (it is Data.Files) {
+                                println("file code=${it.code}")
+                            }
+
+                            if (it.instanceOf(Data.Bytes::class) && (it as Data.Bytes).bytes.size == 1) {
+                                val buffer = it.bytes
+                                val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
                                 message.isDelivered = true
                                 messagesDao.upsertMessage(message)
-                                deliverMap.remove(it.second[0])
+                                deliverMap.remove(buffer[0])
                             } else {
-                                val code = it.second.last()
-                                map.getOrPut(code, { mutableListOf() })
-                                    .add(it.second.copyOfRange(0, it.second.size - 1))
+                                when (it) {
+                                    is Data.Bytes -> map.getOrPut(it.code, { mutableListOf() })
+                                        .add(it)
+
+                                    is Data.Files -> map.getOrPut(it.code, { mutableListOf() })
+                                        .add(it)
+                                }
                             }
                         }
                     }
@@ -85,21 +105,27 @@ class Observer(
                                 if (map[key]!!.size == 2) {
                                     val list = map[key]!!
                                     val messageDC = try {
-                                        val json =
-                                            Json.decodeFromString(MessageDC.serializer(), list[0].decodeToString())
-                                        json.data = list[1]
-                                        json
+                                        if (list[0] is Data.Bytes && list[1] is Data.Files) {
+                                            val json =
+                                                Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
+                                            json.data = (list[1] as Data.Files).file.getAbsolutePath().encodeToByteArray()
+                                            json
+                                        } else if (list[1] is Data.Bytes && list[0] is Data.Files) {
+                                            val json =
+                                                Json.decodeFromString<MessageDC>((list[1] as Data.Bytes).bytes.decodeToString())
+                                            json.data = (list[0] as Data.Files).file.getAbsolutePath().encodeToByteArray()
+                                            json
+                                        } else {
+                                            val json =
+                                                Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
+                                            json.data = (list[1] as Data.Bytes).bytes
+                                            json
+                                        }
                                     } catch (_: SerializationException) {
                                         val json =
-                                            Json.decodeFromString(MessageDC.serializer(), list[1].decodeToString())
-                                        json.data = list[0]
+                                            Json.decodeFromString<MessageDC>((list[1] as Data.Bytes).bytes.decodeToString())
+                                        json.data = (list[0] as Data.Bytes).bytes
                                         json
-                                    }
-                                    if (messageDC.havePath){
-                                        File(messageDC.data.decodeToString()).apply {
-                                            val bytes = this.readBytes()
-                                            this.writeBytes(bytes.copyOfRange(0, bytes.size - 1))
-                                        }
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -107,11 +133,11 @@ class Observer(
                                     sendCode(key)
                                     Notifications().push(
                                         (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
-                                        when(messageDC.type) {
-                                            MessageDC.TEXT->messageDC.data.decodeToString().stripMarkdown()
-                                            MessageDC.IMAGE->"🖼 Изображение"
-                                            MessageDC.ANIMATED_IMAGE->"🖼 Изображение"
-                                            MessageDC.FILE->"📁 Файл"
+                                        when (messageDC.type) {
+                                            MessageDC.TEXT -> messageDC.data.decodeToString().stripMarkdown()
+                                            MessageDC.IMAGE -> "🖼 Изображение"
+                                            MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
+                                            MessageDC.FILE -> "📁 Файл"
                                             else -> "Неизвестно"
                                         }
                                     )
@@ -136,22 +162,21 @@ class Observer(
             val msg = message.copy(data = ByteArray(0))
             val code = Random.nextInt(1, 255).toByte()
             deliverMap[code] = data
-            val json = Json.encodeToString(msg)
-            channel.send(false, json.encodeToByteArray() + code)
-            if (message.havePath){
-                File(data.decodeToString()).apply {
-                    this.writeBytes(this.readBytes() + code)
-                }
-                channel.send(true, data)
-            }else{
-                channel.send(false, data + code)
+            val json = Json.encodeToString(msg).encodeToByteArray()
+            channel.send(json, code)
+            if (message.havePath) {
+                val dataFile = KMPFile("$pomegranatePath${separator}temp", data.decodeToString())
+                channel.send(dataFile, code)
+            } else {
+                channel.send(data, code)
             }
+
         }
     }
 
     fun sendCode(code: Byte) {
         scope.launch {
-            channel.send(false, byteArrayOf(code))
+            channel.send(byteArrayOf(code))
         }
     }
 }

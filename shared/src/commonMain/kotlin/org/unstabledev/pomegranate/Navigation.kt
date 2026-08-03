@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.screen.ChatScreen
@@ -35,19 +36,22 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
     Repository.messagesDao = messagesDao
     var startDestination: String
-    val fistFilePath = remember { "${File.currentPath}pomegranate${File.sep}auth.txt" }
-    if (File(fistFilePath).exists()) {
-        startDestination = if (File(fistFilePath).readText() != "") {
+    val fistFilePath = remember { Repository.fistFilePath }
+    if (KMPFile(fistFilePath).exists()) {
+        KMPFile("$pomegranatePath${separator}temp").createNewFile()
+        startDestination = if (KMPFile(fistFilePath).readText() != "") {
             Routes.HOME_SCREEN
         } else {
             Routes.WELCOME_SCREEN
         }
     } else {
-        if (File("${File.currentPath}pomegranate").exists()) {
-            File(fistFilePath).createFile()
+        if (KMPFile(Repository.pomegranatePath).exists()) {
+            KMPFile("$pomegranatePath${separator}temp").createNewFile()
+            KMPFile(fistFilePath).createNewFile()
         } else {
-            File("${File.currentPath}pomegranate").createDirectory()
-            File(fistFilePath).createFile()
+            KMPFile(Repository.pomegranatePath).mkdir()
+            KMPFile("$pomegranatePath${separator}temp").createNewFile()
+            KMPFile(fistFilePath).createNewFile()
         }
         startDestination = Routes.WELCOME_SCREEN
     }

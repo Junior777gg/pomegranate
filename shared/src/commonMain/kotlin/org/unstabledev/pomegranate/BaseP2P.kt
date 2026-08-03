@@ -8,12 +8,12 @@ import org.unstabledev.pomegranate.database.sha256
 
 class BaseP2P {
     init {
-        File("${File.currentPath}pomegranate${File.sep}temp").createDirectory()
+        KMPFile("${Repository.pomegranatePath}temp").mkdir()
     }
-    val myEmail = File(Repository.fistFilePath).readText()
+    val myEmail by lazy { Repository.myEmail}
 
     companion object {
-        val myEmail by lazy { File(Repository.fistFilePath).readText().sha256() }
+        val myEmail by lazy { Repository.myEmail.sha256() }
         suspend fun receiveConnections(): Pair<String, P2PManagerImpl> {
             var email = ""
             while (email == "") {
@@ -25,7 +25,7 @@ class BaseP2P {
             }
             println("new connections: $email")
             Firebase.delete("p2p/${myEmail}")
-            val manager = P2PManagerImpl()
+            val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
             Firebase.put(
                 "p2p/${myEmail}/${email.sha256()}/offer",
                 "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}"
@@ -39,7 +39,7 @@ class BaseP2P {
                 delay(100)
             }
             val splitAnswer = answer.split("&")
-            manager.createConnection(splitAnswer[0], "${File.currentPath}pomegranate${File.sep}temp",splitAnswer[1], splitAnswer[2])
+            manager.createConnection(splitAnswer[0], splitAnswer[1], splitAnswer[2])
             return email to manager
         }
     }
@@ -64,13 +64,13 @@ class BaseP2P {
             Firebase.delete("p2p/${email.sha256()}")
         }
         val splitOffer = offer.split("&")
-        val manager = P2PManagerImpl()
+        val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
         val answer = "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}"
         try {
             Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", answer)
         } catch (e: Exception) {
         }
-        manager.createConnection(splitOffer[0], "${File.currentPath}pomegranate${File.sep}temp",splitOffer[1], splitOffer[2])
+        manager.createConnection(splitOffer[0],splitOffer[1], splitOffer[2])
         return manager
     }
 }

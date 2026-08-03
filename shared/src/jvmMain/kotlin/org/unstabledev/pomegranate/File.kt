@@ -16,55 +16,48 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.net.URI
+import java.nio.charset.Charset
+import kotlin.io.appendText
+import kotlin.io.readLines
+import kotlin.io.readText
+import kotlin.io.writeText
 
 import java.io.File as FileAccess
 
-actual class File actual constructor(val path: String) {
-    actual fun createFile() {
-        val file = FileAccess(path)
-        file.createNewFile()
-    }
+actual val rootDirectory = System.getProperty("user.dir") ?: ""
+actual val separator : String = FileAccess.separator
+actual typealias KMPFile = FileAccess
+actual fun KMPFile.readBytes(): ByteArray = readBytes()
 
-    actual fun createDirectory() {
-        FileAccess(path).mkdir()
-    }
+actual fun KMPFile.readText(charset: String): String =
+    readText(Charset.forName(charset))
 
-    actual fun readText(): String {
-        return FileAccess(path).readText()
-    }
+actual fun KMPFile.readLines(charset: String): List<String> =
+    readLines(Charset.forName(charset))
 
-    actual fun writeText(text: String) {
-        FileAccess(path).writeText(text)
-    }
+actual fun KMPFile.writeBytes(data: ByteArray): Unit = writeBytes(data)
 
-    actual fun readBytes(): ByteArray {
-        return FileAccess(path).readBytes()
-    }
+actual fun KMPFile.appendBytes(data: ByteArray): Unit = appendBytes(data)
 
-    actual fun writeBytes(bytes: ByteArray) {
-        FileAccess(path).writeBytes(bytes)
-    }
+actual fun KMPFile.writeText(text: String, charset: String) =
+    writeText(text, Charset.forName(charset))
 
-    actual fun delete() {
-        FileAccess(path).delete()
-    }
-
-    actual fun exists(): Boolean {
-        return FileAccess(path).exists()
-    }
-
-    actual companion object {
-        actual val currentPath = "${System.getProperty("user.dir")}${FileAccess.separator}"
-        actual val sep: String
-            get() = FileAccess.separator
-    }
-
-    actual fun size(): Long {
-        val file = FileAccess(path)
-        return if (file.exists() && file.isFile) file.length() else 0L
-    }
-}
+actual fun KMPFile.appendText(text: String, charset: String) =
+    appendText(text, Charset.forName(charset))
+actual typealias KMPInputStream = InputStream
+actual typealias KMPOutputStream = OutputStream
+actual typealias KMPByteArrayInputStream = ByteArrayInputStream
+actual typealias KMPByteArrayOutputStream = ByteArrayOutputStream
+actual fun KMPFile.inputStream(): KMPInputStream = FileInputStream(this)
+actual fun KMPFile.outputStream(): KMPOutputStream = FileOutputStream(this)
+actual fun ByteArray.inputStream(): KMPInputStream = ByteArrayInputStream(this)
 
 actual class FileSaver {
     actual suspend fun saveBitmapImage(bitmap: ImageBitmap, fileName: String): Boolean = withContext(Dispatchers.IO) {

@@ -23,16 +23,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.components.ColorTheme
-import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.writeText
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {
-    val fistFilePath = "${File.currentPath}pomegranate${File.sep}auth.txt"
+    val fistFilePath = Repository.fistFilePath
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
     Column(applyScreenPadding()) {
@@ -64,7 +66,7 @@ fun LoginScreen(navWayObj: NavigationWays) {
                     errorText = "Некорректный Email"
                     return@Button
                 }*/
-                val file = File(fistFilePath)
+                val file = KMPFile(fistFilePath)
                 file.writeText(email)
                 navWayObj.goTo(Routes.HOME_SCREEN)
             }){

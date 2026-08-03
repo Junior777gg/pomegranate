@@ -14,6 +14,7 @@ import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import java.awt.FileDialog
 import java.awt.Frame
+import java.io.InputStream
 
 fun main(args: Array<String>) {
     val isOpen = mutableStateOf(true)

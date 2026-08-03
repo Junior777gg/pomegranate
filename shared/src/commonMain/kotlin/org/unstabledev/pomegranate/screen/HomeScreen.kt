@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.components.SearchableChatsPanel
-import org.unstabledev.pomegranate.File
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
@@ -129,7 +129,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     label = { Text("Выйти", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
                     selected = false,
                     onClick = {
-                        File(fistFilePath).delete()
+                        KMPFile(fistFilePath).delete()
                         navWayObj.goTo(Routes.LOGIN_SCREEN)
                     },
                     icon = {

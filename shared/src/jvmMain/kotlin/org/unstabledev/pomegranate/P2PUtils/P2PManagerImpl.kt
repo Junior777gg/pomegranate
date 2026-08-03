@@ -4,9 +4,9 @@ import P2PManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 
-actual class P2PManagerImpl {
+actual class P2PManagerImpl actual constructor(tempDir: String) {
     actual var channel: P2PChannelImpl? = null
-    val manager = P2PManager()
+    val manager = P2PManager(tempDir)
     actual suspend fun getAddress(): String? {
         return manager.getAddress()
     }
@@ -21,11 +21,10 @@ actual class P2PManagerImpl {
 
     actual suspend fun createConnection(
         remoteAddress: String,
-        dirPath: String,
         remoteLocalAddress: String,
         peerPublicKeyJson: String
     ): P2PChannelImpl {
-        val libChannel = manager.createConnection(dirPath, remoteAddress, remoteLocalAddress, peerPublicKeyJson)
+        val libChannel = manager.createConnection(remoteAddress, remoteLocalAddress, peerPublicKeyJson)
         while (true) {
             try {
                 channel = P2PChannelImpl(libChannel)
