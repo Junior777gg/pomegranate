@@ -151,10 +151,7 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
                         },
                         onClick = {
                             scope.launch {
-                                FileSaver().saveBitmapImage(
-                                    bitmap,
-                                    "img${bitmap.hashCode() + Clock.System.now().hashCode()}.png"
-                                )
+                                FileSaver().saveFile(message.data.decodeToString())
                                 snackbarHostState.showSnackbar("Изображение сохранено")
                             }
                             menuExpanded.value = false

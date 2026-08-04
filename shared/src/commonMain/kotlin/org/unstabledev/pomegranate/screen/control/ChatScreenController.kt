@@ -6,7 +6,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.BaseP2P
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
@@ -22,7 +22,6 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
-import kotlin.time.Clock.System.now
 
 class ChatScreenController(
     val messagesDao: MessagesDao,
@@ -64,7 +63,7 @@ class ChatScreenController(
         _pageSize.value += PAGE_SIZE_STEP
     }
 
-    fun startMessaging(message: String? = null, files: List<Pair<ByteArray, String>>? = null) {
+    fun startMessaging(message: String? = null, files: List<KMPFile>? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentChat = chatDC.value
             val messagesList = mutableListOf<MessageDC>()
@@ -101,7 +100,7 @@ class ChatScreenController(
         }
     }
 
-    fun send(message: String? = null, files: List<Pair<ByteArray, String>>? = null) {
+    fun send(message: String? = null, files: List<KMPFile>? = null) {
         if (observer == null) {
             startMessaging(message, files)
         } else {

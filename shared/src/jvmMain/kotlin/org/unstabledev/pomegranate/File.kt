@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -18,6 +17,7 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -34,7 +34,7 @@ import java.io.File as FileAccess
 actual val rootDirectory = System.getProperty("user.dir") ?: ""
 actual val separator : String = FileAccess.separator
 actual typealias KMPFile = FileAccess
-actual fun KMPFile.readBytes(): ByteArray = readBytes()
+actual fun KMPFile.readBytes(): ByteArray = FileInputStream(this).use { it.readBytes() }
 
 actual fun KMPFile.readText(charset: String): String =
     readText(Charset.forName(charset))
@@ -60,13 +60,9 @@ actual fun KMPFile.outputStream(): KMPOutputStream = FileOutputStream(this)
 actual fun ByteArray.inputStream(): KMPInputStream = ByteArrayInputStream(this)
 
 actual class FileSaver {
-    actual suspend fun saveBitmapImage(bitmap: ImageBitmap, fileName: String): Boolean = withContext(Dispatchers.IO) {
+    actual suspend fun saveFile(path: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val skiaBitmap = bitmap.asSkiaBitmap()
-            val skiaImage = Image.makeFromBitmap(skiaBitmap)
-            val encodedData = skiaImage.encodeToData() ?: return@withContext false
-            val bytes = encodedData.bytes
-
+            val currentFile = File(path)
             val userHome = System.getProperty("user.home") ?: return@withContext false
             val downloadsDir = FileAccess(userHome, "Downloads")
 
@@ -74,26 +70,8 @@ actual class FileSaver {
                 downloadsDir.mkdirs()
             }
 
-            val targetFile = FileAccess(downloadsDir, "$fileName")
-            targetFile.writeBytes(bytes)
-
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-    actual suspend fun saveBytes(bytes: ByteArray, fileName: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val userHome = System.getProperty("user.home") ?: return@withContext false
-            val downloadsDir = FileAccess(userHome, "Downloads")
-
-            if (!downloadsDir.exists()) {
-                downloadsDir.mkdirs()
-            }
-
-            val targetFile = FileAccess(downloadsDir, "$fileName")
-            targetFile.writeBytes(bytes)
+            val targetFile = FileAccess(downloadsDir, currentFile.name)
+            currentFile.copyTo(targetFile, overwrite = true)
 
             true
         } catch (e: Exception) {
@@ -105,9 +83,9 @@ actual class FileSaver {
 
 actual class ChooseFiles actual constructor(){
     companion object {
-        lateinit var choose: (onResult: (List<Pair<ByteArray, String>>) -> Unit) -> Unit
+        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
     }
-    actual fun getFiles(onResult: (List<Pair<ByteArray, String>>) -> Unit) {
+    actual fun getFiles(onResult: (List<KMPFile>) -> Unit) {
         choose(onResult)
     }
 }

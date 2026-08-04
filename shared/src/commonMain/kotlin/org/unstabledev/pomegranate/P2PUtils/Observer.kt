@@ -13,9 +13,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.KMPInputStream
 import org.unstabledev.pomegranate.Notifications
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -23,12 +21,7 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.inputStream
-import org.unstabledev.pomegranate.outputStream
-import org.unstabledev.pomegranate.readBytes
 import org.unstabledev.pomegranate.separator
-import org.unstabledev.pomegranate.writeBytes
-import kotlin.math.ceil
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 
@@ -101,19 +94,23 @@ class Observer(
                     }
                     launch {
                         while (true) {
-                            map.keys.forEach { key ->
+                            map.keys.toList().forEach { key ->
                                 if (map[key]!!.size == 2) {
                                     val list = map[key]!!
                                     val messageDC = try {
                                         if (list[0] is Data.Bytes && list[1] is Data.Files) {
                                             val json =
                                                 Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
-                                            json.data = (list[1] as Data.Files).file.getAbsolutePath().encodeToByteArray()
+                                            json.data = (list[1] as Data.Files).file.apply {
+                                                renameTo(KMPFile(json.data.decodeToString()))
+                                            }.getAbsolutePath().encodeToByteArray()
                                             json
                                         } else if (list[1] is Data.Bytes && list[0] is Data.Files) {
                                             val json =
                                                 Json.decodeFromString<MessageDC>((list[1] as Data.Bytes).bytes.decodeToString())
-                                            json.data = (list[0] as Data.Files).file.getAbsolutePath().encodeToByteArray()
+                                            json.data = (list[0] as Data.Files).file.apply {
+                                                renameTo(KMPFile(json.data.decodeToString()))
+                                            }.getAbsolutePath().encodeToByteArray()
                                             json
                                         } else {
                                             val json =
@@ -162,10 +159,13 @@ class Observer(
             val msg = message.copy(data = ByteArray(0))
             val code = Random.nextInt(1, 255).toByte()
             deliverMap[code] = data
+            if (message.type != MessageDC.TEXT) {
+                msg.data = KMPFile(msg.data.decodeToString()).getName().encodeToByteArray()
+            }
             val json = Json.encodeToString(msg).encodeToByteArray()
             channel.send(json, code)
-            if (message.havePath) {
-                val dataFile = KMPFile("$pomegranatePath${separator}temp", data.decodeToString())
+            if (message.type != MessageDC.TEXT) {
+                val dataFile = KMPFile( data.decodeToString())
                 channel.send(dataFile, code)
             } else {
                 channel.send(data, code)

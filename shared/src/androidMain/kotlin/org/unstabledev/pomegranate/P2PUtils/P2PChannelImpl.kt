@@ -36,4 +36,8 @@ actual class P2PChannelImpl actual constructor(
             is Messages.FileMessage -> Data.Files(data.file, data.code)
         }
     }
+
+    actual suspend fun send(stream: KMPInputStream, code: Byte) {
+        channel.send(stream, code)
+    }
 }

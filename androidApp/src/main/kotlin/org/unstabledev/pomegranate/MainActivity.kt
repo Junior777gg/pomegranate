@@ -12,7 +12,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
-import java.io.ByteArrayInputStream
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -26,9 +25,9 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.RequestPermission(),
             {}).launch(Manifest.permission.POST_NOTIFICATIONS)
 
-        var pendingFileResult: ((List<Pair<ByteArray, String>>) -> Unit)? = null
+        var pendingFileResult: ((List<File>) -> Unit)? = null
         val pick = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-            val selectedBytes = mutableListOf<Pair<ByteArray, String>>()
+            val selectedFiles = mutableListOf<File>()
             uris.forEach { uri ->
                 try {
                     contentResolver.takePersistableUriPermission(
@@ -39,13 +38,19 @@ class MainActivity : ComponentActivity() {
                     e.printStackTrace()
                 }
 
-                val extension = getExtensionFromUri(uri)
+                val name = getNameFromUri(uri)
 
                 contentResolver.openInputStream(uri)?.use { input ->
-                    selectedBytes.add(input.readBytes() to extension)
+                    val file = File("${Repository.pomegranatePath}temp", name).apply {
+                        createNewFile()
+                        outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    selectedFiles.add(file)
                 }
             }
-            pendingFileResult?.invoke(selectedBytes)
+            pendingFileResult?.invoke(selectedFiles)
             pendingFileResult = null
         }
         ChooseFiles.choose = { onResult ->
@@ -67,13 +72,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun getExtensionFromUri(uri: Uri): String {
+    private fun getNameFromUri(uri: Uri): String {
         contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (nameIndex != -1 && cursor.moveToFirst()) {
                 val name = cursor.getString(nameIndex)
                 if (!name.isNullOrEmpty() && name.contains(".")) {
-                    return name.substringAfterLast('.').lowercase()
+                    return name.lowercase()
                 }
             }
         }

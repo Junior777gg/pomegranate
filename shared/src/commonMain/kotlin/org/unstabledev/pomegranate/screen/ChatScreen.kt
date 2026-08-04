@@ -78,6 +78,7 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.ChooseFiles
 import org.unstabledev.pomegranate.Firebase
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
@@ -177,11 +178,7 @@ fun ChatScreen(
                 areFilesBeingDraggedOver.value = false
                 scope.launch {
                     try {
-                        val preparedFiles: List<Pair<ByteArray, String>> = dropped.map { file ->
-                            val fileBytes = file.readBytes()
-                            Pair(fileBytes, file.name)
-                        }
-
+                        val preparedFiles: List<KMPFile> = dropped as List<KMPFile>
                         println("processed ${preparedFiles.size} dropped-in files")
                         viewModel.send(files = preparedFiles)
                     } catch (e: Exception) {

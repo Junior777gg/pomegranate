@@ -32,8 +32,8 @@ fun main(args: Array<String>) {
         val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)
         dialog.isMultipleMode = true
         dialog.isVisible = true
-        val bytes = dialog.files.toList().map { it.readBytes() to it.extension }
-        onResult(bytes)
+        val files = dialog.files.toList()
+        onResult(files)
     }
     application {
         val trayState = rememberTrayState()

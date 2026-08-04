@@ -21,6 +21,10 @@ actual class P2PChannelImpl actual constructor(actChannel: Any) {
         channel.send(file, code)
     }
 
+    actual suspend fun send(stream: KMPInputStream, code: Byte) {
+        channel.send(stream, code)
+    }
+
     actual suspend fun send(bytes: ByteArray, code: Byte) {
         channel.send(bytes, code)
     }

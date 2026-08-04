@@ -122,12 +122,11 @@ expect open class KMPByteArrayOutputStream() : KMPOutputStream {
 }
 
 expect class FileSaver() {
-    suspend fun saveBitmapImage(bitmap: ImageBitmap, fileName: String): Boolean
-    suspend fun saveBytes(bytes: ByteArray, fileName: String): Boolean
+    suspend fun saveFile(path: String): Boolean
 }
 
 expect class ChooseFiles(){
-    fun getFiles(onResult: (List<Pair<ByteArray, String>>) -> Unit)
+    fun getFiles(onResult: (List<KMPFile>) -> Unit)
 }
 
 data class DroppedFile(

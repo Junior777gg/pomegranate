@@ -64,11 +64,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.FileSaver
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.readBytes
 import kotlin.time.Clock
 
 @Composable
@@ -217,7 +219,7 @@ fun MessageBubble(
 
                         LaunchedEffect(message.key) {
                             val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(message.data)
+                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).readBytes())
                             }
                             bitmap = bmp
                             ratio = bmp.width.toFloat() / bmp.height.toFloat()
@@ -286,7 +288,7 @@ fun MessageBubble(
 
                         LaunchedEffect(message.key) {
                             val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(message.data)
+                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).readBytes())
                             }
                             bitmap = bmp
                             ratio = bmp.width.toFloat() / bmp.height.toFloat()
@@ -352,10 +354,7 @@ fun MessageBubble(
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
                                     scope.launch {
-                                        FileSaver().saveBytes(
-                                            message.data,
-                                            "${message.hashCode() + Clock.System.now().hashCode()}.bin"
-                                        )
+                                        FileSaver().saveFile(message.data.decodeToString())
                                         snackbarHostState.showSnackbar("Файл сохранён")
                                         savedAlready.value = true
                                     }
@@ -440,16 +439,9 @@ fun MessageBubble(
                         onClick = {
                             scope.launch {
                                 if (message.type == MessageDC.FILE) {
-                                    FileSaver().saveBytes(
-                                        message.data,
-                                        "file${message.hashCode() + Clock.System.now().hashCode()}.bin"
-                                    )
+                                    FileSaver().saveFile(message.data.decodeToString())
                                 } else {
-                                    val bitmap = getBitmapFromBytes(message.data)
-                                    FileSaver().saveBitmapImage(
-                                        bitmap,
-                                        "img${bitmap.hashCode() + Clock.System.now().hashCode()}.png"
-                                    )
+                                    FileSaver().saveFile(message.data.decodeToString())
                                 }
                                 snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE) "Изображение сохранено" else "Файл сохранён")
                             }

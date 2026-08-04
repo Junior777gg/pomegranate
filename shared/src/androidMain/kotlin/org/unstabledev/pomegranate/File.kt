@@ -27,8 +27,10 @@ import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.unstabledev.pomegranate.readBytes
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -44,7 +46,7 @@ actual val rootDirectory by lazy {
     context!!.cacheDir?.absolutePath ?: ""}
 actual val separator : String = FileAccess.separator
 actual typealias KMPFile = FileAccess
-actual fun KMPFile.readBytes(): ByteArray = readBytes()
+actual fun KMPFile.readBytes(): ByteArray = FileInputStream(this).use { it.readBytes() }
 
 actual fun KMPFile.readText(charset: String): String =
     readText(Charset.forName(charset))
@@ -74,46 +76,14 @@ actual class FileSaver {
     companion object {
         lateinit var context: Context
     }
-
-    actual suspend fun saveBitmapImage(bitmap: ImageBitmap, fileName: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val androidBitmap = bitmap.asAndroidBitmap()
-            val resolver = context.contentResolver
-            val contentValues = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(
-                        MediaStore.MediaColumns.RELATIVE_PATH,
-                        Environment.DIRECTORY_PICTURES + "/pomegranate"
-                    )
-                }
-            }
-
-            val collectionUri =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                } else {
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                }
-
-            val uri = resolver.insert(collectionUri, contentValues) ?: return@withContext false
-            val success = resolver.openOutputStream(uri)?.use { outputStream ->
-                androidBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, outputStream)
-            } ?: false
-            return@withContext success
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-    actual suspend fun saveBytes(bytes: ByteArray, fileName: String): Boolean = withContext(Dispatchers.IO) {
+    actual suspend fun saveFile(path: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val resolver = context.contentResolver
+            val currentFile = File(path)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, currentFile.name)
                     put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream")
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                 }
@@ -122,13 +92,13 @@ actual class FileSaver {
                 val uri = resolver.insert(collectionUri, contentValues) ?: return@withContext false
 
                 resolver.openOutputStream(uri)?.use { outputStream ->
-                    outputStream.write(bytes)
+                    currentFile.inputStream().copyTo(outputStream)
                 } ?: return@withContext false
             } else {
                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = FileAccess(downloadsDir, fileName)
+                val file = FileAccess(downloadsDir, currentFile.name)
                 FileOutputStream(file).use { outputStream ->
-                    outputStream.write(bytes)
+                    currentFile.inputStream().copyTo(outputStream)
                 }
             }
             true
@@ -141,10 +111,10 @@ actual class FileSaver {
 
 actual class ChooseFiles actual constructor() {
     companion object {
-        lateinit var choose: (onResult: (List<Pair<ByteArray, String>>) -> Unit) -> Unit
+        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
     }
 
-    actual fun getFiles(onResult: (List<Pair<ByteArray, String>>) -> Unit) {
+    actual fun getFiles(onResult: (List<KMPFile>) -> Unit) {
         return choose(onResult)
     }
 }

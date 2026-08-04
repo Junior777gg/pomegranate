@@ -1,6 +1,7 @@
 package org.unstabledev.pomegranate.P2PUtils
 
 import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.KMPInputStream
 
 sealed class Data {
     class Bytes(val bytes: ByteArray, val code: Byte) : Data()
@@ -11,6 +12,7 @@ expect class P2PChannelImpl(actChannel: Any) {
     var remoteIP: String
     var remotePort: Int
     suspend fun send(file: KMPFile, code: Byte)
+    suspend fun send(stream: KMPInputStream, code: Byte)
     suspend fun send(bytes: ByteArray, code: Byte = 0)
     suspend fun receive(): Data
 }

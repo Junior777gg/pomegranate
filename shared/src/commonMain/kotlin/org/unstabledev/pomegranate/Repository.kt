@@ -78,7 +78,7 @@ object Repository {
         _lastContact.value = contact
     }
 
-    fun createMessage(chatDC: ChatDC, message: String? = null, file: Pair<ByteArray, String>? = null): MessageDC {
+    fun createMessage(chatDC: ChatDC, message: String? = null, file: KMPFile? = null): MessageDC {
         var currentMessage: MessageDC? = null
         if (message != null) {
             val time = now().toString().split("T")[1].split(":")
@@ -93,14 +93,14 @@ object Repository {
         }
         if (file != null) {
             val time = now().toString().split("T")[1].split(":")
-            val type = when (file.second) {
+            val type = when (file.getName().substringAfter(".")) {
                 "png", "jpg", "jpeg" -> MessageDC.IMAGE
                 "gif", "webp" -> MessageDC.ANIMATED_IMAGE
                 else -> MessageDC.FILE
             }
             val messageDC = MessageDC(
                 email = chatDC.partnerEmail,
-                data = file.first,
+                data = file.getAbsolutePath().encodeToByteArray(),
                 type = type,
                 time = "${time[0].toInt() + 3}:${time[1]}",
                 isMine = true,
