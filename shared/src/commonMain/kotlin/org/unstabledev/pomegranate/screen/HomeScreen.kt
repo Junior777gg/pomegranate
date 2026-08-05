@@ -45,6 +45,7 @@ import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.kmpReadText
 
 @Composable
 fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
@@ -52,7 +53,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     val viewModel = viewModel { HomeScreenController(chatDao) }
 
     val userEmail = "Гранат"
-    val userName = Repository.myEmail
+    val userName = KMPFile(fistFilePath).kmpReadText()
 
     val scope = rememberCoroutineScope()
 
@@ -70,7 +71,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
                         .clickable(indication = null, interactionSource = null) {
-                            Repository.lastOpponentEmail=Repository.myEmail
+                            Repository.lastOpponentEmail = KMPFile(fistFilePath).kmpReadText()
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }
                 ) {
@@ -108,7 +109,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     label = { Text("Профиль", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        Repository.lastOpponentEmail=Repository.myEmail
+                        Repository.lastOpponentEmail = Repository.myEmail
                         navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },

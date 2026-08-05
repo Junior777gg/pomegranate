@@ -207,8 +207,12 @@ private fun ProfileContent(profile: Profile, snackbarHostState: SnackbarHostStat
 
 @Composable
 private fun GeneratedProfileCard(email: String, snackbarHostState: SnackbarHostState) {
-    val chat = Repository.lastContact.value!!
-    val displayName = chat.nickname?:chat.partnerEmail
+    val chat = Repository.lastContact.value
+    val displayName = if (email == Repository.myEmail || chat == null){
+        email
+    }else{
+        chat.nickname?:chat.partnerEmail
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -21,6 +21,9 @@ object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
+    val myEmail by lazy{
+        while (KMPFile(fistFilePath).kmpReadText() == "") {}
+            KMPFile(fistFilePath).kmpReadText() }
 
     init {
         if (KMPFile(fistFilePath).exists()) {
@@ -38,7 +41,6 @@ object Repository {
         }
     }
 
-    val myEmail by lazy { KMPFile(fistFilePath).readText() }
     lateinit var messagesDao: MessagesDao
     private val _lastContact = MutableStateFlow<ChatDC?>(null)
     val lastContact: StateFlow<ChatDC?> = _lastContact

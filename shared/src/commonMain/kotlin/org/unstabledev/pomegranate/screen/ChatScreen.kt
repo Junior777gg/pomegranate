@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Attachment
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.VideoCall
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -414,7 +416,23 @@ private fun ChatHeader(
             }
         }
 
-        Box {
+        Row {
+            IconButton(onClick = {  }) {
+                Icon(
+                    imageVector = Icons.Default.Call,
+                    contentDescription = "Звонок",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            IconButton(onClick = {  }) {
+                Icon(
+                    imageVector = Icons.Default.VideoCall,
+                    contentDescription = "Видео звонок",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
             IconButton(onClick = { menuExpanded.value = true }) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,

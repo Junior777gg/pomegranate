@@ -60,7 +60,7 @@ object AppSettings {
 
     fun save() {
         try {
-            KMPFile(FILE_PATH).writeText(json.encodeToString(state.value))
+            KMPFile(FILE_PATH).kmpWriteText(json.encodeToString(state.value))
             println("Saved app config")
         } catch (e: Exception) {
             e.printStackTrace()
@@ -72,7 +72,7 @@ object AppSettings {
         try {
             if (!file.exists()) return
 
-            val raw = file.readText()
+            val raw = file.kmpReadText()
             if (raw.isBlank()) return
 
             val loaded = json.decodeFromString<AppSettingsState>(raw)

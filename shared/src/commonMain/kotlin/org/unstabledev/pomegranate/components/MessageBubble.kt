@@ -70,6 +70,7 @@ import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.readBytes
 import kotlin.time.Clock
 
@@ -219,7 +220,7 @@ fun MessageBubble(
 
                         LaunchedEffect(message.key) {
                             val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).readBytes())
+                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                             }
                             bitmap = bmp
                             ratio = bmp.width.toFloat() / bmp.height.toFloat()
@@ -288,7 +289,7 @@ fun MessageBubble(
 
                         LaunchedEffect(message.key) {
                             val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).readBytes())
+                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                             }
                             bitmap = bmp
                             ratio = bmp.width.toFloat() / bmp.height.toFloat()

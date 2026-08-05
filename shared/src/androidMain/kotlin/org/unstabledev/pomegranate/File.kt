@@ -46,22 +46,19 @@ actual val rootDirectory by lazy {
     context!!.cacheDir?.absolutePath ?: ""}
 actual val separator : String = FileAccess.separator
 actual typealias KMPFile = FileAccess
-actual fun KMPFile.readBytes(): ByteArray = FileInputStream(this).use { it.readBytes() }
+actual fun KMPFile.kmpReadBytes(): ByteArray = FileInputStream(this).use { it.readBytes() }
 
-actual fun KMPFile.readText(charset: String): String =
+actual fun KMPFile.kmpReadText(charset: String): String =
     readText(Charset.forName(charset))
 
-actual fun KMPFile.readLines(charset: String): List<String> =
-    readLines(Charset.forName(charset))
+actual fun KMPFile.kmpWriteBytes(data: ByteArray): Unit = writeBytes(data)
 
-actual fun KMPFile.writeBytes(data: ByteArray): Unit = writeBytes(data)
+actual fun KMPFile.kmpAppendBytes(data: ByteArray): Unit = appendBytes(data)
 
-actual fun KMPFile.appendBytes(data: ByteArray): Unit = appendBytes(data)
-
-actual fun KMPFile.writeText(text: String, charset: String) =
+actual fun KMPFile.kmpWriteText(text: String, charset: String) =
     writeText(text, Charset.forName(charset))
 
-actual fun KMPFile.appendText(text: String, charset: String) =
+actual fun KMPFile.kmpAppendText(text: String, charset: String) =
     appendText(text, Charset.forName(charset))
 
 actual typealias KMPInputStream = InputStream

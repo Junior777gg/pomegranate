@@ -61,6 +61,7 @@ import org.unstabledev.pomegranate.components.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.kmpReadText
 
 private enum class PanelSubScreen {
     CHATS,
@@ -76,7 +77,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     val viewModel = viewModel { HomeScreenController(chatDao) }
 
     val userEmail = "Гранат"
-    val userName = Repository.myEmail
+    val userName = KMPFile(fistFilePath).kmpReadText()
 
     var splitPosition by remember { mutableFloatStateOf(settings.desktopHomeSplit) }
     val minLeftWidth = 0.5f
@@ -129,7 +130,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         ProfileSettings(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            Repository.lastOpponentEmail = Repository.myEmail
+                            Repository.lastOpponentEmail = KMPFile(fistFilePath).kmpReadText()
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }, {
                             navWayObj.goTo(Routes.SETTINGS_SCREEN)

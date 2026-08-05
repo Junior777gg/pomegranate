@@ -39,7 +39,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
     val fistFilePath = remember { Repository.fistFilePath }
     if (KMPFile(fistFilePath).exists()) {
         KMPFile("$pomegranatePath${separator}temp").createNewFile()
-        startDestination = if (KMPFile(fistFilePath).readText() != "") {
+        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") {
             Routes.HOME_SCREEN
         } else {
             Routes.WELCOME_SCREEN

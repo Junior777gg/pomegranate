@@ -40,9 +40,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.FileSaver
+import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.kmpReadBytes
 import kotlin.time.Clock
 
 @Composable
@@ -54,7 +56,7 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
 
     val menuExpanded = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val bitmap = getBitmapFromBytes(message.data)
+    val bitmap = getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }

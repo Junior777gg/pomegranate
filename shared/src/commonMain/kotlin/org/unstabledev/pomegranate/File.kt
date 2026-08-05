@@ -71,13 +71,12 @@ expect open class KMPFile {
     override fun toString(): String
 }
 
-expect fun KMPFile.readBytes(): ByteArray
-expect fun KMPFile.readText(charset: String = "UTF-8"): String
-expect fun KMPFile.readLines(charset: String = "UTF-8"): List<String>
-expect fun KMPFile.writeBytes(data: ByteArray)
-expect fun KMPFile.appendBytes(data: ByteArray)
-expect fun KMPFile.writeText(text: String, charset: String = "UTF-8")
-expect fun KMPFile.appendText(text: String, charset: String = "UTF-8")
+expect fun KMPFile.kmpReadBytes(): ByteArray
+expect fun KMPFile.kmpReadText(charset: String = "UTF-8"): String
+expect fun KMPFile.kmpWriteBytes(data: ByteArray)
+expect fun KMPFile.kmpAppendBytes(data: ByteArray)
+expect fun KMPFile.kmpWriteText(text: String, charset: String = "UTF-8")
+expect fun KMPFile.kmpAppendText(text: String, charset: String = "UTF-8")
 expect fun KMPFile.inputStream(): KMPInputStream
 expect fun KMPFile.outputStream(): KMPOutputStream
 expect fun ByteArray.inputStream(): KMPInputStream

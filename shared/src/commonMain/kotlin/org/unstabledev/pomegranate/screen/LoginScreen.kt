@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.unstabledev.pomegranate.KMPFile
@@ -30,7 +31,7 @@ import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.applyScreenPadding
-import org.unstabledev.pomegranate.writeText
+import org.unstabledev.pomegranate.kmpWriteText
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {
@@ -55,7 +56,7 @@ fun LoginScreen(navWayObj: NavigationWays) {
             LabeledTextField(state, "", "Email")
             if(isErrorVisible) Text(errorText, color = ColorTheme.Warning)
             Button(onClick = {
-                val email = state.text.toString().trimIndent()
+                val email = state.text.toString().trimIndent().lowercase()
                 if(email.isEmpty()) {
                     isErrorVisible = true
                     errorText = "Email пустой"
@@ -66,8 +67,10 @@ fun LoginScreen(navWayObj: NavigationWays) {
                     errorText = "Некорректный Email"
                     return@Button
                 }*/
-                val file = KMPFile(fistFilePath)
-                file.writeText(email)
+                val file = KMPFile(fistFilePath).apply {
+                    createNewFile()
+                kmpWriteText(email)}
+                Repository.lastOpponentEmail = email
                 navWayObj.goTo(Routes.HOME_SCREEN)
             }){
                 Text("Войти")

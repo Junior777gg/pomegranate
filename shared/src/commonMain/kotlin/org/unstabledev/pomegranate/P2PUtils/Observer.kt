@@ -14,6 +14,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -66,15 +67,6 @@ class Observer(
                     val map = mutableMapOf<Byte, MutableList<Data>>()
                     launch {
                         flow.collect {
-                            println("collect got: ${it::class.simpleName}")
-
-                            if (it is Data.Bytes) {
-                                println("bytes size=${it.bytes.size} code=${it.code}")
-                            }
-                            if (it is Data.Files) {
-                                println("file code=${it.code}")
-                            }
-
                             if (it.instanceOf(Data.Bytes::class) && (it as Data.Bytes).bytes.size == 1) {
                                 val buffer = it.bytes
                                 val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
@@ -102,7 +94,10 @@ class Observer(
                                             val json =
                                                 Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
                                             json.data = (list[1] as Data.Files).file.apply {
-                                                renameTo(KMPFile(json.data.decodeToString()))
+                                                renameTo(KMPFile("${pomegranatePath}temp",json.data.decodeToString()).apply {
+                                                    println("zxccxzzxccxz${getName()}zxccxzzxccxz")
+                                                    createNewFile()
+                                                })
                                             }.getAbsolutePath().encodeToByteArray()
                                             json
                                         } else if (list[1] is Data.Bytes && list[0] is Data.Files) {
