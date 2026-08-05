@@ -34,6 +34,8 @@ import java.io.File as FileAccess
 actual val rootDirectory = System.getProperty("user.dir") ?: ""
 actual val separator : String = FileAccess.separator
 actual typealias KMPFile = FileAccess
+actual fun KMPFile.kmpCopyTo(file: KMPFile) = copyTo(file)
+
 actual fun KMPFile.kmpReadBytes(): ByteArray = FileInputStream(this).use { it.readBytes() }
 
 actual fun KMPFile.kmpReadText(charset: String): String =

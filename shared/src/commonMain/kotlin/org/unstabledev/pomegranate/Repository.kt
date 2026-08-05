@@ -19,6 +19,7 @@ import kotlin.time.Clock.System.now
 
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    var lastCallType = ""
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy{

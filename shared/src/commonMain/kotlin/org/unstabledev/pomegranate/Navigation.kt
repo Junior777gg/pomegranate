@@ -2,8 +2,6 @@ package org.unstabledev.pomegranate
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -16,6 +14,7 @@ import androidx.navigation.compose.composable
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.screen.BetterCallSoulScreen
 import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
 import org.unstabledev.pomegranate.screen.DesktopHomeScreen
@@ -78,7 +77,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
-                    back = { }
+                    back = {}
                 )
             }
             if (isMobile) HomeScreen(navWayObj, chatDao)
@@ -132,6 +131,15 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                 )
             }
             ProfileScreen(navWayObj)
+        }
+        composable(Routes.CALL_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            BetterCallSoulScreen(navWayObj)
         }
     }
 }

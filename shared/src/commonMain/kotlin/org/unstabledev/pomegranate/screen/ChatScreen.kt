@@ -99,7 +99,6 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.fileDropArea
 import org.unstabledev.pomegranate.isMobile
-import org.unstabledev.pomegranate.readBytes
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import kotlin.time.Duration.Companion.seconds
 
@@ -200,7 +199,11 @@ fun ChatScreen(
                     }
                     ChatHeader(
                         chat,
+                        viewModel,
                         if (canBack) back else null,
+                        {
+                            navWayObj.goTo(Routes.CALL_SCREEN)
+                        },
                         {
                             Repository.lastOpponentEmail = chat.partnerEmail
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
@@ -369,7 +372,9 @@ fun ChatScreen(
 @Composable
 private fun ChatHeader(
     chat: ChatDC,
+    viewModel: ChatScreenController,
     onBackClick: (() -> Unit)?,
+    onCallClick: (() -> Unit),
     onProfileClick: () -> Unit,
     onScrollToTopClick: () -> Unit,
     onClearHistoryClick: () -> Unit,
@@ -417,7 +422,7 @@ private fun ChatHeader(
         }
 
         Row {
-            IconButton(onClick = {  }) {
+            IconButton(onClick = { viewModel.startCall(onCallClick) }) {
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = "Звонок",
@@ -425,7 +430,7 @@ private fun ChatHeader(
                 )
             }
 
-            IconButton(onClick = {  }) {
+            IconButton(onClick = { viewModel.startCall(onCallClick, "Video") }) {
                 Icon(
                     imageVector = Icons.Default.VideoCall,
                     contentDescription = "Видео звонок",

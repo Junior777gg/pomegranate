@@ -2,6 +2,7 @@ package org.unstabledev.pomegranate
 
 import android.Manifest
 import android.content.Intent
+import android.hardware.camera2.CameraDevice
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -13,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import java.io.File
+import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

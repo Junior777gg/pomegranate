@@ -71,6 +71,7 @@ expect open class KMPFile {
     override fun toString(): String
 }
 
+expect fun KMPFile.kmpCopyTo(file: KMPFile): KMPFile
 expect fun KMPFile.kmpReadBytes(): ByteArray
 expect fun KMPFile.kmpReadText(charset: String = "UTF-8"): String
 expect fun KMPFile.kmpWriteBytes(data: ByteArray)
