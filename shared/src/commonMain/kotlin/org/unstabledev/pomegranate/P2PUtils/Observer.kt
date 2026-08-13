@@ -68,7 +68,7 @@ class Observer(
                     val map = mutableMapOf<Byte, MutableList<Data>>()
                     launch {
                         flow.collect {
-                            if (it.instanceOf(Data.Bytes::class) && (it as Data.Bytes).bytes.size == 1) {
+                            if (it is Data.Bytes && it.bytes.size == 1) {
                                 val buffer = it.bytes
                                 val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
                                 message.isDelivered = true
