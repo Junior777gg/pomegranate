@@ -23,11 +23,13 @@ class MainActivity : ComponentActivity() {
         Camera.context = this
         Notifications.context = this
         FileSaver.context = this
+        Camera.context = this
         super.onCreate(savedInstanceState)
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
             {}).apply {
-                launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.CAMERA))
+                launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO))
             }
         var pendingFileResult: ((List<File>) -> Unit)? = null
         val pick = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->

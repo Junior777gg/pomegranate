@@ -128,6 +128,7 @@ class Observer(
                                             MessageDC.TEXT -> messageDC.data.decodeToString().stripMarkdown()
                                             MessageDC.IMAGE -> "🖼 Изображение"
                                             MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
+                                            MessageDC.AUDIO -> "🎵 Аудио"
                                             MessageDC.FILE -> "📁 Файл"
                                             else -> "Неизвестно"
                                         }
