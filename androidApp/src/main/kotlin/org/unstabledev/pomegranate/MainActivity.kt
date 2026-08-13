@@ -25,11 +25,10 @@ class MainActivity : ComponentActivity() {
         FileSaver.context = this
         super.onCreate(savedInstanceState)
         registerForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-            {}).launch(Manifest.permission.POST_NOTIFICATIONS)
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-            {}).launch(Manifest.permission.CAMERA)
+            ActivityResultContracts.RequestMultiplePermissions(),
+            {}).apply {
+                launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.CAMERA))
+            }
         var pendingFileResult: ((List<File>) -> Unit)? = null
         val pick = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             val selectedFiles = mutableListOf<File>()
