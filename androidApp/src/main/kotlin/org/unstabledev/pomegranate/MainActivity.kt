@@ -20,13 +20,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         context = this
+        Camera.context = this
         Notifications.context = this
         FileSaver.context = this
         super.onCreate(savedInstanceState)
         registerForActivityResult(
             ActivityResultContracts.RequestPermission(),
             {}).launch(Manifest.permission.POST_NOTIFICATIONS)
-
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+            {}).launch(Manifest.permission.CAMERA)
         var pendingFileResult: ((List<File>) -> Unit)? = null
         val pick = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             val selectedFiles = mutableListOf<File>()

@@ -51,6 +51,14 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.compose.uiToolingPreview)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+            val camerax_version = "1.6.1"
+            implementation("androidx.camera:camera-core:${camerax_version}")
+            implementation("androidx.camera:camera-compose:${camerax_version}")
+            implementation("androidx.camera:camera-camera2:${camerax_version}")
+            implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+            implementation("androidx.camera:camera-video:${camerax_version}")
+            implementation("androidx.camera:camera-view:${camerax_version}")
+            implementation("androidx.camera:camera-extensions:${camerax_version}")
             implementation("com.google.crypto.tink:tink:1.21.0")
         }
         commonMain.dependencies {

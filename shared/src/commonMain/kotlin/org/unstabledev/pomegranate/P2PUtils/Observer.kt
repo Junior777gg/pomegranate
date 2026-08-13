@@ -1,6 +1,5 @@
 package org.unstabledev.pomegranate.P2PUtils
 
-import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -14,7 +13,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -23,7 +21,6 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.kmpCopyTo
-import org.unstabledev.pomegranate.separator
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 
