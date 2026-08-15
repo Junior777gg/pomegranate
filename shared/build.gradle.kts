@@ -64,6 +64,7 @@ kotlin {
             implementation("androidx.camera:camera-view:${camerax_version}")
             implementation("androidx.camera:camera-extensions:${camerax_version}")
             implementation("com.google.crypto.tink:tink:1.21.0")
+            implementation("androidx.media:media:1.7.0")
         }
         commonMain.dependencies {
             implementation("io.coil-kt.coil3:coil-network-ktor3:3.5.0")

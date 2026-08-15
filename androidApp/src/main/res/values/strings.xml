@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">pomegranate</string>
+    <string name="media3_attribution_label">Воспроизведение медиафайлов</string>
+    <string name="empty_tag"></string>
 </resources>

@@ -26,7 +26,6 @@ actual class AudioPlayer actual constructor() {
         if (isActive()) AudioPlaybackManager.seekTo(positionMs)
     }
 
-    //Realised already by media playback
     actual fun release() {}
 
     actual fun isPlaying(): Boolean =

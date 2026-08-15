@@ -10,7 +10,7 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import kotlin.jvm.java
+import androidx.media.app.NotificationCompat.MediaStyle
 
 class AudioPlaybackService : Service() {
     companion object {
@@ -44,14 +44,14 @@ class AudioPlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        startForeground(NOTIF_ID, buildNotification(isPlaying = true))
+        AudioPlaybackManager.initMediaSession()
+        startForeground(NOTIF_ID, buildNotification(isPlaying = false))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
                 AudioPlaybackManager.togglePlayPause()
-                startForeground(NOTIF_ID, buildNotification(AudioPlaybackManager.isPlaying()))
             }
             ACTION_STOP -> {
                 AudioPlaybackManager.stopAndRelease()
@@ -65,6 +65,11 @@ class AudioPlaybackService : Service() {
             }
         }
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AudioPlaybackManager.releaseMediaSession()
     }
 
     private fun createChannel() {
@@ -95,13 +100,16 @@ class AudioPlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Pomegranate")
-            .setContentText(if (isPlaying) "Аудио воспроизводится" else "Аудио приостоновлено")
+            .setContentText(
+                if (isPlaying) "Аудио воспроизводится" else "Аудио приостановлено"
+            )
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(contentPending)
             .addAction(
-                if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                if (isPlaying) android.R.drawable.ic_media_pause
+                else android.R.drawable.ic_media_play,
                 if (isPlaying) "Пауза" else "Воспроизвести",
                 pendingServiceIntent(ACTION_PLAY_PAUSE, 1)
             )
@@ -112,6 +120,16 @@ class AudioPlaybackService : Service() {
             )
             .setOngoing(isPlaying)
             .setOnlyAlertOnce(true)
-            .build()
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        AudioPlaybackManager.mediaSession?.sessionToken?.let { token ->
+            builder.setStyle(
+                MediaStyle()
+                    .setMediaSession(token)
+                    .setShowActionsInCompactView(0)
+            )
+        }
+
+        return builder.build()
     }
 }
