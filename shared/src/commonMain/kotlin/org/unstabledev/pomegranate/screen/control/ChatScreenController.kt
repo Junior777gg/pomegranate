@@ -77,14 +77,17 @@ class ChatScreenController(
             val currentChat = chatDC.value
             val messagesList = mutableListOf<MessageDC>()
             if (message != null) {
+                println("input from chat screen controller $message")
                 val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
-            files?.forEach { file ->
-                val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE, file = file)
-                messagesDao.insertMessage(messageDC)
-                messagesList.add(messageDC)
+            if (files != null) {
+                files.forEach { file ->
+                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE, file = file)
+                    messagesDao.insertMessage(messageDC)
+                    messagesList.add(messageDC)
+                }
             }
             try {
                 val manager = BaseP2P().createConnection(currentChat.partnerEmail)
@@ -120,10 +123,12 @@ class ChatScreenController(
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
-                files?.forEach { file ->
-                    val messageDC = Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
-                    messagesDao.insertMessage(messageDC)
-                    observer!!.sendMessage(messageDC)
+                if (files != null) {
+                    files.forEach { file ->
+                        val messageDC = Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
+                        messagesDao.insertMessage(messageDC)
+                        observer!!.sendMessage(messageDC)
+                    }
                 }
             }
         }

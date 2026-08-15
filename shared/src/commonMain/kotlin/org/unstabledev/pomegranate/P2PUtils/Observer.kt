@@ -161,6 +161,8 @@ class Observer(
             deliverMap[code] = data
             if (message.type != MessageDC.TEXT) {
                 msg.data = KMPFile(msg.data.decodeToString()).getName().encodeToByteArray()
+            }else{
+                println("input from Observer ${data.decodeToString()}")
             }
             val json = Json.encodeToString(msg).encodeToByteArray()
             channel.send(json, code)

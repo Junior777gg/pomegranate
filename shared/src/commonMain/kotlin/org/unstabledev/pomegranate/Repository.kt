@@ -89,6 +89,7 @@ object Repository {
         var currentMessage: MessageDC? = null
         when (type) {
             MessageDC.TEXT -> {
+                println("input from repository $message")
                 val time = now().toString().split("T")[1].split(":")
                 val messageDC = MessageDC(
                     email = chatDC.partnerEmail,

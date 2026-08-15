@@ -624,6 +624,7 @@ private fun MessageInput(
                     val text = state.text.toString().trim()
                     if (text.isNotEmpty()) {
                         viewModel.send(text)
+                        println("input from chat screen $text")
                         state.clearText()
                     }
                 },
