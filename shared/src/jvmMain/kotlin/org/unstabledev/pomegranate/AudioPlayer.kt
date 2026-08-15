@@ -10,6 +10,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private val jfxStarted = AtomicBoolean(false)
 
+fun shutdownJavaFx() {
+    if (jfxStarted.getAndSet(false)) {
+        try {
+            Platform.exit()
+        } catch (_: Exception) {}
+    }
+}
+
 private fun ensureJfxToolkit() {
     if (jfxStarted.compareAndSet(false, true)) {
         val latch = CountDownLatch(1)
@@ -21,6 +29,14 @@ private fun ensureJfxToolkit() {
         latch.await()
         Platform.setImplicitExit(false)
     }
+}
+
+private fun safeRunLater(action: () -> Unit) {
+    try {
+        if (jfxStarted.get()) {
+            Platform.runLater(action)
+        }
+    } catch (_: IllegalStateException) { }
 }
 
 actual class AudioPlayer actual constructor() {
@@ -39,23 +55,28 @@ actual class AudioPlayer actual constructor() {
         val latch = CountDownLatch(1)
         var initError: Throwable? = null
 
-        Platform.runLater {
-            try {
-                disposeInternal()
-                val file = File(path)
-                val media = Media(file.toURI().toString())
-                val player = MediaPlayer(media)
-                player.setOnEndOfMedia { completionListener?.invoke() }
-                player.setOnError {
-                    initError = player.error
+        try {
+            Platform.runLater {
+                try {
+                    disposeInternal()
+                    val file = File(path)
+                    val media = Media(file.toURI().toString())
+                    val player = MediaPlayer(media)
+                    player.setOnEndOfMedia { completionListener?.invoke() }
+                    player.setOnError {
+                        initError = player.error
+                        latch.countDown()
+                    }
+                    player.setOnReady { latch.countDown() }
+                    mediaPlayer = player
+                } catch (e: Exception) {
+                    initError = e
                     latch.countDown()
                 }
-                player.setOnReady { latch.countDown() }
-                mediaPlayer = player
-            } catch (e: Exception) {
-                initError = e
-                latch.countDown()
             }
+        } catch (e: IllegalStateException) {
+            initError = e
+            latch.countDown()
         }
 
         latch.await()
@@ -63,21 +84,21 @@ actual class AudioPlayer actual constructor() {
     }
 
     actual fun play() {
-        Platform.runLater { mediaPlayer?.play() }
+        safeRunLater { mediaPlayer?.play() }
     }
 
     actual fun pause() {
-        Platform.runLater { mediaPlayer?.pause() }
+        safeRunLater { mediaPlayer?.pause() }
     }
 
     actual fun seekTo(positionMs: Long) {
-        Platform.runLater {
+        safeRunLater {
             mediaPlayer?.seek(Duration.millis(positionMs.toDouble()))
         }
     }
 
     actual fun release() {
-        Platform.runLater { disposeInternal() }
+        safeRunLater { disposeInternal() }
     }
 
     private fun disposeInternal() {
@@ -87,15 +108,21 @@ actual class AudioPlayer actual constructor() {
     }
 
     actual fun isPlaying(): Boolean =
-        mediaPlayer?.status == MediaPlayer.Status.PLAYING
+        try {
+            mediaPlayer?.status == MediaPlayer.Status.PLAYING
+        } catch (_: Exception) { false }
 
     actual fun isActive(): Boolean = true
 
     actual fun getDuration(): Long =
-        mediaPlayer?.totalDuration?.toMillis()?.toLong()?.coerceAtLeast(0L) ?: 0L
+        try {
+            mediaPlayer?.totalDuration?.toMillis()?.toLong()?.coerceAtLeast(0L) ?: 0L
+        } catch (_: Exception) { 0L }
 
     actual fun getCurrentPosition(): Long =
-        mediaPlayer?.currentTime?.toMillis()?.toLong()?.coerceAtLeast(0L) ?: 0L
+        try {
+            mediaPlayer?.currentTime?.toMillis()?.toLong()?.coerceAtLeast(0L) ?: 0L
+        } catch (_: Exception) { 0L }
 
     actual fun setOnCompletionListener(listener: () -> Unit) {
         completionListener = listener

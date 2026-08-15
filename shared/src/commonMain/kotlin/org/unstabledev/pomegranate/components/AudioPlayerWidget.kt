@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
@@ -145,6 +146,7 @@ fun AudioPlayerWidget(
                 enabled = isPrepared.value
             ) {
                 Icon(
+                    modifier = Modifier.size(30.dp),
                     imageVector = if (isPlaying.value) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
                     contentDescription = if (isPlaying.value) "Пауза" else "Воспроизвести",
                     tint = if (isPrepared.value) MaterialTheme.colorScheme.onBackground else Color.Gray.copy(alpha = 0.5f)
@@ -167,10 +169,10 @@ fun AudioPlayerWidget(
                     valueRange = if (durationMs.value > 0) 0f..durationMs.value.toFloat() else 0f..1f,
                     enabled = isPrepared.value && durationMs.value > 0
                 )
-                if (player.isPlaying()) {
+                if (player.getCurrentPosition()>0L) {
                     Text(
                         modifier = Modifier,
-                        text = formatTime(currentPositionMs.value),
+                        text = formatTime(currentPositionMs.value)+"/"+formatTime(durationMs.value),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onBackground
                     )
