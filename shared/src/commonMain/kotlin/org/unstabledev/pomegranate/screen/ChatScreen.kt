@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
@@ -54,6 +55,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,6 +80,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.AudioRecorder
 import org.unstabledev.pomegranate.ChooseFiles
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.KMPFile
@@ -100,6 +103,7 @@ import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.fileDropArea
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -546,6 +550,19 @@ private fun MessageInput(
     state: TextFieldState,
     viewModel: ChatScreenController
 ) {
+    val scope = rememberCoroutineScope()
+    var isRecording by remember { mutableStateOf(false) }
+    val recorder = remember { AudioRecorder() }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (recorder.isRecording()) {
+                recorder.stop()
+            }
+            recorder.release()
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -568,7 +585,7 @@ private fun MessageInput(
             contentAlignment = Alignment.CenterStart
         ) {
             Row {
-                if (state.text.isEmpty()) {
+                if (state.text.isEmpty() && !isRecording) {
                     Box(
                         modifier = Modifier
                             .height(22.5.dp)
@@ -590,26 +607,53 @@ private fun MessageInput(
                     }
                     Spacer(Modifier.width(6.dp))
                 }
-                BasicTextField(
-                    state = state,
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 15.sp
-                    ),
-                    cursorBrush = SolidColor(ColorTheme.MessageAccent),
-                    lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
-                    decorator = { innerTextField ->
-                        if (state.text.isEmpty()) {
-                            Text(
-                                text = "Сообщение",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 15.sp
-                            )
+
+                if (isRecording) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        var alpha by remember { mutableStateOf(1f) }
+                        LaunchedEffect(Unit) {
+                            while (true) {
+                                alpha = if (alpha == 1f) 0.3f else 1f
+                                delay(500)
+                            }
                         }
-                        innerTextField()
+                        Box(
+                            Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(Color.Red.copy(alpha = alpha))
+                        )
+                        Text(
+                            "Запись...",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 15.sp
+                        )
                     }
-                )
+                } else {
+                    BasicTextField(
+                        state = state,
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = TextStyle(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 15.sp
+                        ),
+                        cursorBrush = SolidColor(ColorTheme.MessageAccent),
+                        lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
+                        decorator = { innerTextField ->
+                            if (state.text.isEmpty()) {
+                                Text(
+                                    text = "Сообщение",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 15.sp
+                                )
+                            }
+                            innerTextField()
+                        }
+                    )
+                }
             }
         }
 
@@ -622,17 +666,45 @@ private fun MessageInput(
                 .background(ColorTheme.MessageAccent)
                 .clickable {
                     val text = state.text.toString().trim()
-                    if (text.isNotEmpty()) {
+                    if (isRecording) {
+                        recorder.stop()
+                        isRecording = false
+
+                        scope.launch {
+                            try {
+                                val voiceFile = KMPFile(
+                                    Repository.pomegranatePath + "temp",
+                                    "voice_${Clock.System.now().hashCode()}.ogg"
+                                )
+                                viewModel.send(files = listOf(voiceFile))
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    } else if (text.isNotEmpty()) {
                         viewModel.send(text)
-                        println("input from chat screen $text")
                         state.clearText()
+                    } else {
+                        scope.launch {
+                            try {
+                                val voiceFile = KMPFile(
+                                    Repository.pomegranatePath + "temp",
+                                    "voice_${Clock.System.now().hashCode()}.ogg"
+                                )
+                                voiceFile.getParentFile()?.mkdirs()
+                                recorder.start(voiceFile)
+                                isRecording = true
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
                     }
                 },
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Send,
-                contentDescription = "Отправить",
+                imageVector = if (isRecording||!state.text.isEmpty()) Icons.Default.Send else Icons.Default.Mic,
+                contentDescription = if (isRecording||!state.text.isEmpty()) "Отправить" else "Записать/Отправить",
                 tint = MaterialTheme.colorScheme.background,
                 modifier = Modifier.size(20.dp)
             )

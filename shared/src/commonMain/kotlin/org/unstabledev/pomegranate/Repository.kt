@@ -118,7 +118,7 @@ object Repository {
                     val type = when (file.getName().substringAfter(".")) {
                         "png", "jpg", "jpeg" -> MessageDC.IMAGE
                         "gif", "webp" -> MessageDC.ANIMATED_IMAGE
-                        "ogg", "mp3" -> MessageDC.AUDIO
+                        "ogg", "mp3", "wav" -> MessageDC.AUDIO
                         else -> MessageDC.FILE
                     }
                     val messageDC = MessageDC(

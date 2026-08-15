@@ -13,3 +13,10 @@ expect class AudioPlayer() {
     fun getCurrentPosition(): Long
     fun setOnCompletionListener(listener: () -> Unit)
 }
+
+expect class AudioRecorder() {
+    fun start(outputFile: KMPFile)
+    fun stop()
+    fun isRecording(): Boolean
+    fun release()
+}
