@@ -116,12 +116,12 @@ class ChatScreenController(
             viewModelScope.launch(Dispatchers.IO) {
                 val currentChat = chatDC.value
                 if (message != null) {
-                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.TEXT)
+                    val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
                 files?.forEach { file ->
-                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE)
+                    val messageDC = Repository.createMessage(currentChat,file = file, type = MessageDC.FILE)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
