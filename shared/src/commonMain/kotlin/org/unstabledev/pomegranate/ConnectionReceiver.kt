@@ -14,7 +14,7 @@ import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
 object ConnectionReceiver {
-    suspend fun start(chatDao: ChatDao, messagesDao: MessagesDao){
+    suspend fun start(){
         LoggerImpl().init()
         while (true) {
             val opponent = BaseP2P.receiveConnections()
@@ -23,11 +23,11 @@ object ConnectionReceiver {
             } catch (_: Exception) {
                 null
             }
-            val exChat = chatDao.tryGetChatByEmailFlow(opponent.first)
+            val exChat = Repository.chatDao.tryGetChatByEmailFlow(opponent.first)
             val nickname = exChat.first()?.nickname
             val chat = ChatDC(opponent.first, nickname, profile?.serialize())
-            val observer = Observer(opponent.second, opponent.second.channel!!,chat, messagesDao)
-            chatDao.upsertChat(chat)
+            val observer = Observer(opponent.second, opponent.second.channel!!,chat, Repository.messagesDao)
+            Repository.chatDao.upsertChat(chat)
             availableChats.getOrPut(chat, {MutableSharedFlow(1)}).emit(observer)
         }
     }

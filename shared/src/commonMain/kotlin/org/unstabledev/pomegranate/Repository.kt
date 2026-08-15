@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.getValue
@@ -45,6 +46,7 @@ object Repository {
     }
 
     lateinit var messagesDao: MessagesDao
+    lateinit var chatDao: ChatDao
     private val _lastContact = MutableStateFlow<ChatDC?>(null)
     val lastContact: StateFlow<ChatDC?> = _lastContact
 

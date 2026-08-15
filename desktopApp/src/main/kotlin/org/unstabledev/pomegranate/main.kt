@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
     val messagesDao = messagesDatabase.messagesDao()
     val runBg = !args.contains("--no-bg-service")
     CoroutineScope(Dispatchers.IO).launch {
-        ConnectionReceiver.start(chatDao, messagesDao,)
+        ConnectionReceiver.start()
     }
     ChooseFiles.choose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)

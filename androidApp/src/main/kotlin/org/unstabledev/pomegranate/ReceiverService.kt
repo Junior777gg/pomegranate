@@ -15,10 +15,6 @@ import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.random.Random
 
 class ReceiverService : Service() {
-    companion object {
-        var chatDao: ChatDao? = null
-        var messagesDao: MessagesDao? = null
-    }
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -50,7 +46,7 @@ class ReceiverService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         GlobalScope.launch {
-            ConnectionReceiver.start(chatDao!!, messagesDao!!,)
+            ConnectionReceiver.start()
         }
         return super.onStartCommand(intent, flags, startId)
     }

@@ -74,7 +74,7 @@ class Observer(
                                         messagesDao.upsertMessage(message)
                                     }
                                     deliverMap.remove(buffer[0])
-                                }
+                                } else println("Received null message")
                             } else {
                                 when (it) {
                                     is Data.Bytes -> map.getOrPut(it.code, { mutableListOf() })

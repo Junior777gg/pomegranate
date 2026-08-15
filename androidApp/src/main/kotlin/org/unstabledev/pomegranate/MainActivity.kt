@@ -70,8 +70,6 @@ class MainActivity : ComponentActivity() {
         val messagesBuilder = getMessagesDatabaseBuilder(applicationContext)
         val messagesDatabase = getMessagesDatabase(messagesBuilder)
         val messagesDao = messagesDatabase.messagesDao()
-        ReceiverService.chatDao = chatDao
-        ReceiverService.messagesDao = messagesDao
         baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent {
             App(chatDao, messagesDao)

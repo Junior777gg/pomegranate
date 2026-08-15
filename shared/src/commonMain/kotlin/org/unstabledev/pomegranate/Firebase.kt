@@ -22,10 +22,10 @@ object Firebase {
     val client = HttpClient()
 
     inline fun <reified T> serializer (value: T): String {
-        try {
-        return Json.encodeToString<T>(value)
-        } catch (e: Exception) {
-            return ""
+        return try {
+            Json.encodeToString<T>(value)
+        } catch (_: Exception) {
+            ""
         }
     }
 

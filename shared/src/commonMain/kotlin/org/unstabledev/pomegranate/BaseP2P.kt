@@ -24,7 +24,7 @@ class BaseP2P {
                 }
                 delay(100)
             }
-            println("new connections: $email")
+            println("New connection: $email")
             Firebase.delete("p2p/${myEmail}")
             val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
             Firebase.put(
@@ -35,8 +35,7 @@ class BaseP2P {
             while (answer == "") {
                 try {
                     answer = Firebase.get<String>("p2p/${myEmail}/${email.sha256()}/answer") ?: ""
-                } catch (e: Exception) {
-                }
+                } catch (_: Exception) { }
                 delay(100)
             }
             val splitAnswer = answer.split("&")
@@ -49,8 +48,7 @@ class BaseP2P {
         Firebase.delete("p2p/${email.sha256()}")
         try {
             Firebase.put("p2p/${email.sha256()}", myEmail)
-        } catch (e: Exception) {
-        }
+        } catch (_: Exception) { }
         var offer = ""
         try {
             withTimeout(5000) {
@@ -69,8 +67,7 @@ class BaseP2P {
         val answer = "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}"
         try {
             Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", answer)
-        } catch (e: Exception) {
-        }
+        } catch (_: Exception) { }
         manager.createConnection(splitOffer[0],splitOffer[1], splitOffer[2])
         return manager
     }

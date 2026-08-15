@@ -77,12 +77,12 @@ class ChatScreenController(
             val currentChat = chatDC.value
             val messagesList = mutableListOf<MessageDC>()
             if (message != null) {
-                val messageDC = Repository.createMessage(currentChat, message, type = MessageDC.TEXT)
+                val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
             files?.forEach { file ->
-                val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE)
+                val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE, file = file)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
@@ -121,7 +121,7 @@ class ChatScreenController(
                     observer!!.sendMessage(messageDC)
                 }
                 files?.forEach { file ->
-                    val messageDC = Repository.createMessage(currentChat,file = file, type = MessageDC.FILE)
+                    val messageDC = Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }

@@ -34,6 +34,7 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 @Composable
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
     Repository.messagesDao = messagesDao
+    Repository.chatDao = chatDao
     var startDestination: String
     val fistFilePath = remember { Repository.fistFilePath }
     if (KMPFile(fistFilePath).exists()) {
