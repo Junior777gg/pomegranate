@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
         Notifications.context = this
         FileSaver.context = this
         Camera.context = this
+        AudioPlaybackManager.context = applicationContext
         super.onCreate(savedInstanceState)
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),

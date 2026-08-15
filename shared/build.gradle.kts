@@ -46,6 +46,9 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
             implementation("com.google.crypto.tink:tink:1.21.0")
             implementation("org.bytedeco:javacv-platform:1.5.10")
+            implementation("org.openjfx:javafx-base:21:win")
+            implementation("org.openjfx:javafx-graphics:21:win")
+            implementation("org.openjfx:javafx-media:21:win")
         }
         androidMain.dependencies {
             implementation(files("libs/HideP2P.jar"))

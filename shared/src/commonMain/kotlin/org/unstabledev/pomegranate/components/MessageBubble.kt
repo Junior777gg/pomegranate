@@ -29,6 +29,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -379,9 +382,35 @@ fun MessageBubble(
                             }
                         }
                     }
+
+                    MessageDC.AUDIO -> {
+                        Column {
+                            AudioPlayerWidget(
+                                message.data.decodeToString(), Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Text(
+                                    text = message.time,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 11.sp
+                                )
+                                Spacer(Modifier.width(2.dp))
+                                Icon(
+                                    modifier = Modifier.size(15.dp),
+                                    imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        }
+                    }
                 }
 
-                if (message.type != MessageDC.IMAGE) {
+                if (message.type != MessageDC.IMAGE && message.type != MessageDC.AUDIO) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {

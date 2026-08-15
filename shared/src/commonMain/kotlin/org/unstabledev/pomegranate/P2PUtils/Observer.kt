@@ -65,16 +65,14 @@ class Observer(
                     val map = mutableMapOf<Byte, MutableList<Data>>()
                     launch {
                         flow.collect {
-                            if (it is Data.Bytes && it.bytes.size == 1) {
+                            if (it is Data.Bytes && it.bytes.size == 1 && deliverMap[it.bytes[0]]!=null) {
                                 val buffer = it.bytes
-                                if (deliverMap[buffer[0]]!=null) {
-                                    val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
-                                    if (message != null) {
-                                        message.isDelivered = true
-                                        messagesDao.upsertMessage(message)
-                                    }
-                                    deliverMap.remove(buffer[0])
-                                } else println("Received null message")
+                                val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
+                                if (message != null) {
+                                    message.isDelivered = true
+                                    messagesDao.upsertMessage(message)
+                                }
+                                deliverMap.remove(buffer[0])
                             } else {
                                 when (it) {
                                     is Data.Bytes -> map.getOrPut(it.code, { mutableListOf() })
