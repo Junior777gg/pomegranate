@@ -22,9 +22,11 @@ object Repository {
     var lastCallType = ""
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
-    val myEmail by lazy{
-        while (KMPFile(fistFilePath).kmpReadText() == "") {}
-            KMPFile(fistFilePath).kmpReadText() }
+    val myEmail by lazy {
+        while (KMPFile(fistFilePath).kmpReadText() == "") {
+        }
+        KMPFile(fistFilePath).kmpReadText()
+    }
 
     init {
         if (KMPFile(fistFilePath).exists()) {
@@ -81,35 +83,51 @@ object Repository {
         _lastContact.value = contact
     }
 
-    fun createMessage(chatDC: ChatDC, message: String? = null, file: KMPFile? = null): MessageDC {
+    fun createMessage(chatDC: ChatDC, message: String? = null, file: KMPFile? = null, type: String): MessageDC {
         var currentMessage: MessageDC? = null
-        if (message != null) {
-            val time = now().toString().split("T")[1].split(":")
-            val messageDC = MessageDC(
-                email = chatDC.partnerEmail,
-                data = message.encodeToByteArray(),
-                type = MessageDC.TEXT,
-                time = "${time[0].toInt() + 3}:${time[1]}",
-                isMine = true,
-            )
-            currentMessage = messageDC
-        }
-        if (file != null) {
-            val time = now().toString().split("T")[1].split(":")
-            val type = when (file.getName().substringAfter(".")) {
-                "png", "jpg", "jpeg" -> MessageDC.IMAGE
-                "gif", "webp" -> MessageDC.ANIMATED_IMAGE
-                "ogg", "mp3" -> MessageDC.AUDIO
-                else -> MessageDC.FILE
+        when (type) {
+            MessageDC.TEXT -> {
+                val time = now().toString().split("T")[1].split(":")
+                val messageDC = MessageDC(
+                    email = chatDC.partnerEmail,
+                    data = message!!.encodeToByteArray(),
+                    type = MessageDC.TEXT,
+                    time = "${time[0].toInt() + 3}:${time[1]}",
+                    isMine = true,
+                )
+                currentMessage = messageDC
             }
-            val messageDC = MessageDC(
-                email = chatDC.partnerEmail,
-                data = file.getAbsolutePath().encodeToByteArray(),
-                type = type,
-                time = "${time[0].toInt() + 3}:${time[1]}",
-                isMine = true,
-            )
-            currentMessage = messageDC
+
+            MessageDC.CALL -> {
+                val time = now().toString().split("T")[1].split(":")
+                val messageDC = MessageDC(
+                    email = chatDC.partnerEmail,
+                    data = message!!.encodeToByteArray(),
+                    type = MessageDC.CALL,
+                    time = "${time[0].toInt() + 3}:${time[1]}",
+                    isMine = true,
+                )
+                currentMessage = messageDC
+            }
+            else -> {
+                if (file != null) {
+                    val time = now().toString().split("T")[1].split(":")
+                    val type = when (file.getName().substringAfter(".")) {
+                        "png", "jpg", "jpeg" -> MessageDC.IMAGE
+                        "gif", "webp" -> MessageDC.ANIMATED_IMAGE
+                        "ogg", "mp3" -> MessageDC.AUDIO
+                        else -> MessageDC.FILE
+                    }
+                    val messageDC = MessageDC(
+                        email = chatDC.partnerEmail,
+                        data = file.getAbsolutePath().encodeToByteArray(),
+                        type = type,
+                        time = "${time[0].toInt() + 3}:${time[1]}",
+                        isMine = true,
+                    )
+                    currentMessage = messageDC
+                }
+            }
         }
         return currentMessage!!
     }

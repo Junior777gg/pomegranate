@@ -54,14 +54,17 @@ class ChatScreenController(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).collect {
-                observer = it
+            launch {
+                availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).collect {
+                    observer = it
+                }
             }
         }
     }
 
-    fun startCall(onCallClick: () -> Unit, type: String = "Call") {
+    fun startCall(onCallClick: () -> Unit, type: String = "Call", isMyCall: Boolean = true) {
         lastCallType = type
+        Repository.setLastContact(chatDC.value)
         onCallClick.invoke()
     }
 
@@ -74,12 +77,12 @@ class ChatScreenController(
             val currentChat = chatDC.value
             val messagesList = mutableListOf<MessageDC>()
             if (message != null) {
-                val messageDC = Repository.createMessage(currentChat, message)
+                val messageDC = Repository.createMessage(currentChat, message, type = MessageDC.TEXT)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
             files?.forEach { file ->
-                val messageDC = Repository.createMessage(currentChat, file = file)
+                val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
@@ -113,12 +116,12 @@ class ChatScreenController(
             viewModelScope.launch(Dispatchers.IO) {
                 val currentChat = chatDC.value
                 if (message != null) {
-                    val messageDC = Repository.createMessage(currentChat, message)
+                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.TEXT)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
                 files?.forEach { file ->
-                    val messageDC = Repository.createMessage(currentChat, file = file)
+                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }

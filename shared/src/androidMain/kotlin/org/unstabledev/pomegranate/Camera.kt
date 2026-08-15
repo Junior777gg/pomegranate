@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.delay
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.Executors
@@ -47,8 +48,8 @@ actual class Camera {
     actual fun takePhoto(): String {
         val photoFile = File(
             "${Repository.pomegranatePath}temp",
-            "photo_${System.currentTimeMillis()}.jpg"
-        )
+            "photo_${System.currentTimeMillis()}.jpeg"
+        ).apply { createNewFile() }
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture?.takePicture(
             outputOptions,

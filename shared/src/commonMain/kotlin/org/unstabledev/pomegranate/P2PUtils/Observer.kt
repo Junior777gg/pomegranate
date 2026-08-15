@@ -68,8 +68,10 @@ class Observer(
                             if (it is Data.Bytes && it.bytes.size == 1) {
                                 val buffer = it.bytes
                                 val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
-                                message.isDelivered = true
-                                messagesDao.upsertMessage(message)
+                                if (message != null) {
+                                    message.isDelivered = true
+                                    messagesDao.upsertMessage(message)
+                                }
                                 deliverMap.remove(buffer[0])
                             } else {
                                 when (it) {
@@ -126,6 +128,7 @@ class Observer(
                                         (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
                                         when (messageDC.type) {
                                             MessageDC.TEXT -> messageDC.data.decodeToString().stripMarkdown()
+                                            MessageDC.CALL -> "📞 Звонок"
                                             MessageDC.IMAGE -> "🖼 Изображение"
                                             MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
                                             MessageDC.AUDIO -> "🎵 Аудио"
@@ -159,11 +162,11 @@ class Observer(
             }
             val json = Json.encodeToString(msg).encodeToByteArray()
             channel.send(json, code)
-            if (message.type != MessageDC.TEXT) {
-                val dataFile = KMPFile( data.decodeToString())
-                channel.send(dataFile, code)
-            } else {
+            if (message.type == MessageDC.TEXT || message.type == MessageDC.CALL) {
                 channel.send(data, code)
+            } else {
+                val dataFile = KMPFile(data.decodeToString())
+                channel.send(dataFile, code)
             }
 
         }
