@@ -1,7 +1,10 @@
 package org.unstabledev.pomegranate
 
+import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 
 actual class AudioPlayer actual constructor() {
     private var myPath: String? = null
@@ -45,52 +48,38 @@ actual class AudioPlayer actual constructor() {
         completionListener = listener
     }
 }
-//Merge test
 
 actual class AudioRecorder actual constructor() {
     private var recorder: MediaRecorder? = null
-    private var recording = false
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     actual fun start(outputFile: KMPFile) {
-        if (recording) return
+        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            throw SecurityException("RECORD_AUDIO permission not granted")
+        }
 
-        recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(context!!)
-        } else {
-            @Suppress("DEPRECATION")
-            MediaRecorder()
-        }.apply {
+        val mr = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.OGG)
             setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
-            setAudioSamplingRate(48000)
-            setAudioEncodingBitRate(64000)
-            setOutputFile(outputFile.getAbsolutePath())
-
-            try {
-                prepare()
-                start()
-                recording = true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                release()
-                throw e
-            }
+            setOutputFile(outputFile)
+            prepare()
+            start()
         }
+        recorder = mr
     }
 
     actual fun stop() {
-        if (!recording) return
-
         try {
             recorder?.stop()
+            recorder?.release()
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        recording = false
+        recorder = null
     }
 
-    actual fun isRecording(): Boolean = recording
+    actual fun isRecording(): Boolean = recorder != null
 
     actual fun release() {
         try {
@@ -99,6 +88,5 @@ actual class AudioRecorder actual constructor() {
             e.printStackTrace()
         }
         recorder = null
-        recording = false
     }
 }
