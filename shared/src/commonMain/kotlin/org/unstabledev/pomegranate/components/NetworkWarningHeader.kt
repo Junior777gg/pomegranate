@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.unstabledev.pomegranate.Firebase
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun NetworkWarningHeader() {
@@ -28,9 +29,9 @@ fun NetworkWarningHeader() {
         while (isActive) {
             value = Firebase.isAvailable()
             if (value) {
-                delay(10000)
+                delay(10000.milliseconds)
             } else {
-                delay(4000)
+                delay(4000.milliseconds)
             }
         }
     }

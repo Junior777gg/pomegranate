@@ -74,8 +74,8 @@ class ChatScreenController(
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
-            if (message == null && type == MessageDC.CALL){
-                val messageDC = Repository.createMessage(currentChat, type = MessageDC.CALL)
+            if (message == null && type == MessageDC.BEGIN_CALL){
+                val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
@@ -120,8 +120,8 @@ class ChatScreenController(
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }
-                if (message == null && type == MessageDC.CALL){
-                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.CALL)
+                if (message == null && type == MessageDC.BEGIN_CALL){
+                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }

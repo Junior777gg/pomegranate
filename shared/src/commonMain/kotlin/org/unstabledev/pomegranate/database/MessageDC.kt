@@ -22,7 +22,8 @@ data class MessageDC(
         const val ANIMATED_IMAGE = "anim_img"
         const val FILE = "file"
         const val AUDIO = "audio"
-        const val CALL = "call"
+        const val BEGIN_CALL = "call:begin_video"
+        const val ACCEPT_CALL = "call:accept"
     }
 }
 

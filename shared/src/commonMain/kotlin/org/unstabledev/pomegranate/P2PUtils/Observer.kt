@@ -1,6 +1,5 @@
 package org.unstabledev.pomegranate.P2PUtils
 
-import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -15,7 +14,6 @@ import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Call
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
@@ -28,6 +26,7 @@ import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.kmpCopyTo
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
+import kotlin.time.Duration.Companion.milliseconds
 
 class Observer(
     private val manager: P2PManagerImpl,
@@ -44,13 +43,13 @@ class Observer(
         receive()
         CoroutineScope(Dispatchers.IO).launch {
             while (timeOutMillis + lastAction > now().toEpochMilliseconds()) {
-                delay(5000)
+                delay(5000.milliseconds)
             }
             try {
                 scope.cancel()
                 manager.breakConnection()
             } finally {
-                availableChats.getOrPut(chatDC, { MutableSharedFlow(1) }).emit(null)
+                availableChats.getOrPut(chatDC) { MutableSharedFlow(1) }.emit(null)
             }
         }
     }
@@ -80,10 +79,10 @@ class Observer(
                                 deliverMap.remove(buffer[0])
                             } else {
                                 when (it) {
-                                    is Data.Bytes -> map.getOrPut(it.code, { mutableListOf() })
+                                    is Data.Bytes -> map.getOrPut(it.code) { mutableListOf() }
                                         .add(it)
 
-                                    is Data.Files -> map.getOrPut(it.code, { mutableListOf() })
+                                    is Data.Files -> map.getOrPut(it.code) { mutableListOf() }
                                         .add(it)
                                 }
                             }
@@ -126,42 +125,47 @@ class Observer(
                                         json
                                     }
                                     sendCode(key)
-                                    Notifications().push(
-                                        (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
-                                        when (messageDC.type) {
-                                            MessageDC.TEXT -> messageDC.data.decodeToString().stripMarkdown()
-                                            MessageDC.CALL -> "📞 Звонок"
-                                            MessageDC.IMAGE -> "🖼 Изображение"
-                                            MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
-                                            MessageDC.AUDIO -> "🎵 Аудио"
-                                            MessageDC.FILE -> "📁 Файл"
-                                            else -> "Неизвестно"
-                                        }
-                                    )
+                                    if(messageDC.type != MessageDC.ACCEPT_CALL) {
+                                        Notifications().push(
+                                            (chatDC.profile?.deserialize()?.displayName
+                                                ?: chatDC.partnerEmail),
+                                            when (messageDC.type) {
+                                                MessageDC.TEXT -> messageDC.data.decodeToString()
+                                                    .stripMarkdown()
+
+                                                MessageDC.BEGIN_CALL -> "📞 Звонок"
+                                                MessageDC.IMAGE -> "🖼 Изображение"
+                                                MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
+                                                MessageDC.AUDIO -> "🎵 Аудио"
+                                                MessageDC.FILE -> "📁 Файл"
+                                                else -> "Неизвестно"
+                                            }
+                                        )
+                                    }
                                     println(currentCall)
                                     println(messageDC.type)
-                                    if (messageDC.type == MessageDC.CALL && currentCall == null) {
+                                    val isCall = (messageDC.type == MessageDC.BEGIN_CALL || messageDC.type == MessageDC.ACCEPT_CALL)
+                                    if (isCall && currentCall == null) {
                                         val manager = P2PManagerImpl("${pomegranatePath}temp")
                                         val data = messageDC.data.decodeToString().split("&")
-                                        println("before")
+                                        println("Received call request")
                                         launch {
                                             manager.createConnection(data[0], data[1], data[2])
                                         }
-                                        println("after")
+                                        println("Created call connection")
                                         messageDC.data =
                                             "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
                                         currentCallState.value = Call(messageDC.email, manager, false)
-                                        sendMessage(messageDC)
-                                    } else if (messageDC.type == MessageDC.CALL && currentCall != null) {
+                                        sendMessage(messageDC.copy(type = MessageDC.ACCEPT_CALL))
+                                    } else if (isCall && currentCall != null) {
                                         val data = messageDC.data.decodeToString().split("&")
                                         val call = currentCall!!
                                         val manager = currentCall!!.manager
-                                        println("before")
+                                        println("Received call answer")
                                         manager.createConnection(data[0], data[1], data[2])
-                                        println("after")
+                                        println("Created call connection")
                                         val copy = call.copy(manager = manager)
                                         currentCallState.value = copy
-
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -170,7 +174,7 @@ class Observer(
                                     map.remove(key)
                                 }
                             }
-                            delay(100)
+                            delay(100.milliseconds)
                         }
                     }
                 }
@@ -186,26 +190,26 @@ class Observer(
             var data = message.data
             val msg = message.copy()
             val code = Random.nextInt(1, 255).toByte()
-            if (message.type == MessageDC.CALL && data.isEmpty()) {
+            val isCall = (message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL)
+            if (isCall && data.isEmpty()) {
                 val manager = P2PManagerImpl("${pomegranatePath}temp")
                 currentCall = Call(message.email, manager)
                 data =
                     "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
             }
             deliverMap[code] = data
-            if (message.type != MessageDC.TEXT && message.type != MessageDC.CALL) {
+            if (message.type != MessageDC.TEXT && !isCall) {
                 msg.data = KMPFile(msg.data.decodeToString()).getName().encodeToByteArray()
             }
             val json = Json.encodeToString(msg).encodeToByteArray()
             channel.send(json, code)
-            if (message.type == MessageDC.TEXT || message.type == MessageDC.CALL) {
+            if (message.type == MessageDC.TEXT || isCall) {
                 println(data.size)
                 channel.send(data, code)
             } else {
                 val dataFile = KMPFile(data.decodeToString())
                 channel.send(dataFile, code)
             }
-
         }
     }
 

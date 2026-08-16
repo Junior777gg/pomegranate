@@ -69,7 +69,8 @@ actual class FileSaver {
                 downloadsDir.mkdirs()
             }
 
-            val targetFile = FileAccess(downloadsDir, currentFile.name)
+            val fileName = path.substringAfterLast('/').substringAfterLast('\\')
+            val targetFile = FileAccess(downloadsDir, fileName)
             currentFile.copyTo(targetFile, overwrite = true)
 
             true

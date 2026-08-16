@@ -36,7 +36,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
@@ -79,7 +78,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -98,7 +96,6 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.Util.Companion.buildTimeMarkMillis
-import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.MessageBubble
@@ -251,7 +248,8 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(messages.value, key = { message -> message.key }) { message ->
-                            MessageBubble(message, onImagePreviewClick, scope, snackbarHostState, settings.parseMarkdown)
+                            MessageBubble(message, chat, onImagePreviewClick,
+                                scope, snackbarHostState, settings.parseMarkdown)
                         }
                         if (displayNewContactWidget.value) {
                             item {
@@ -436,7 +434,7 @@ private fun ChatHeader(
         }
 
         Row {
-            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.CALL) }) {
+            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.BEGIN_CALL) }) {
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = "Звонок",
@@ -444,7 +442,7 @@ private fun ChatHeader(
                 )
             }
 
-            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.CALL) }) {
+            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.BEGIN_CALL) }) {
                 Icon(
                     imageVector = Icons.Default.VideoCall,
                     contentDescription = "Видео звонок",

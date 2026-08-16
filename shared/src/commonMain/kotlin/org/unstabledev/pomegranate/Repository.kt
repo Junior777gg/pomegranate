@@ -1,6 +1,5 @@
 package org.unstabledev.pomegranate
 
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +19,8 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.getValue
 import kotlin.time.Clock.System.now
+import kotlin.time.Duration.Companion.milliseconds
+
 data class Call(
     val email: String,
     val manager: P2PManagerImpl,
@@ -80,11 +81,9 @@ object Repository {
                             observer.sendMessage(message)
                         }
                         waitedConnection.remove(chatDC)
-                    } catch (_: TimeoutCancellationException) {
-
-                    }
+                    } catch (_: TimeoutCancellationException) { }
                 }
-                delay(3000)
+                delay(3000.milliseconds)
             }
         }
     }
@@ -109,12 +108,12 @@ object Repository {
                 currentMessage = messageDC
             }
 
-            MessageDC.CALL -> {
+            MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> {
                 val time = now().toString().split("T")[1].split(":")
                 val messageDC = MessageDC(
                     email = chatDC.partnerEmail,
                     data = ByteArray(0),
-                    type = MessageDC.CALL,
+                    type = type,
                     time = "${time[0].toInt() + 3}:${time[1]}",
                     isMine = true,
                 )

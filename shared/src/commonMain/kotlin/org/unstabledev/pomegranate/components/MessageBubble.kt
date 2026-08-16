@@ -29,9 +29,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,9 +47,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -66,20 +65,22 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
-import org.unstabledev.pomegranate.readBytes
-import kotlin.time.Clock
 
 @Composable
 fun MessageBubble(
     message: MessageDC,
+    chat: ChatDC,
     setImagePreview: (MessageDC) -> Unit,
     scope: CoroutineScope,
     snackbarHostState: SnackbarHostState,
@@ -94,26 +95,36 @@ fun MessageBubble(
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
     ) {
         val needPadding = message.type != MessageDC.IMAGE
+        val noNeedForBubble = message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL
+        val profile = chat.profile?.deserialize()
+        val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+        val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
+        @Composable
+        fun applyMessageBubble(base: Modifier): Modifier {
+            if(!noNeedForBubble) {
+                return base.widthIn(max = 280.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (message.isMine) 16.dp else 4.dp,
+                            bottomEnd = if (message.isMine) 4.dp else 16.dp
+                        )
+                    )
+                    .background(if (message.isMine) ColorTheme.MyMessageBubble else MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
+            }
+            return base
+        }
         Box(
-            modifier = Modifier
+            modifier = applyMessageBubble(Modifier
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = { menuOpen.value = true },
                         onTap = { if (message.type == MessageDC.IMAGE) { setImagePreview(message) } }
                     )
                 }
-                .widthIn(max = 280.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (message.isMine) 16.dp else 4.dp,
-                        bottomEnd = if (message.isMine) 4.dp else 16.dp
-                    )
-                )
-                .background(if (message.isMine) ColorTheme.MyMessageBubble else MaterialTheme.colorScheme.surface)
-                .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
-                .pointerHoverIcon(if (message.type == MessageDC.IMAGE) PointerIcon.Hand else PointerIcon.Default)
+                .pointerHoverIcon(if (message.type == MessageDC.IMAGE) PointerIcon.Hand else PointerIcon.Default))
         ) {
             Row(
                 verticalAlignment = Alignment.Bottom,
@@ -215,14 +226,14 @@ fun MessageBubble(
 
                     MessageDC.IMAGE -> {
                         var bitmap by remember(message.key) {
-                            mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+                            mutableStateOf<ImageBitmap?>(null)
                         }
                         var ratio by remember(message.key) {
                             mutableStateOf<Float?>(null)
                         }
 
                         LaunchedEffect(message.key) {
-                            val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
+                            val bmp = withContext(Dispatchers.Default) {
                                 getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                             }
                             bitmap = bmp
@@ -241,7 +252,7 @@ fun MessageBubble(
                                 Image(
                                     bitmap = bitmap!!,
                                     contentDescription = null,
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
                                 )
                             } else {
@@ -284,14 +295,14 @@ fun MessageBubble(
 
                     MessageDC.ANIMATED_IMAGE -> {
                         var bitmap by remember(message.key) {
-                            mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+                            mutableStateOf<ImageBitmap?>(null)
                         }
                         var ratio by remember(message.key) {
                             mutableStateOf<Float?>(null)
                         }
 
                         LaunchedEffect(message.key) {
-                            val bmp = kotlinx.coroutines.withContext(Dispatchers.Default) {
+                            val bmp = withContext(Dispatchers.Default) {
                                 getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                             }
                             bitmap = bmp
@@ -310,7 +321,7 @@ fun MessageBubble(
                                 Image(
                                     bitmap = bitmap!!,
                                     contentDescription = null,
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
                                 )
                             } else {
@@ -353,6 +364,8 @@ fun MessageBubble(
 
                     MessageDC.FILE -> {
                         val savedAlready = remember { mutableStateOf(false) }
+                        val path = remember { message.data.decodeToString() }
+                        val fileName = path.substringAfterLast('/').substringAfterLast('\\')
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(10.dp))
@@ -377,7 +390,7 @@ fun MessageBubble(
                                     tint = MaterialTheme.colorScheme.onBackground
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text("Файл", color = MaterialTheme.colorScheme.onBackground)
+                                Text(fileName, color = MaterialTheme.colorScheme.onBackground)
                                 Spacer(Modifier.width(2.dp))
                             }
                         }
@@ -408,9 +421,43 @@ fun MessageBubble(
                             }
                         }
                     }
+
+                    MessageDC.BEGIN_CALL -> {
+                        fun getCallText(): String {
+                            return if (message.isMine) "Вы начали звонок"
+                            else "$opponentName начал(а) звонок"
+                        }
+                        Column(Modifier.fillMaxWidth().height(30.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center) {
+                            Row(Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                .background(Color.Black.copy(alpha = 0.2f)).padding(vertical = 5.dp, horizontal = 15.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(getCallText(), color = Color.White)
+                            }
+                        }
+                    }
+
+                    MessageDC.ACCEPT_CALL -> {
+                        fun getCallText(): String {
+                            return if (message.isMine) "Вы приняли звонок"
+                            else "$opponentName принял(а) звонок"
+                        }
+                        Column(Modifier.fillMaxWidth().height(30.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center) {
+                            Row(Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                .background(Color.Black.copy(alpha = 0.2f)).padding(vertical = 5.dp, horizontal = 15.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(getCallText(), color = Color.White)
+                            }
+                        }
+                    }
                 }
 
-                if (message.type != MessageDC.IMAGE && message.type != MessageDC.AUDIO) {
+                if (message.type == MessageDC.TEXT || message.type == MessageDC.FILE) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {

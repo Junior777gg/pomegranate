@@ -95,7 +95,8 @@ actual class FileSaver {
                 } ?: return@withContext false
             } else {
                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = FileAccess(downloadsDir, currentFile.name)
+                val fileName = path.substringAfterLast('/').substringAfterLast('\\')
+                val file = FileAccess(downloadsDir, fileName)
                 FileOutputStream(file).use { outputStream ->
                     currentFile.inputStream().copyTo(outputStream)
                 }
