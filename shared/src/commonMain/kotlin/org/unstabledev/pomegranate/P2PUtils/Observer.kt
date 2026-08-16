@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate.P2PUtils
 
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -11,9 +12,13 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.unstabledev.pomegranate.Call
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
+import org.unstabledev.pomegranate.Repository.currentCall
+import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
@@ -65,7 +70,7 @@ class Observer(
                     val map = mutableMapOf<Byte, MutableList<Data>>()
                     launch {
                         flow.collect {
-                            if (it is Data.Bytes && it.bytes.size == 1 && deliverMap[it.bytes[0]]!=null) {
+                            if (it is Data.Bytes && it.bytes.size == 1 && deliverMap[it.bytes[0]] != null) {
                                 val buffer = it.bytes
                                 val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
                                 if (message != null) {
@@ -120,9 +125,6 @@ class Observer(
                                         json.data = (list[0] as Data.Bytes).bytes
                                         json
                                     }
-                                    messageDC.isMine = false
-                                    messageDC.email = chatDC.partnerEmail
-                                    messageDC.isDelivered = true
                                     sendCode(key)
                                     Notifications().push(
                                         (chatDC.profile?.deserialize()?.displayName ?: chatDC.partnerEmail),
@@ -136,6 +138,25 @@ class Observer(
                                             else -> "Неизвестно"
                                         }
                                     )
+                                    if (messageDC.type == MessageDC.CALL && currentCall == null) {
+                                        val manager = P2PManagerImpl("${pomegranatePath}temp")
+                                        val data = messageDC.data.decodeToString().split("&")
+                                        manager.createConnection(data[0], data[1], data[2])
+                                        messageDC.data =
+                                            "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
+                                        currentCallState.value = Call(messageDC.email, manager, false)
+                                        sendMessage(messageDC)
+                                    } else if(messageDC.type == MessageDC.CALL && currentCall != null) {
+                                        val data = messageDC.data.decodeToString().split("&")
+                                        val call = currentCall!!
+                                        val manager = currentCall!!.manager
+                                        manager.createConnection(data[0], data[1], data[2])
+                                        currentCallState.value = call.copy(manager = manager)
+
+                                    }
+                                    messageDC.isMine = false
+                                    messageDC.email = chatDC.partnerEmail
+                                    messageDC.isDelivered = true
                                     messagesDao.insertMessage(messageDC)
                                     map.remove(key)
                                 }
@@ -153,18 +174,23 @@ class Observer(
     fun sendMessage(message: MessageDC) {
         lastAction = now().toEpochMilliseconds()
         scope.launch {
-            val data = message.data
+            var data = message.data
             val msg = message.copy()
             val code = Random.nextInt(1, 255).toByte()
+            if (message.type == MessageDC.CALL && data.isEmpty()) {
+                val manager = P2PManagerImpl("${pomegranatePath}temp")
+                currentCall = Call(message.email, manager)
+                data =
+                    "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
+            }
             deliverMap[code] = data
-            if (message.type != MessageDC.TEXT) {
+            if (message.type != MessageDC.TEXT && message.type != MessageDC.CALL) {
                 msg.data = KMPFile(msg.data.decodeToString()).getName().encodeToByteArray()
-            }else{
-                println("input from Observer ${data.decodeToString()}")
             }
             val json = Json.encodeToString(msg).encodeToByteArray()
             channel.send(json, code)
             if (message.type == MessageDC.TEXT || message.type == MessageDC.CALL) {
+                println(data.size)
                 channel.send(data, code)
             } else {
                 val dataFile = KMPFile(data.decodeToString())

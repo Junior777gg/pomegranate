@@ -1,5 +1,7 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -11,16 +13,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
+import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.getValue
 import kotlin.time.Clock.System.now
-
+data class Call(
+    val email: String,
+    val manager: P2PManagerImpl,
+    val isMyCall : Boolean = true
+)
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    var lastCallType = ""
+    val currentCallState = mutableStateOf<Call?>(null)
+    var currentCall: Call? = null
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy {
@@ -105,7 +113,7 @@ object Repository {
                 val time = now().toString().split("T")[1].split(":")
                 val messageDC = MessageDC(
                     email = chatDC.partnerEmail,
-                    data = message!!.encodeToByteArray(),
+                    data = ByteArray(0),
                     type = MessageDC.CALL,
                     time = "${time[0].toInt() + 3}:${time[1]}",
                     isMine = true,

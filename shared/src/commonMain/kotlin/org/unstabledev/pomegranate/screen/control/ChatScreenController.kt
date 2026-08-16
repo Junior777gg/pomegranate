@@ -18,7 +18,6 @@ import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
-import org.unstabledev.pomegranate.Repository.lastCallType
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
@@ -62,29 +61,27 @@ class ChatScreenController(
         }
     }
 
-    fun startCall(onCallClick: () -> Unit, type: String = "Call", isMyCall: Boolean = true) {
-        lastCallType = type
-        Repository.setLastContact(chatDC.value)
-        onCallClick.invoke()
-    }
-
     fun loadMore() {
         _pageSize.value += PAGE_SIZE_STEP
     }
 
-    fun startMessaging(message: String? = null, files: List<KMPFile>? = null) {
+    fun startMessaging(message: String? = null, files: List<KMPFile>? = null, type: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentChat = chatDC.value
             val messagesList = mutableListOf<MessageDC>()
-            if (message != null) {
-                println("input from chat screen controller $message")
+            if (message != null && type == MessageDC.TEXT) {
                 val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
+                messagesDao.insertMessage(messageDC)
+                messagesList.add(messageDC)
+            }
+            if (message == null && type == MessageDC.CALL){
+                val messageDC = Repository.createMessage(currentChat, type = MessageDC.CALL)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
             if (files != null) {
                 files.forEach { file ->
-                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.FILE, file = file)
+                    val messageDC = Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
                     messagesDao.insertMessage(messageDC)
                     messagesList.add(messageDC)
                 }
@@ -112,14 +109,19 @@ class ChatScreenController(
         }
     }
 
-    fun send(message: String? = null, files: List<KMPFile>? = null) {
+    fun send(message: String? = null, files: List<KMPFile>? = null, type: String) {
         if (observer == null) {
-            startMessaging(message, files)
+            startMessaging(message, files, type)
         } else {
             viewModelScope.launch(Dispatchers.IO) {
                 val currentChat = chatDC.value
-                if (message != null) {
+                if (message != null && type == MessageDC.TEXT) {
                     val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
+                    messagesDao.insertMessage(messageDC)
+                    observer!!.sendMessage(messageDC)
+                }
+                if (message == null && type == MessageDC.CALL){
+                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.CALL)
                     messagesDao.insertMessage(messageDC)
                     observer!!.sendMessage(messageDC)
                 }

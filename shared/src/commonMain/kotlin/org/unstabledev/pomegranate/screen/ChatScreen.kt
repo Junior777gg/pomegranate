@@ -185,7 +185,7 @@ fun ChatScreen(
                     try {
                         val preparedFiles: List<KMPFile> = dropped as List<KMPFile>
                         println("processed ${preparedFiles.size} dropped-in files")
-                        viewModel.send(files = preparedFiles)
+                        viewModel.send(files = preparedFiles, type = MessageDC.FILE)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -426,7 +426,7 @@ private fun ChatHeader(
         }
 
         Row {
-            IconButton(onClick = { viewModel.startCall(onCallClick) }) {
+            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.CALL) }) {
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = "Звонок",
@@ -434,7 +434,7 @@ private fun ChatHeader(
                 )
             }
 
-            IconButton(onClick = { viewModel.startCall(onCallClick, "Video") }) {
+            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.CALL) }) {
                 Icon(
                     imageVector = Icons.Default.VideoCall,
                     contentDescription = "Видео звонок",
@@ -592,7 +592,7 @@ private fun MessageInput(
                             .clickable {
                                 ChooseFiles().getFiles { files ->
                                     if (files.isNotEmpty()) {
-                                        viewModel.send(files = files)
+                                        viewModel.send(files = files, type = MessageDC.FILE)
                                     }
                                 }
                             },
@@ -676,13 +676,13 @@ private fun MessageInput(
                                     Repository.pomegranatePath + "temp",
                                     "voice_${Clock.System.now().hashCode()}.ogg"
                                 )
-                                viewModel.send(files = listOf(voiceFile))
+                                viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
                         }
                     } else if (text.isNotEmpty()) {
-                        viewModel.send(text)
+                        viewModel.send(text, type = MessageDC.TEXT)
                         state.clearText()
                     } else {
                         scope.launch {

@@ -49,8 +49,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun BetterCallSoulScreen(navWayObj: NavigationWays) {
-    val viewModel = viewModel { BetterCallSoulScreenController() }
     val camera = remember { Camera() }
+    camera.StartCamera(true)
+    val viewModel = viewModel { BetterCallSoulScreenController(camera) }
 
     val microphoneActive = remember { mutableStateOf(true) }
     val cameraActive = remember { mutableStateOf(false) }
@@ -81,8 +82,11 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     }
 
     Box {
-        camera.StartCamera(true)
-        camera.CameraPreview(modifier = Modifier.fillMaxSize())
+        val bitmap = viewModel.image.value
+        if (bitmap != null) {
+            Image(modifier = Modifier.fillMaxSize(), bitmap = bitmap, contentDescription = null)
+        }
+        camera.CameraPreview(modifier = Modifier.size(100.dp))
         Row(
             applyScreenPadding(Modifier.fillMaxWidth().align(Alignment.TopCenter)),
             horizontalArrangement = Arrangement.Center
