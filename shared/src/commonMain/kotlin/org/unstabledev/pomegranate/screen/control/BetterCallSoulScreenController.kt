@@ -18,11 +18,13 @@ class BetterCallSoulScreenController(val camera: Camera) : ViewModel() {
     val image = mutableStateOf<ImageBitmap?>(null)
 
     init {
+        println("betterCallSoulScreenController")
         viewModelScope.launch(Dispatchers.IO) {
             while (call.manager.channel == null) {
                 delay(100)
                 println(null)
             }
+            println("notnull")
             val channel = call.manager.channel!!
             launch {
                 while (true) {
@@ -33,11 +35,12 @@ class BetterCallSoulScreenController(val camera: Camera) : ViewModel() {
                 }
             }
             launch {
-                camera.videoStream {
-                    launch {
-                        println(it.size)
-                        channel.send(it)
+                while (true) {
+                    val frame = camera.getFrame()
+                    if (frame != null) {
+                        channel.send(frame)
                     }
+                    delay(100)
                 }
             }
         }

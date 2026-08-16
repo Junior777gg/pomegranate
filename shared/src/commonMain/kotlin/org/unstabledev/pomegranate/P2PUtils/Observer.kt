@@ -138,20 +138,29 @@ class Observer(
                                             else -> "Неизвестно"
                                         }
                                     )
+                                    println(currentCall)
+                                    println(messageDC.type)
                                     if (messageDC.type == MessageDC.CALL && currentCall == null) {
                                         val manager = P2PManagerImpl("${pomegranatePath}temp")
                                         val data = messageDC.data.decodeToString().split("&")
-                                        manager.createConnection(data[0], data[1], data[2])
+                                        println("before")
+                                        launch {
+                                            manager.createConnection(data[0], data[1], data[2])
+                                        }
+                                        println("after")
                                         messageDC.data =
                                             "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
                                         currentCallState.value = Call(messageDC.email, manager, false)
                                         sendMessage(messageDC)
-                                    } else if(messageDC.type == MessageDC.CALL && currentCall != null) {
+                                    } else if (messageDC.type == MessageDC.CALL && currentCall != null) {
                                         val data = messageDC.data.decodeToString().split("&")
                                         val call = currentCall!!
                                         val manager = currentCall!!.manager
+                                        println("before")
                                         manager.createConnection(data[0], data[1], data[2])
-                                        currentCallState.value = call.copy(manager = manager)
+                                        println("after")
+                                        val copy = call.copy(manager = manager)
+                                        currentCallState.value = copy
 
                                     }
                                     messageDC.isMine = false
