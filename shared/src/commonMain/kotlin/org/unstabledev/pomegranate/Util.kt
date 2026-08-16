@@ -3,6 +3,7 @@ package org.unstabledev.pomegranate
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.intl.Locale
@@ -104,6 +105,45 @@ class Util {
             result = result.replace(Regex("^\\s*[-*_]{3,}\\s*$", RegexOption.MULTILINE), "")
 
             return result
+        }
+
+        fun MutableState<Int>.buildTimeMark(): String {
+            val elapsedSeconds = this.value
+            val hours = elapsedSeconds / 3600
+            val minutes = (elapsedSeconds % 3600) / 60
+            val seconds = elapsedSeconds % 60
+            return buildString {
+                if (hours > 0) {
+                    append(hours)
+                    append(':')
+                    append(minutes.toString().padStart(2, '0'))
+                } else {
+                    append(minutes.toString().padStart(2, '0'))
+                }
+                append(':')
+                append(seconds.toString().padStart(2, '0'))
+            }
+        }
+
+        fun MutableState<Int>.buildTimeMarkMillis(): String {
+            val elapsedSeconds = this.value / 10
+            val elapsed100Ms = this.value % 10
+            val hours = elapsedSeconds / 3600
+            val minutes = (elapsedSeconds % 3600) / 60
+            val seconds = elapsedSeconds % 60
+            return buildString {
+                if (hours > 0) {
+                    append(hours)
+                    append(':')
+                    append(minutes.toString().padStart(2, '0'))
+                } else {
+                    append(minutes.toString().padStart(1, '0'))
+                }
+                append(':')
+                append(seconds.toString().padStart(2, '0'))
+                append(',')
+                append(elapsed100Ms.toString().padStart(1, '0'))
+            }
         }
     }
 }

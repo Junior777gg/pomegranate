@@ -52,26 +52,35 @@ actual class AudioPlayer actual constructor() {
 actual class AudioRecorder actual constructor() {
     private var recorder: MediaRecorder? = null
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     actual fun start(outputFile: KMPFile) {
         if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             throw SecurityException("RECORD_AUDIO permission not granted")
         }
 
-        val mr = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.OGG)
-            setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
-            setOutputFile(outputFile)
-            prepare()
-            start()
+        stop()
+
+        try {
+            val mr = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.OGG)
+                setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
+                setOutputFile(outputFile)
+                prepare()
+                start()
+            }
+            recorder = mr
+        } catch (e: Exception) {
+            android.util.Log.e("AudioRecorder", "Failed to start recording", e)
+            stop()
+            throw e
         }
-        recorder = mr
     }
 
     actual fun stop() {
         try {
             recorder?.stop()
+        } catch (_: Exception) { }
+        try {
             recorder?.release()
         } catch (e: Exception) {
             e.printStackTrace()
