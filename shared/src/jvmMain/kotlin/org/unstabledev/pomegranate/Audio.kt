@@ -91,7 +91,14 @@ actual class AudioPlayer actual constructor() {
             latch.countDown()
         }
 
-        latch.await()
+        try {
+            if (!latch.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                initError = RuntimeException("Timeout waiting for JavaFX MediaPlayer to prepare")
+            }
+        } catch (e: InterruptedException) {
+            initError = e
+        }
+
         initError?.let { throw RuntimeException(it) }
     }
 

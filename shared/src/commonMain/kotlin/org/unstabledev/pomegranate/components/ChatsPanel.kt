@@ -157,6 +157,8 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
                     when (msg.type) {
                         MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
                         MessageDC.IMAGE -> "Изображение"
+                        MessageDC.ANIMATED_IMAGE -> "Изображение"
+                        MessageDC.AUDIO -> "Аудио"
                         MessageDC.FILE -> "Файл"
                         else -> "Неизвестно"
                     }

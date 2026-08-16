@@ -1,5 +1,10 @@
 package org.unstabledev.pomegranate.screen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
@@ -69,8 +75,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,6 +97,7 @@ import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.Util.Companion.buildTimeMarkMillis
 import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
@@ -104,6 +114,7 @@ import org.unstabledev.pomegranate.fileDropArea
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -171,7 +182,6 @@ fun ChatScreen(
         }
     }
     Scaffold(
-        modifier = applyScreenPadding(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
@@ -553,7 +563,16 @@ private fun MessageInput(
     val scope = rememberCoroutineScope()
     var isRecording by remember { mutableStateOf(false) }
     val recorder = remember { AudioRecorder() }
+    var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
+    val elapsedSeconds = remember { mutableStateOf(0) }
 
+    LaunchedEffect(Unit) {
+        while (true) {
+            if (!isRecording) elapsedSeconds.value = 0
+            delay(100.milliseconds)
+            elapsedSeconds.value++
+        }
+    }
     DisposableEffect(Unit) {
         onDispose {
             if (recorder.isRecording()) {
@@ -565,6 +584,7 @@ private fun MessageInput(
 
     Row(
         modifier = Modifier
+            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0f), Color.Black.copy(alpha = 0.2f))))
             .fillMaxWidth()
             .padding(
                 horizontal = 8.dp, vertical = if (isMobile) {
@@ -578,6 +598,7 @@ private fun MessageInput(
         Box(
             modifier = Modifier
                 .weight(1f)
+                .shadow(2.dp, CircleShape)
                 .heightIn(min = 40.dp, max = 120.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.surface)
@@ -585,7 +606,11 @@ private fun MessageInput(
             contentAlignment = Alignment.CenterStart
         ) {
             Row {
-                if (state.text.isEmpty() && !isRecording) {
+                AnimatedVisibility(
+                    visible = (state.text.isEmpty() && !isRecording),
+                    enter = fadeIn() + slideInHorizontally(initialOffsetX = { -it / 2 }),
+                    exit = fadeOut() + slideOutHorizontally(targetOffsetX = { -it / 2 })
+                ) {
                     Box(
                         modifier = Modifier
                             .height(22.5.dp)
@@ -617,7 +642,7 @@ private fun MessageInput(
                         LaunchedEffect(Unit) {
                             while (true) {
                                 alpha = if (alpha == 1f) 0.3f else 1f
-                                delay(500)
+                                delay(500.milliseconds)
                             }
                         }
                         Box(
@@ -627,7 +652,7 @@ private fun MessageInput(
                                 .background(Color.Red.copy(alpha = alpha))
                         )
                         Text(
-                            "Запись...",
+                            elapsedSeconds.buildTimeMarkMillis(),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 15.sp
                         )
@@ -659,44 +684,90 @@ private fun MessageInput(
 
         Spacer(modifier = Modifier.width(8.dp))
 
+        if (isRecording) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .shadow(2.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(ColorTheme.Warning)
+                    .clickable {
+                        try {
+                            recorder.stop()
+                            isRecording = false
+
+                            currentVoiceFile?.let { voiceFile ->
+                                voiceFile.delete()
+                                currentVoiceFile = null
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            isRecording = false
+                            currentVoiceFile = null
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Отменить",
+                    tint = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
         Box(
             modifier = Modifier
                 .size(44.dp)
+                .shadow(2.dp, CircleShape)
                 .clip(CircleShape)
                 .background(ColorTheme.MessageAccent)
                 .clickable {
                     val text = state.text.toString().trim()
                     if (isRecording) {
-                        recorder.stop()
-                        isRecording = false
+                        try {
+                            recorder.stop()
+                            isRecording = false
 
-                        scope.launch {
-                            try {
-                                val voiceFile = KMPFile(
-                                    Repository.pomegranatePath + "temp",
-                                    "voice_${Clock.System.now().hashCode()}.ogg"
-                                )
-                                viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                            currentVoiceFile?.let { voiceFile ->
+                                if (voiceFile.exists() && voiceFile.length() > 0) {
+                                    scope.launch {
+                                        viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
+                                    }
+                                } else {
+                                    println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
+                                }
+                                currentVoiceFile = null
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            isRecording = false
+                            currentVoiceFile = null
                         }
                     } else if (text.isNotEmpty()) {
                         viewModel.send(text, type = MessageDC.TEXT)
                         state.clearText()
                     } else {
-                        scope.launch {
-                            try {
-                                val voiceFile = KMPFile(
-                                    Repository.pomegranatePath + "temp",
-                                    "voice_${Clock.System.now().hashCode()}.ogg"
-                                )
-                                voiceFile.getParentFile()?.mkdirs()
-                                recorder.start(voiceFile)
-                                isRecording = true
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                        try {
+                            val tempDir = KMPFile(Repository.pomegranatePath, "temp")
+                            if (!tempDir.exists()) {
+                                tempDir.mkdirs()
                             }
+
+                            val voiceFile = KMPFile(
+                                tempDir,
+                                "voice_${Clock.System.now().hashCode()}.ogg"
+                            )
+
+                            currentVoiceFile = voiceFile
+                            recorder.start(voiceFile)
+                            isRecording = true
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            isRecording = false
+                            currentVoiceFile = null
                         }
                     }
                 },
