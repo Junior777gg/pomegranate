@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
@@ -65,6 +66,7 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.menu
+import pomegranate.shared.generated.resources.test_avatar
 
 @Composable
 fun SearchableChatsPanel(
@@ -174,14 +176,23 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
 
 @Composable
 fun addChatBackground(base: Modifier = Modifier): Modifier {
-    return base.background(
-        Brush.linearGradient(
-            listOf(
-                lerp(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.background, 0.25f),
-                MaterialTheme.colorScheme.primary
+    val settings by AppSettings.state.collectAsState()
+    if (settings.customChatId==0) {
+        return base.background(
+            Brush.linearGradient(
+                listOf(
+                    lerp(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.background,
+                        0.25f
+                    ),
+                    MaterialTheme.colorScheme.primary
+                )
             )
         )
-    )
+    } else {
+        return base.paint(painterResource(Res.drawable.test_avatar))
+    }
 }
 
 @Composable

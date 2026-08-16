@@ -20,6 +20,9 @@ class ColorTheme {
         val BackgroundDark = Color(0xFF181A1C)
         val SurfaceDark = Color(0xFF292B2D)
         val OnSurfaceDark = Color(0xFF717376)
+        val BackgroundAmoled = Color(0xFF000000)
+        val SurfaceAmoled = Color(0xFF101011)
+        val OnSurfaceAmoled = Color(0xFF1C1D1F)
         val Warning = Color(0xFFFF2929)
         val TextDark = Color(0xFFF9FBFF)
         val TextLight = Color(0xFF151617)
@@ -35,6 +38,16 @@ class ColorTheme {
         onBackground = TextDark,
         surface = SurfaceDark,
         onSurface = OnSurfaceDark,
+        error = Warning
+    )
+
+    private val AmoledColorScheme = darkColorScheme(
+        primary = AccentLight,
+        onPrimary = TextDark,
+        background = BackgroundAmoled,
+        onBackground = TextDark,
+        surface = SurfaceAmoled,
+        onSurface = OnSurfaceAmoled,
         error = Warning
     )
 
@@ -60,8 +73,9 @@ class ColorTheme {
             ThemeMode.SYSTEM -> isSystemInDarkTheme()
             ThemeMode.LIGHT -> false
             ThemeMode.DARK -> true
+            ThemeMode.AMOLED -> true
         }
-        val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+        val colorScheme = if (theme==ThemeMode.AMOLED) AmoledColorScheme else if (darkTheme) DarkColorScheme else LightColorScheme
 
         MaterialTheme(
             colorScheme = colorScheme,

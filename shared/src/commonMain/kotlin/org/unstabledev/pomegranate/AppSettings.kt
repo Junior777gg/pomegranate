@@ -13,7 +13,8 @@ import kotlin.time.Clock
 enum class ThemeMode {
     SYSTEM,
     LIGHT,
-    DARK
+    DARK,
+    AMOLED
 }
 @Serializable
 data class FirebaseAddress(
@@ -39,6 +40,8 @@ data class AppSettingsState(
     val hideSendBarWhenNoNetwork: Boolean = true,
     val parseMarkdown: Boolean = true,
     val chatTripleColumn: Boolean = false,
+    val amoledUnlocked: Boolean = false,
+    val customChatId: Int = 0,
     val desktopHomeSplit: Float = 1.0f,
 ) {
     val selectedFirebaseUrl: String
@@ -113,12 +116,20 @@ object AppSettings {
         _state.value = _state.value.copy(theme = mode)
     }
 
+    fun setCustomChatId(id: Int) {
+        _state.value = _state.value.copy(customChatId = id)
+    }
+
     fun selectFirebaseAddress(id: String) {
         _state.value = _state.value.copy(selectedFirebaseAddressId = id)
     }
 
     fun setHideSendBarWhenNoNetwork(v: Boolean) {
         _state.value = _state.value.copy(hideSendBarWhenNoNetwork = v)
+    }
+
+    fun setAmoledUnlocked(v: Boolean) {
+        _state.value = _state.value.copy(amoledUnlocked = v)
     }
 
     fun setParseMarkdown(v: Boolean) {

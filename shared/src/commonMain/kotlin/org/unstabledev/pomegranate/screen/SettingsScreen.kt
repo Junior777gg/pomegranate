@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.ShieldMoon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -55,6 +56,7 @@ import org.unstabledev.pomegranate.database.ChatDao
 fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     val settings by AppSettings.state.collectAsState()
     val scope = rememberCoroutineScope()
+    val amoledClicks = remember { mutableStateOf(0) }
 
     Column(applyScreenPadding()) {
         Row(
@@ -122,12 +124,32 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                     thickness = 3.dp,
                                     modifier = Modifier.padding(start = 16.dp)
                                 )
-                                IconButton(onClick = { AppSettings.setTheme(ThemeMode.DARK) }) {
+                                IconButton(onClick = {
+                                    AppSettings.setTheme(ThemeMode.DARK)
+                                    amoledClicks.value += 1
+                                    if (amoledClicks.value>3) AppSettings.setAmoledUnlocked(true)
+                                }) {
                                     Icon(
                                         imageVector = Icons.Default.DarkMode,
                                         contentDescription = "Тёмная тема",
                                         tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
                                     )
+                                }
+                                if (settings.amoledUnlocked) {
+                                    VerticalDivider(
+                                        color = MaterialTheme.colorScheme.background,
+                                        thickness = 3.dp,
+                                        modifier = Modifier.padding(start = 16.dp)
+                                    )
+                                    IconButton(onClick = {
+                                        AppSettings.setTheme(ThemeMode.AMOLED)
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.ShieldMoon,
+                                            contentDescription = "Amoled тема",
+                                            tint = if (settings.theme == ThemeMode.AMOLED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
                                 }
                             }
                         }
