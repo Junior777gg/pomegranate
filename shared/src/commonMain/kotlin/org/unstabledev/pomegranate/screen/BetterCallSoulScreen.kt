@@ -50,7 +50,6 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     val camera = remember { Camera() }
-    camera.StartCamera(true)
     val viewModel = viewModel { BetterCallSoulScreenController(camera) }
 
     val microphoneActive = remember { mutableStateOf(true) }
@@ -75,12 +74,12 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     }
 
     LaunchedEffect(Unit) {
+        camera.startCamera(true)
         while (true) {
             delay(1000.milliseconds)
             elapsedSeconds.value++
         }
     }
-
     Box {
         val bitmap = viewModel.image.value
         if (bitmap != null) {
