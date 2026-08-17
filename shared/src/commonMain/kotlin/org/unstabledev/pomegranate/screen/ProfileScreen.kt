@@ -214,45 +214,32 @@ private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: 
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        if (profile!=null) {
-                            Column(Modifier.padding(vertical = 4.dp)) {
-                                if (profile.description.isNotBlank()) {
-                                    InfoRow(label = "О себе", value = profile.description)
-                                    Divider()
-                                }
-                                if (profile.location.isNotBlank()) {
-                                    InfoRow(label = "Локация", value = profile.location)
-                                    Divider()
-                                }
-                                if (profile.profileUrl.isNotBlank()) {
-                                    InfoRow(
-                                        label = "Ссылка",
-                                        value = profile.profileUrl,
-                                        valueColor = MaterialTheme.colorScheme.primary,
-                                        canBeCopied = true,
-                                        snackbarHostState = snackbarHostState
-                                    )
-                                    Divider()
-                                }
+                        Column(Modifier.padding(vertical = 4.dp)) {
+                            if (profile?.description?.isNotBlank()?:false) {
+                                InfoRow(label = "О себе", value = profile.description)
+                                Divider()
+                            }
+                            if (profile?.location?.isNotBlank()?:false) {
+                                InfoRow(label = "Локация", value = profile.location)
+                                Divider()
+                            }
+                            if (profile?.profileUrl?.isNotBlank()?:false) {
                                 InfoRow(
-                                    label = "Email",
-                                    value = Repository.lastOpponentEmail,
+                                    label = "Ссылка",
+                                    value = profile.profileUrl,
+                                    valueColor = MaterialTheme.colorScheme.primary,
                                     canBeCopied = true,
                                     snackbarHostState = snackbarHostState
                                 )
+                                Divider()
                             }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Профиль не найден",
-                                    fontSize = 16.sp
-                                )
-                            }
+                            InfoRow(
+                                label = "Email",
+                                value = Repository.lastOpponentEmail,
+                                canBeCopied = true,
+                                valueColor = MaterialTheme.colorScheme.primary,
+                                snackbarHostState = snackbarHostState
+                            )
                         }
                     }
                 }
@@ -318,9 +305,8 @@ private fun FilesList(snackbarHostState: SnackbarHostState, scope: CoroutineScop
             val fileSize = remember(message.key) {
                 try {
                     val file = KMPFile(path)
-                    val sizeInMb = file.length() / (1024.0 * 1024.0)
-                    Util.formatBinarySize(sizeInMb.toLong())
-                } catch (e: Exception) {
+                    Util.formatBinarySize(file.length())
+                } catch (_: Exception) {
                     "- MB"
                 }
             }
@@ -417,6 +403,7 @@ private fun MediaGridItem(message: MessageDC, modifier: Modifier = Modifier, set
         modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.background)
             .clickable { setImagePreview(message) }
     ) {
         if (bitmap != null) {
