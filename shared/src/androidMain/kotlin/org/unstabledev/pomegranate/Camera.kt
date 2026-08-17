@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.github.panpf.sketch.util.rotate
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -94,7 +95,7 @@ actual class Camera {
                 .build().apply {
                     setAnalyzer(analysisExecutor) { imageProxy ->
                         try {
-                            val bitmap = imageProxy.toBitmap()
+                            val bitmap = imageProxy.toBitmap().rotate(-90)
                             val stream = ByteArrayOutputStream()
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 30, stream)
                             latestJpeg = stream.toByteArray()
