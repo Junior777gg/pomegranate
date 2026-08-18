@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 
 actual class P2PManagerImpl actual constructor(tempDir: String) {
     actual var channel: P2PChannelImpl? = null
-    val manager = P2PManager(tempDir)
+    var manager = P2PManager(tempDir)
     actual suspend fun getAddress(): String? {
         return manager.getAddress()
     }
@@ -15,16 +15,11 @@ actual class P2PManagerImpl actual constructor(tempDir: String) {
         return manager.getLocalAddress()
     }
 
-    actual suspend fun getPublicKeyJson(): String {
-        return manager.getPublicKeyJson()
-    }
-
     actual suspend fun createConnection(
         remoteAddress: String,
         remoteLocalAddress: String,
-        peerPublicKeyJson: String
     ): P2PChannelImpl {
-        val libChannel = manager.createConnection(remoteAddress, remoteLocalAddress, peerPublicKeyJson)
+        val libChannel = manager.createConnection(remoteAddress, remoteLocalAddress)
         while (true) {
             try {
                 channel = P2PChannelImpl(libChannel)
@@ -39,4 +34,13 @@ actual class P2PManagerImpl actual constructor(tempDir: String) {
     actual fun breakConnection() {
         manager.breakConnection()
     }
+
+    actual suspend fun fork(): P2PManagerImpl? {
+        val oldManager = manager   // сохраняем старый, рабочий менеджер
+        val newP2P = oldManager.fork() ?: return null
+        val impl = P2PManagerImpl(manager.tempDir)
+        impl.manager = newP2P
+        return impl
+        }
+
 }

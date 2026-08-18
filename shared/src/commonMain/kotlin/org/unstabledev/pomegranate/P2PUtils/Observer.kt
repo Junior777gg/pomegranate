@@ -125,7 +125,7 @@ class Observer(
                                         json
                                     }
                                     sendCode(key)
-                                    if(messageDC.type != MessageDC.ACCEPT_CALL) {
+                                    if (messageDC.type != MessageDC.ACCEPT_CALL) {
                                         Notifications().push(
                                             (chatDC.profile?.deserialize()?.displayName
                                                 ?: chatDC.partnerEmail),
@@ -142,30 +142,11 @@ class Observer(
                                             }
                                         )
                                     }
-                                    println(currentCall)
-                                    println(messageDC.type)
-                                    val isCall = (messageDC.type == MessageDC.BEGIN_CALL || messageDC.type == MessageDC.ACCEPT_CALL)
+                                    val isCall =
+                                        (messageDC.type == MessageDC.BEGIN_CALL || messageDC.type == MessageDC.ACCEPT_CALL)
                                     if (isCall && currentCall == null) {
-                                        val manager = P2PManagerImpl("${pomegranatePath}temp")
-                                        val data = messageDC.data.decodeToString().split("&")
-                                        println("Received call request")
-                                        launch {
-                                            manager.createConnection(data[0], data[1], data[2])
-                                        }
-                                        println("Created call connection")
-                                        messageDC.data =
-                                            "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
-                                        currentCallState.value = Call(messageDC.email, manager, false)
-                                        sendMessage(messageDC.copy(type = MessageDC.ACCEPT_CALL))
-                                    } else if (isCall && currentCall != null) {
-                                        val data = messageDC.data.decodeToString().split("&")
-                                        val call = currentCall!!
-                                        val manager = currentCall!!.manager
-                                        println("Received call answer")
-                                        manager.createConnection(data[0], data[1], data[2])
-                                        println("Created call connection")
-                                        val copy = call.copy(manager = manager)
-                                        currentCallState.value = copy
+                                        val manager = manager.fork()
+                                        currentCall = Call(chatDC.partnerEmail, manager!!, false)
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -192,10 +173,11 @@ class Observer(
             val code = Random.nextInt(1, 255).toByte()
             val isCall = (message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL)
             if (isCall && data.isEmpty()) {
-                val manager = P2PManagerImpl("${pomegranatePath}temp")
-                currentCall = Call(message.email, manager)
-                data =
-                    "${manager.getAddress()}&${manager.getLocalAddress()}&${manager.getPublicKeyJson()}".encodeToByteArray()
+                launch {
+                    val manager = manager.fork()
+                    currentCall = Call(message.email, manager!!)
+                }
+                data = "call".encodeToByteArray()
             }
             deliverMap[code] = data
             if (message.type != MessageDC.TEXT && !isCall) {
