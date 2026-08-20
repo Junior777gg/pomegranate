@@ -7,8 +7,10 @@ import javafx.util.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.CountDownLatch
@@ -18,6 +20,7 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
+import javax.sound.sampled.SourceDataLine
 import javax.sound.sampled.TargetDataLine
 
 private val jfxStarted = AtomicBoolean(false)
@@ -26,7 +29,8 @@ fun shutdownJavaFx() {
     if (jfxStarted.getAndSet(false)) {
         try {
             Platform.exit()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 }
 
@@ -35,7 +39,7 @@ private fun ensureJfxToolkit() {
         val latch = CountDownLatch(1)
         try {
             Platform.startup { latch.countDown() }
-        } catch (e: IllegalStateException) {
+        } catch (_: IllegalStateException) {
             latch.countDown()
         }
         latch.await()
@@ -48,7 +52,8 @@ private fun safeRunLater(action: () -> Unit) {
         if (jfxStarted.get()) {
             Platform.runLater(action)
         }
-    } catch (_: IllegalStateException) { }
+    } catch (_: IllegalStateException) {
+    }
 }
 
 actual class AudioPlayer actual constructor() {
@@ -129,19 +134,25 @@ actual class AudioPlayer actual constructor() {
     actual fun isPlaying(): Boolean =
         try {
             mediaPlayer?.status == MediaPlayer.Status.PLAYING
-        } catch (_: Exception) { false }
+        } catch (_: Exception) {
+            false
+        }
 
     actual fun isActive(): Boolean = true
 
     actual fun getDuration(): Long =
         try {
             mediaPlayer?.totalDuration?.toMillis()?.toLong()?.coerceAtLeast(0L) ?: 0L
-        } catch (_: Exception) { 0L }
+        } catch (_: Exception) {
+            0L
+        }
 
     actual fun getCurrentPosition(): Long =
         try {
             mediaPlayer?.currentTime?.toMillis()?.toLong()?.coerceAtLeast(0L) ?: 0L
-        } catch (_: Exception) { 0L }
+        } catch (_: Exception) {
+            0L
+        }
 
     actual fun setOnCompletionListener(listener: () -> Unit) {
         completionListener = listener
@@ -188,10 +199,14 @@ actual class AudioRecorder actual constructor() {
         try {
             targetDataLine?.stop()
             targetDataLine?.close()
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         try {
             recordingThread?.join(1000)
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     actual fun isRecording(): Boolean = isRunning && targetDataLine?.isOpen == true
@@ -199,4 +214,67 @@ actual class AudioRecorder actual constructor() {
     actual fun release() {
         stop()
     }
+}
+
+actual class CallAudioRecorder actual constructor() {
+    private var targetDataLine: TargetDataLine? = null
+    private var recordingThread: Thread? = null
+    val lastFrame = Channel<ByteArray>()
+    actual fun start() {
+        try {
+            val format = AudioFormat(16000f, 16, 1, true, false)
+            val info = DataLine.Info(TargetDataLine::class.java, format)
+
+            if (!AudioSystem.isLineSupported(info)) {
+                println("AudioRecorder: Audio line not supported on this system")
+                return
+            }
+
+            val line = AudioSystem.getLine(info) as TargetDataLine
+            line.open(format)
+            line.start()
+            targetDataLine = line
+            recordingThread = Thread {
+                runBlocking(Dispatchers.IO){
+                    val ais = AudioInputStream(line)
+                    while (recordingThread!!.isAlive) {
+                        val buffer = ByteArrayOutputStream(640)
+                        AudioSystem.write(ais, AudioFileFormat.Type.WAVE, buffer)
+                        lastFrame.send(buffer.toByteArray())
+                    }
+                }
+            }
+            recordingThread?.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    actual suspend fun getFrame(): ByteArray {
+        return lastFrame.receive()
+    }
+
+    actual fun stop() {
+        targetDataLine?.stop()
+    }
+
+}
+
+actual class CallAudioPlayer actual constructor() {
+    val audioFormat = AudioFormat(16000f, 16, 1, true, false)
+    lateinit var line: SourceDataLine
+    actual fun start() {
+        AudioSystem.getSourceDataLine(audioFormat)
+        line.open()
+    }
+
+    actual fun playChunk(chunk: ByteArray) {
+        line.write(chunk, 0, chunk.size)
+    }
+
+    actual fun stop() {
+        line.close()
+    }
+
 }

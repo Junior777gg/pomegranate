@@ -20,3 +20,15 @@ expect class AudioRecorder() {
     fun isRecording(): Boolean
     fun release()
 }
+
+expect class CallAudioRecorder() {
+    fun start()
+    suspend fun getFrame(): ByteArray
+    fun stop()
+}
+
+expect class CallAudioPlayer(){
+    fun start()
+    fun playChunk(chunk: ByteArray)
+    fun stop()
+}
