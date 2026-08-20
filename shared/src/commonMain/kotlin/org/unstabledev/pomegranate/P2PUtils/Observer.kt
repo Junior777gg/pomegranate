@@ -16,7 +16,6 @@ import org.unstabledev.pomegranate.Call
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
 import org.unstabledev.pomegranate.Repository.availableChats
-import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -145,11 +144,9 @@ class Observer(
                                     }
                                     val isCall =
                                         (messageDC.type == MessageDC.BEGIN_CALL || messageDC.type == MessageDC.ACCEPT_CALL)
-                                    if (isCall && currentCall == null) {
-                                        runBlocking(Dispatchers.IO) {
-                                            val manager = manager.fork()
-                                            currentCall = Call(chatDC.partnerEmail, manager!!, false)
-                                        }
+                                    if (isCall && currentCallState.value == null) {
+                                        val manager = manager.fork()
+                                        currentCallState.value = Call(chatDC.partnerEmail, manager!!, false)
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -177,10 +174,8 @@ class Observer(
             val isCall = (message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL)
             if (isCall && data.isEmpty()) {
                 launch {
-                    runBlocking(Dispatchers.IO) {
-                        val manager = manager.fork()
-                        currentCall = Call(message.email, manager!!)
-                    }
+                    val manager = manager.fork()
+                    currentCallState.value = Call(message.email, manager!!)
                 }
                 data = "call".encodeToByteArray()
             }

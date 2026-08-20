@@ -29,7 +29,6 @@ data class Call(
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val currentCallState = mutableStateOf<Call?>(null)
-    var currentCall: Call? = null
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy {
