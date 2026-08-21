@@ -34,7 +34,7 @@ actual class P2PManagerImpl actual constructor(tempDir: String) {
         manager.breakConnection()
     }
 
-    actual fun fork(): P2PManagerImpl{
+    actual suspend fun fork(): P2PManagerImpl{
         val newP2P = manager.fork()
         val impl = P2PManagerImpl(manager.tempDir)
         impl.manager = newP2P!!

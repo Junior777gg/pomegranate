@@ -137,9 +137,9 @@ actual class CallAudioRecorder actual constructor(){
         audioRecord?.startRecording()
         scope = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
-                val buffer = ByteBuffer.allocate(chunkSize)
-                audioRecord?.read(buffer,chunkSize)
-                lastChunk.send(buffer.array())
+                val buffer = ByteArray(chunkSize)
+                audioRecord?.read(buffer, 0, buffer.size)
+                lastChunk.send(buffer)
             }
         }
 

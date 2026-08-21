@@ -13,9 +13,11 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Call
+import org.unstabledev.pomegranate.CallState
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
 import org.unstabledev.pomegranate.Repository.availableChats
+import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -144,9 +146,11 @@ class Observer(
                                     }
                                     val isCall =
                                         (messageDC.type == MessageDC.BEGIN_CALL || messageDC.type == MessageDC.ACCEPT_CALL)
-                                    if (isCall && currentCallState.value == null) {
-                                        val manager = manager.fork()
-                                        currentCallState.value = Call(chatDC.partnerEmail, manager!!, false)
+                                    if (isCall) {
+                                        val videoManager = manager.fork()
+                                        val audioManager = manager.fork()
+                                        currentCall.value = Call(chatDC.partnerEmail, videoManager,audioManager, false)
+                                        currentCallState.emit(CallState.Calling)
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -174,8 +178,10 @@ class Observer(
             val isCall = (message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL)
             if (isCall && data.isEmpty()) {
                 launch {
-                    val manager = manager.fork()
-                    currentCallState.value = Call(message.email, manager!!)
+                    val videoManager = manager.fork()
+                    val audioManager = manager.fork()
+                    currentCall.value = Call(message.email, videoManager,audioManager)
+                    currentCallState.emit(CallState.AcceptedCall)
                 }
                 data = "call".encodeToByteArray()
             }

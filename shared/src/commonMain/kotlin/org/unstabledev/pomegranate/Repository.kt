@@ -23,12 +23,21 @@ import kotlin.time.Duration.Companion.milliseconds
 
 data class Call(
     val email: String,
-    val manager: P2PManagerImpl,
+    val videoManager: P2PManagerImpl,
+    val audioManager: P2PManagerImpl,
     val isMyCall : Boolean = true
 )
+
+sealed class CallState {
+    object NoCall : CallState()
+    object Calling : CallState()
+    object AcceptedCall : CallState()
+    object Cancelled : CallState()
+}
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val currentCallState = mutableStateOf<Call?>(null)
+    var currentCall = mutableStateOf<Call?>(null)
+    val currentCallState = MutableSharedFlow<CallState>()
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy {

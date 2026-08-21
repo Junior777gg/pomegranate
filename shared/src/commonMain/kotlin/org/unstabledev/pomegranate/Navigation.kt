@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import org.unstabledev.pomegranate.Repository.currentCall
+import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
@@ -35,7 +37,7 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
     Repository.messagesDao = messagesDao
     Repository.chatDao = chatDao
-    if (Repository.currentCallState.value != null) {
+    if (currentCall.value != null) {
         navController.navigate(Routes.CALL_SCREEN)
     }
     var startDestination: String

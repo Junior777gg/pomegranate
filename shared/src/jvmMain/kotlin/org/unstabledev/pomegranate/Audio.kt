@@ -218,7 +218,6 @@ actual class AudioRecorder actual constructor() {
 
 actual class CallAudioRecorder actual constructor() {
     private var targetDataLine: TargetDataLine? = null
-    private var recordingThread: Thread? = null
     val lastFrame = Channel<ByteArray>()
     actual fun start() {
         try {
@@ -234,17 +233,13 @@ actual class CallAudioRecorder actual constructor() {
             line.open(format)
             line.start()
             targetDataLine = line
-            recordingThread = Thread {
-                runBlocking(Dispatchers.IO){
-                    val ais = AudioInputStream(line)
-                    while (recordingThread!!.isAlive) {
-                        val buffer = ByteArrayOutputStream(640)
-                        AudioSystem.write(ais, AudioFileFormat.Type.WAVE, buffer)
-                        lastFrame.send(buffer.toByteArray())
-                    }
+            CoroutineScope(Dispatchers.IO).launch {
+                while (isActive) {
+                    val buffer = ByteArray(640)
+                    line.read(buffer, 0 , buffer.size)
+                    lastFrame.send(buffer)
                 }
             }
-            recordingThread?.start()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -265,7 +260,7 @@ actual class CallAudioPlayer actual constructor() {
     val audioFormat = AudioFormat(16000f, 16, 1, true, false)
     lateinit var line: SourceDataLine
     actual fun start() {
-        AudioSystem.getSourceDataLine(audioFormat)
+        line = AudioSystem.getSourceDataLine(audioFormat)
         line.open()
     }
 
