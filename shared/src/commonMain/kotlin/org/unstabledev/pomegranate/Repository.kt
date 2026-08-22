@@ -1,5 +1,7 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -9,6 +11,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
@@ -37,7 +40,7 @@ sealed class CallState {
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     var currentCall = mutableStateOf<Call?>(null)
-    val currentCallState = MutableSharedFlow<CallState>()
+    val currentCallState = MutableStateFlow<CallState>(CallState.NoCall)
     val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy {

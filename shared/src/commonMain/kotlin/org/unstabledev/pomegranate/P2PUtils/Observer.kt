@@ -8,7 +8,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -149,8 +148,8 @@ class Observer(
                                     if (isCall) {
                                         val videoManager = manager.fork()
                                         val audioManager = manager.fork()
+                                        currentCallState.value = CallState.Calling
                                         currentCall.value = Call(chatDC.partnerEmail, videoManager,audioManager, false)
-                                        currentCallState.emit(CallState.Calling)
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail
@@ -180,8 +179,8 @@ class Observer(
                 launch {
                     val videoManager = manager.fork()
                     val audioManager = manager.fork()
+                    currentCallState.value = CallState.AcceptedCall
                     currentCall.value = Call(message.email, videoManager,audioManager)
-                    currentCallState.emit(CallState.AcceptedCall)
                 }
                 data = "call".encodeToByteArray()
             }

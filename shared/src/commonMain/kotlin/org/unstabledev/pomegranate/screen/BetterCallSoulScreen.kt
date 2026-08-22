@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.CallState
 import org.unstabledev.pomegranate.Camera
@@ -50,12 +51,15 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     val camera = remember { Camera() }
-    camera.CameraPreview(Modifier.size(0.dp))
-    val microphoneActive = remember { mutableStateOf(true) }
-    val cameraActive = remember { mutableStateOf(false) }
-
     val playbackDevice = remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val viewModel = viewModel { BetterCallSoulScreenController(camera, navWayObj) }
+    val state = currentCallState.value
+    scope.launch {
+        viewModel.currentCallStateFlow.emit(currentCallState.value)
+    }
+    val microphoneActive = viewModel.microphoneActive
+    val cameraActive = viewModel.cameraActive
 
     val elapsedSeconds = remember { mutableStateOf(0) }
 
@@ -73,7 +77,6 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
         append(':')
         append(seconds.toString().padStart(2, '0'))
     }
-
     LaunchedEffect(Unit) {
         camera.startCamera(true)
         while (true) {
@@ -81,8 +84,8 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
             elapsedSeconds.value++
         }
     }
-    val viewModel = viewModel { BetterCallSoulScreenController(camera, navWayObj, microphoneActive, cameraActive) }
-    when (currentCallState.collectAsState(CallState.NoCall).value) {
+    println(state)
+    when (state) {
         CallState.Calling -> {
             Column(verticalArrangement = Arrangement.Bottom) {
                 Row(
@@ -95,7 +98,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
                         Column(
                             Modifier.background(ColorTheme.Warning).size(50.dp).clickable {
                                 scope.launch {
-                                    currentCallState.emit(CallState.Cancelled)
+                                    currentCallState.value = CallState.Cancelled
                                 }
                             },
                             verticalArrangement = Arrangement.Center,
@@ -113,7 +116,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
                         Column(
                             Modifier.background(ColorTheme.Warning).size(50.dp).clickable {
                                 scope.launch {
-                                    currentCallState.emit(CallState.AcceptedCall)
+                                    currentCallState.value = CallState.AcceptedCall
                                 }
                             },
                             verticalArrangement = Arrangement.Center,
@@ -178,7 +181,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
                         Column(
                             Modifier.background(ColorTheme.Warning).size(50.dp).clickable {
                                 scope.launch {
-                                    currentCallState.emit(CallState.Cancelled)
+                                    currentCallState.value = CallState.Cancelled
                                 }
                             },
                             verticalArrangement = Arrangement.Center,
@@ -242,6 +245,8 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
             }
         }
 
-        else -> {}
+        else -> {
+            camera.CameraPreview(Modifier.fillMaxSize())
+        }
     }
 }
