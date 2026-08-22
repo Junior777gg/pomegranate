@@ -36,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
@@ -55,7 +57,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     val scope = rememberCoroutineScope()
     val viewModel = viewModel { BetterCallSoulScreenController(camera, navWayObj) }
     val state = currentCallState.value
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
         viewModel.currentCallStateFlow.emit(currentCallState.value)
     }
     val microphoneActive = viewModel.microphoneActive
@@ -84,7 +86,6 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
             elapsedSeconds.value++
         }
     }
-    println(state)
     when (state) {
         CallState.Calling -> {
             Column(verticalArrangement = Arrangement.Bottom) {
