@@ -127,8 +127,7 @@ actual class CallAudioRecorder actual constructor(){
             throw SecurityException("RECORD_AUDIO permission not granted")
         }
         audioRecord = AudioRecord(
-            // AudioSource.VOICE_COMMUNICATION включает системное эхоподавление и шумоподавление!
-            MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            MediaRecorder.AudioSource.MIC,
             sampleRate,
             channelConfig,
             audioFormat,
@@ -166,7 +165,7 @@ actual class CallAudioPlayer actual constructor() {
         audioTrack = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )

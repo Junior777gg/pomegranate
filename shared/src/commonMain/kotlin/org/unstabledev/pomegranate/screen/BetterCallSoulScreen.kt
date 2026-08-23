@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.VideocamOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -57,9 +59,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     val scope = rememberCoroutineScope()
     val viewModel = viewModel { BetterCallSoulScreenController(camera, navWayObj) }
     val state = currentCallState.value
-    scope.launch(Dispatchers.IO) {
-        viewModel.currentCallStateFlow.emit(currentCallState.value)
-    }
+    val owner = LocalLifecycleOwner.current
     val microphoneActive = viewModel.microphoneActive
     val cameraActive = viewModel.cameraActive
 
@@ -80,7 +80,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
         append(seconds.toString().padStart(2, '0'))
     }
     LaunchedEffect(Unit) {
-        camera.startCamera(true)
+        camera.startCamera(owner, true)
         while (true) {
             delay(1000.milliseconds)
             elapsedSeconds.value++
@@ -136,7 +136,9 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
         }
 
         CallState.AcceptedCall -> {
-
+            LaunchedEffect(Unit) {
+                viewModel.acceptedCall()
+            }
             Box {
                 val bitmap = viewModel.image.value
                 if (bitmap != null) {
@@ -247,7 +249,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
         }
 
         else -> {
-            camera.CameraPreview(Modifier.fillMaxSize())
+            viewModel.cancel()
         }
     }
 }

@@ -9,7 +9,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -22,11 +21,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.panpf.sketch.util.rotate
-import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.Executors
-import kotlin.coroutines.resume
 
 actual class Camera {
     companion object {
@@ -44,7 +41,6 @@ actual class Camera {
 
     private var cameraProvider: ProcessCameraProvider? = null
     private var previewUseCase: Preview? = null
-    private var lifecycleOwner: LifecycleOwner? = null
 
     // Последний кадр из анализатора (для быстрого стрима)
     @Volatile
@@ -70,8 +66,7 @@ actual class Camera {
     }
 
     @RequiresPermission(Manifest.permission.CAMERA)
-    private fun initCamera(owner: LifecycleOwner, front: Boolean) {
-        lifecycleOwner = owner
+    private fun initCamera(front: Boolean) {
         isFrontCamera = front
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -88,7 +83,6 @@ actual class Camera {
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
 
-            // Анализатор непрерывно держит свежий кадр в latestJpeg
             imageAnalysis = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
@@ -97,7 +91,7 @@ actual class Camera {
                         try {
                             val bitmap = imageProxy.toBitmap().rotate(-90)
                             val stream = ByteArrayOutputStream()
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, stream)
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 10, stream)
                             latestJpeg = stream.toByteArray()
                             bitmap.recycle()
                         } catch (e: Exception) {
@@ -107,8 +101,6 @@ actual class Camera {
                         }
                     }
                 }
-
-            // ВАЖНО: биндим камеру, иначе ничего не работает
             bindCamera()
         }, ContextCompat.getMainExecutor(context))
     }
@@ -116,7 +108,6 @@ actual class Camera {
     private fun bindCamera() {
         val provider = cameraProvider ?: return
         val preview = previewUseCase ?: return
-        val owner = lifecycleOwner ?: return
 
         val cameraSelector = if (isFrontCamera) {
             CameraSelector.DEFAULT_FRONT_CAMERA
@@ -128,9 +119,10 @@ actual class Camera {
         provider.bindToLifecycle(owner, cameraSelector, preview, imageCapture, imageAnalysis)
     }
 
-    actual fun startCamera(front: Boolean) {
+    actual fun startCamera(lifeOwner: LifecycleOwner, front: Boolean) {
+        owner = lifeOwner
         if (cameraProvider == null) {
-            initCamera(owner, front)
+            initCamera(front)
         } else if (isFrontCamera != front) {
             isFrontCamera = front
             bindCamera()

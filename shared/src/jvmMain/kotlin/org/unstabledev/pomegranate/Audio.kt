@@ -223,12 +223,6 @@ actual class CallAudioRecorder actual constructor() {
         try {
             val format = AudioFormat(16000f, 16, 1, true, false)
             val info = DataLine.Info(TargetDataLine::class.java, format)
-
-            if (!AudioSystem.isLineSupported(info)) {
-                println("AudioRecorder: Audio line not supported on this system")
-                return
-            }
-
             val line = AudioSystem.getLine(info) as TargetDataLine
             line.open(format)
             line.start()
@@ -256,12 +250,20 @@ actual class CallAudioRecorder actual constructor() {
 
 }
 
+fun ByteArray.swapEndian(){
+    for (i in 0 until size step 2) {
+        val temp = this[i]
+        this[i] = this[i + 1]
+        this[i + 1] = temp
+    }
+}
 actual class CallAudioPlayer actual constructor() {
     val audioFormat = AudioFormat(16000f, 16, 1, true, false)
     lateinit var line: SourceDataLine
     actual fun start() {
         line = AudioSystem.getSourceDataLine(audioFormat)
         line.open()
+        line.start()
     }
 
     actual fun playChunk(chunk: ByteArray) {

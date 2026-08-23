@@ -1,20 +1,16 @@
 package org.unstabledev.pomegranate.screen.control
 
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.CallAudioPlayer
 import org.unstabledev.pomegranate.CallAudioRecorder
-import org.unstabledev.pomegranate.CallState
 import org.unstabledev.pomegranate.Camera
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.P2PUtils.Data
@@ -31,61 +27,52 @@ class BetterCallSoulScreenController(
     val player = CallAudioPlayer()
     val microphoneActive = mutableStateOf(true)
     val cameraActive = mutableStateOf(true)
-    val currentCallStateFlow = MutableSharedFlow<CallState>()
-    init {
-        val audioManager = call.audioManager
-        val videoManager = call.videoManager
-        recorder.start()
-        player.start()
+    val audioManager = call.audioManager
+    val videoManager = call.videoManager
+
+    fun acceptedCall() {
         viewModelScope.launch(Dispatchers.IO) {
-            currentCallStateFlow.collect { state ->
-                when (state) {
-                    CallState.AcceptedCall -> {
-                        launch {
-                            while (videoManager.channel == null && audioManager.channel == null) {
-                                delay(100)
-                            }
-                            launch {
-                                while (true) {
-                                    val data = audioManager.channel!!.receive()
-                                    player.playChunk((data as Data.Bytes).bytes)
-                                }
-                            }
-                            launch {
-                                while (microphoneActive.value) {
-                                    val frame = recorder.getFrame()
-                                    audioManager.channel!!.send(frame)
-                                }
-                            }
-                            launch {
-                                while (true) {
-                                    val data = videoManager.channel!!.receive()
-                                    val bitmap = getBitmapFromBytes((data as Data.Bytes).bytes)
-                                    image.value = bitmap
-                                }
-                            }
-                            launch {
-                                while (cameraActive.value) {
-                                    val frame = camera.getFrame()
-                                    videoManager.channel!!.send(frame)
-                                    delay(100)
-                                }
-                            }
-                        }
-                    }
-
-                    CallState.Cancelled -> {
-                        launch {
-                            player.stop()
-                            recorder.stop()
-                            withContext(Dispatchers.Main) {
-                                navWayObj.back()
-                            }
-                        }
-                    }
-
-                    else -> {}
+            recorder.start()
+            player.start()
+            while (videoManager.channel == null && audioManager.channel == null) {
+                delay(100)
+            }
+            launch {
+                while (true) {
+                    val data = audioManager.channel!!.receive()
+                    player.playChunk((data as Data.Bytes).bytes)
                 }
+            }
+            launch {
+                while (microphoneActive.value) {
+                    val frame = recorder.getFrame()
+                    audioManager.channel!!.send(frame)
+                }
+            }
+            launch {
+                while (true) {
+                    val data = videoManager.channel!!.receive()
+                    val bitmap = getBitmapFromBytes((data as Data.Bytes).bytes)
+                    image.value = bitmap
+                }
+            }
+            launch {
+                while (cameraActive.value) {
+                    val frame = camera.getFrame()
+                    videoManager.channel!!.send(frame)
+                    delay(30)
+                }
+            }
+
+        }
+    }
+
+    fun cancel() {
+        viewModelScope.launch(Dispatchers.IO) {
+            player.stop()
+            recorder.stop()
+            withContext(Dispatchers.Main) {
+                navWayObj.back()
             }
         }
     }

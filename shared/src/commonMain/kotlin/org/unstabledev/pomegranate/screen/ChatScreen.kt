@@ -560,7 +560,7 @@ private fun MessageInput(
 ) {
     val scope = rememberCoroutineScope()
     var isRecording by remember { mutableStateOf(false) }
-    val recorder = remember { AudioRecorder() }
+    //val recorder = remember { AudioRecorder() }
     var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
     val elapsedSeconds = remember { mutableStateOf(0) }
 
@@ -571,7 +571,7 @@ private fun MessageInput(
             elapsedSeconds.value++
         }
     }
-    DisposableEffect(Unit) {
+    /*DisposableEffect(Unit) {
         onDispose {
             if (recorder.isRecording()) {
                 recorder.stop()
@@ -579,7 +579,7 @@ private fun MessageInput(
             recorder.release()
         }
     }
-
+*/
     Row(
         modifier = Modifier
             .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0f), Color.Black.copy(alpha = 0.2f))))
@@ -691,7 +691,7 @@ private fun MessageInput(
                     .background(ColorTheme.Warning)
                     .clickable {
                         try {
-                            recorder.stop()
+                            //recorder.stop()
                             isRecording = false
 
                             currentVoiceFile?.let { voiceFile ->
@@ -726,7 +726,7 @@ private fun MessageInput(
                     val text = state.text.toString().trim()
                     if (isRecording) {
                         try {
-                            recorder.stop()
+                            //recorder.stop()
                             isRecording = false
 
                             currentVoiceFile?.let { voiceFile ->
@@ -760,7 +760,7 @@ private fun MessageInput(
                             )
 
                             currentVoiceFile = voiceFile
-                            recorder.start(voiceFile)
+                            //recorder.start(voiceFile)
                             isRecording = true
                         } catch (e: Exception) {
                             e.printStackTrace()
