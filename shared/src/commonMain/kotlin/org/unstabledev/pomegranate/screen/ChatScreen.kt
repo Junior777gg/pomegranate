@@ -154,21 +154,16 @@ fun ChatScreen(
     val areFilesBeingDraggedOver = remember { mutableStateOf(false) }
 
     LaunchedEffect(listState, messages.value.size) {
-        try {
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-                .collect { lastVisibleIndex ->
-                    if (lastVisibleIndex != null && lastVisibleIndex >= messages.value.size - 5) {
-                        viewModel.loadMore()
-                    }
-                }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        val messageCount = messages.value.size
-        if (messageCount > 0) {
-            listState.animateScrollToItem(0)
-        }
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex != null && lastVisibleIndex >= messages.value.size - 5)
+                    viewModel.loadMore()
+            }
     }
+    LaunchedEffect(messages.value.size) {
+        if (messages.value.isNotEmpty()) listState.animateScrollToItem(0)
+    }
+
 
     val onImagePreviewClick: (MessageDC) -> Unit = remember {
         { msg -> messagePreview.value = msg }
@@ -558,7 +553,7 @@ private fun MessageInput(
     state: TextFieldState,
     viewModel: ChatScreenController
 ) {
-    val scope = rememberCoroutineScope()
+    //val scope = rememberCoroutineScope()
     var isRecording by remember { mutableStateOf(false) }
     //val recorder = remember { AudioRecorder() }
     var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
@@ -731,9 +726,9 @@ private fun MessageInput(
 
                             currentVoiceFile?.let { voiceFile ->
                                 if (voiceFile.exists() && voiceFile.length() > 0) {
-                                    scope.launch {
+                                    /*scope.launch {
                                         viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
-                                    }
+                                    }*/
                                 } else {
                                     println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
                                 }
