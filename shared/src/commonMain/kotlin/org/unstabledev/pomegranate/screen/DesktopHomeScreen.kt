@@ -213,7 +213,7 @@ private fun ProfileSettings(userEmail: String, userName: String,
             modifier = Modifier
                 .size(70.dp)
                 .clip(CircleShape)
-                .background(Util.randomColor(userEmail.hashCode(), isSystemInDarkTheme())),
+                .background(Util.randomColor(userEmail.hashCode())),
             contentAlignment = Alignment.Center
         ) {
             Text(

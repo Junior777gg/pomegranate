@@ -49,10 +49,7 @@ fun GeneratedProfileImage(name: String, size: Dp=50.dp, fontSize: TextUnit = 18.
             .size(size)
             .clip(CircleShape)
             .background(
-                Util.randomColor(
-                    name.hashCode(),
-                    !AppSettings.isLightTheme(settings)
-                )
+                Util.randomColor(name.hashCode())
             ),
         contentAlignment = Alignment.Center
     ) {

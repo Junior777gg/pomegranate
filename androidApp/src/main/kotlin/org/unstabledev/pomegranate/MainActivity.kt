@@ -2,7 +2,6 @@ package org.unstabledev.pomegranate
 
 import android.Manifest
 import android.content.Intent
-import android.hardware.camera2.CameraDevice
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -10,11 +9,12 @@ import android.webkit.MimeTypeMap
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import java.io.File
-import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,14 +26,15 @@ class MainActivity : ComponentActivity() {
         Camera.context = this
         AudioPlaybackManager.context = applicationContext
         super.onCreate(savedInstanceState)
+        BackgroundStorage.ensureBackgroundDir()
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
             {}).apply {
                 launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.CAMERA,
                     Manifest.permission.RECORD_AUDIO))
             }
-        var pendingFileResult: ((List<File>) -> Unit)? = null
-        val pick = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        var pendingFilesResult: ((List<File>) -> Unit)? = null
+        val pickFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             val selectedFiles = mutableListOf<File>()
             uris.forEach { uri ->
                 try {
@@ -57,12 +58,104 @@ class MainActivity : ComponentActivity() {
                     selectedFiles.add(file)
                 }
             }
-            pendingFileResult?.invoke(selectedFiles)
+            pendingFilesResult?.invoke(selectedFiles)
+            pendingFilesResult = null
+        }
+        ChooseMultipleFiles.choose = { onResult ->
+            pendingFilesResult = onResult
+            pickFiles.launch(arrayOf("*/*"))
+        }
+        var pendingFileResult: ((File) -> Unit)? = null
+        val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            val selectedFile = mutableStateOf<File?>(null)
+            if (uri==null) return@registerForActivityResult
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+            val name = getNameFromUri(uri)
+            contentResolver.openInputStream(uri)?.use { input ->
+                val file = File("${Repository.pomegranatePath}temp", name).apply {
+                    createNewFile()
+                    outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                selectedFile.value = file
+            }
+            if (selectedFile.value==null) return@registerForActivityResult
+            pendingFileResult?.invoke(selectedFile.value!!)
             pendingFileResult = null
         }
-        ChooseFiles.choose = { onResult ->
+        ChooseFile.choose = { onResult ->
             pendingFileResult = onResult
-            pick.launch(arrayOf("*/*"))
+            pickFile.launch(arrayOf("*/*"))
+        }
+        var pendingImagesResult: ((List<File>) -> Unit)? = null
+        val pickImages = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+            val selectedImages = mutableListOf<File>()
+            uris.forEach { uri ->
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: SecurityException) {
+                    e.printStackTrace()
+                }
+
+                val name = getNameFromUri(uri)
+
+                contentResolver.openInputStream(uri)?.use { input ->
+                    val file = File("${Repository.pomegranatePath}temp", name).apply {
+                        createNewFile()
+                        outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    selectedImages.add(file)
+                }
+            }
+            pendingImagesResult?.invoke(selectedImages)
+            pendingImagesResult = null
+        }
+        ChooseMultipleImages.choose = { onResult ->
+            pendingImagesResult = onResult
+            pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+        var pendingImageResult: ((File) -> Unit)? = null
+        val pickImage = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            val selectedFile = mutableStateOf<File?>(null)
+            if (uri==null) return@registerForActivityResult
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+            val name = getNameFromUri(uri)
+            contentResolver.openInputStream(uri)?.use { input ->
+                val file = File("${Repository.pomegranatePath}temp", name).apply {
+                    createNewFile()
+                    outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                selectedFile.value = file
+            }
+            if (selectedFile.value==null) return@registerForActivityResult
+            pendingImageResult?.invoke(selectedFile.value!!)
+            pendingImageResult = null
+        }
+        ChooseImage.choose = { onResult ->
+            pendingImageResult = onResult
+            pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
 
         val chatBuilder = getChatDatabaseBuilder(applicationContext)

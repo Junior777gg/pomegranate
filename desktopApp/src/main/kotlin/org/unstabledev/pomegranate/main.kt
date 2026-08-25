@@ -14,6 +14,8 @@ import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import java.awt.FileDialog
 import java.awt.Frame
+import java.io.File
+import java.io.FilenameFilter
 
 fun main(args: Array<String>) {
     val isOpen = mutableStateOf(true)
@@ -27,13 +29,51 @@ fun main(args: Array<String>) {
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()
     }
-    ChooseFiles.choose = { onResult ->
-        val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)
+    ChooseMultipleFiles.choose = { onResult ->
+        val dialog = FileDialog(null as Frame?, "Выберите файлы", FileDialog.LOAD)
         dialog.isMultipleMode = true
         dialog.isVisible = true
         val files = dialog.files.toList()
         onResult(files)
     }
+    ChooseFile.choose = { onResult ->
+        val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)
+        dialog.isMultipleMode = false
+        dialog.isVisible = true
+        val file = dialog.files.toList().first()
+        onResult(file)
+    }
+    ChooseMultipleImages.choose = { onResult ->
+        val dialog = FileDialog(null as Frame?, "Выберите изображения", FileDialog.LOAD)
+        dialog.isMultipleMode = true
+        dialog.filenameFilter = object : FilenameFilter {
+            override fun accept(dir: File?, name: String?): Boolean {
+                val lowercaseName = name?.lowercase()?:""
+                return lowercaseName.endsWith(".jpg") ||
+                        lowercaseName.endsWith(".jpeg") ||
+                        lowercaseName.endsWith(".png")
+            }
+        }
+        dialog.isVisible = true
+        val files = dialog.files.toList()
+        onResult(files)
+    }
+    ChooseImage.choose = { onResult ->
+        val dialog = FileDialog(null as Frame?, "Выберите изображение", FileDialog.LOAD)
+        dialog.isMultipleMode = false
+        dialog.filenameFilter = object : FilenameFilter {
+            override fun accept(dir: File?, name: String?): Boolean {
+                val lowercaseName = name?.lowercase()?:""
+                return lowercaseName.endsWith(".jpg") ||
+                        lowercaseName.endsWith(".jpeg") ||
+                        lowercaseName.endsWith(".png")
+            }
+        }
+        dialog.isVisible = true
+        val file = dialog.files.toList().first()
+        onResult(file)
+    }
+    BackgroundStorage.ensureBackgroundDir()
     application {
         val trayState = rememberTrayState()
         Notifications.currentPush = { title, message ->

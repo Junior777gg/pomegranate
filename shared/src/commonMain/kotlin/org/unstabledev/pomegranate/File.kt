@@ -125,8 +125,20 @@ expect class FileSaver() {
     suspend fun saveFile(path: String): Boolean
 }
 
-expect class ChooseFiles(){
-    fun getFiles(onResult: (List<KMPFile>) -> Unit)
+expect class ChooseMultipleFiles() {
+    fun get(onResult: (List<KMPFile>) -> Unit)
+}
+
+expect class ChooseFile() {
+    fun get(onResult: (KMPFile) -> Unit)
+}
+
+expect class ChooseMultipleImages() {
+    fun get(onResult: (List<KMPFile>) -> Unit)
+}
+
+expect class ChooseImage() {
+    fun get(onResult: (KMPFile) -> Unit)
 }
 
 data class DroppedFile(

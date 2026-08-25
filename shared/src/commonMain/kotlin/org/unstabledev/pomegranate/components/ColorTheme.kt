@@ -21,8 +21,8 @@ class ColorTheme {
         val SurfaceDark = Color(0xFF292B2D)
         val OnSurfaceDark = Color(0xFF717376)
         val BackgroundAmoled = Color(0xFF000000)
-        val SurfaceAmoled = Color(0xFF101011)
-        val OnSurfaceAmoled = Color(0xFF1C1D1F)
+        val SurfaceAmoled = Color(0xFF18181A)
+        val OnSurfaceAmoled = Color(0xFF515158)
         val Warning = Color(0xFFFF2929)
         val TextDark = Color(0xFFF9FBFF)
         val TextLight = Color(0xFF151617)
@@ -64,9 +64,7 @@ class ColorTheme {
     @Composable
     fun AppTheme(
         theme: ThemeMode = ThemeMode.SYSTEM,
-        shapes: Shapes = MaterialTheme.shapes,
-        typography: Typography = MaterialTheme.typography,
-        dynamicColor: Boolean = false,
+        useAmoledOnDarkSystem: Boolean = false,
         content: @Composable () -> Unit
     ) {
         val darkTheme = when(theme) {
@@ -75,7 +73,10 @@ class ColorTheme {
             ThemeMode.DARK -> true
             ThemeMode.AMOLED -> true
         }
-        val colorScheme = if (theme==ThemeMode.AMOLED) AmoledColorScheme else if (darkTheme) DarkColorScheme else LightColorScheme
+        val colorScheme =
+            if (theme==ThemeMode.AMOLED || (useAmoledOnDarkSystem && theme==ThemeMode.SYSTEM)) AmoledColorScheme
+            else if (darkTheme) DarkColorScheme
+            else LightColorScheme
 
         MaterialTheme(
             colorScheme = colorScheme,

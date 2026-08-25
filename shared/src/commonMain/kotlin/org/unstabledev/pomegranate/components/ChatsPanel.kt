@@ -41,14 +41,14 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.fleeksoft.io.OutputStream
-import com.fleeksoft.io.inputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -57,6 +57,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.BackgroundStorage
+import org.unstabledev.pomegranate.ChatBackgroundIds
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -64,9 +66,11 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.kmpReadBytes
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.menu
-import pomegranate.shared.generated.resources.test_avatar
+import pomegranate.shared.generated.resources.welcome_mobile
 
 @Composable
 fun SearchableChatsPanel(
@@ -162,6 +166,8 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
                         MessageDC.ANIMATED_IMAGE -> "Изображение"
                         MessageDC.AUDIO -> "Аудио"
                         MessageDC.FILE -> "Файл"
+                        MessageDC.BEGIN_CALL -> "Начался звонок"
+                        MessageDC.ACCEPT_CALL -> "Принят звонок"
                         else -> "Неизвестно"
                     }
                 } catch (_: Exception) {
@@ -177,22 +183,46 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
 @Composable
 fun addChatBackground(base: Modifier = Modifier): Modifier {
     val settings by AppSettings.state.collectAsState()
-    if (settings.customChatId==0) {
-        return base.background(
-            Brush.linearGradient(
-                listOf(
-                    lerp(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.background,
-                        0.25f
-                    ),
-                    MaterialTheme.colorScheme.primary
-                )
+
+    return when (settings.chatBackgroundId) {
+        ChatBackgroundIds.DEFAULT_PRIMARY -> addChatBackground_defPrimary(base)
+
+        ChatBackgroundIds.CUSTOM -> {
+            val customBgFile = BackgroundStorage.getCustomBackgroundFile()
+            if (customBgFile.exists()) {
+                try {
+                    val bitmap = getBitmapFromBytes(customBgFile.kmpReadBytes())
+                    base.paint(
+                        painter = BitmapPainter(bitmap),
+                        contentScale = ContentScale.Crop
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    addChatBackground_defPrimary(base)
+                }
+            } else {
+                addChatBackground_defPrimary(base)
+            }
+        }
+
+        else -> base.paint(painterResource(Res.drawable.welcome_mobile))
+    }
+}
+
+@Composable
+fun addChatBackground_defPrimary(base: Modifier = Modifier): Modifier {
+    return base.background(
+        Brush.linearGradient(
+            listOf(
+                lerp(
+                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.colorScheme.background,
+                    0.25f
+                ),
+                MaterialTheme.colorScheme.primary
             )
         )
-    } else {
-        return base.paint(painterResource(Res.drawable.test_avatar))
-    }
+    )
 }
 
 @Composable

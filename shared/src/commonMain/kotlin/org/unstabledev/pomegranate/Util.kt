@@ -31,13 +31,7 @@ class Util {
 
         fun randomColor(seed: Int): Color {
             val rand = Random(seed)
-            return Color(rand.nextInt(256),rand.nextInt(256),rand.nextInt(256))
-        }
-
-        fun randomColor(seed: Int, dark: Boolean): Color {
-            val rand = Random(seed)
-            return if(dark) Color(rand.nextInt(128),rand.nextInt(128),rand.nextInt(128))
-                else Color(rand.nextInt(128,256),rand.nextInt(128,256),rand.nextInt(128,256))
+            return Color(rand.nextInt(64,192),rand.nextInt(64,192),rand.nextInt(64,192))
         }
 
         @Composable

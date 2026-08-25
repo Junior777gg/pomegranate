@@ -79,7 +79,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         modifier = Modifier
                             .size(60.dp)
                             .clip(CircleShape)
-                            .background(Util.randomColor(userEmail.hashCode(), isSystemInDarkTheme())),
+                            .background(Util.randomColor(userEmail.hashCode())),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

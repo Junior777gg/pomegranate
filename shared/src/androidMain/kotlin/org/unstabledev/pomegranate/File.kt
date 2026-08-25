@@ -109,12 +109,42 @@ actual class FileSaver {
     }
 }
 
-actual class ChooseFiles actual constructor() {
+actual class ChooseFile actual constructor() {
+    companion object {
+        lateinit var choose: (onResult: (KMPFile) -> Unit) -> Unit
+    }
+
+    actual fun get(onResult: (KMPFile) -> Unit) {
+        return choose(onResult)
+    }
+}
+
+actual class ChooseMultipleFiles actual constructor() {
     companion object {
         lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
     }
 
-    actual fun getFiles(onResult: (List<KMPFile>) -> Unit) {
+    actual fun get(onResult: (List<KMPFile>) -> Unit) {
+        return choose(onResult)
+    }
+}
+
+actual class ChooseImage actual constructor() {
+    companion object {
+        lateinit var choose: (onResult: (KMPFile) -> Unit) -> Unit
+    }
+
+    actual fun get(onResult: (KMPFile) -> Unit) {
+        return choose(onResult)
+    }
+}
+
+actual class ChooseMultipleImages actual constructor() {
+    companion object {
+        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
+    }
+
+    actual fun get(onResult: (List<KMPFile>) -> Unit) {
         return choose(onResult)
     }
 }

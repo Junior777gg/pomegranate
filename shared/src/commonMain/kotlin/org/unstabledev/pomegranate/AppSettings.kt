@@ -23,6 +23,24 @@ data class FirebaseAddress(
     val url: String
 )
 
+object ChatBackgroundIds {
+    const val DEFAULT_PRIMARY = 0
+    const val CUSTOM = 16
+}
+
+object BackgroundStorage {
+    val CUSTOM_BACKGROUND_PATH = "${Repository.pomegranatePath}backgrounds/"
+
+    fun ensureBackgroundDir() {
+        KMPFile(CUSTOM_BACKGROUND_PATH).mkdirs()
+    }
+
+    fun getCustomBackgroundFile(): KMPFile {
+        ensureBackgroundDir()
+        return KMPFile(CUSTOM_BACKGROUND_PATH, "custom_bg.jpg")
+    }
+}
+
 @Serializable
 data class AppSettingsState(
     val theme: ThemeMode = ThemeMode.SYSTEM,
@@ -41,7 +59,8 @@ data class AppSettingsState(
     val parseMarkdown: Boolean = true,
     val chatTripleColumn: Boolean = false,
     val amoledUnlocked: Boolean = false,
-    val customChatId: Int = 0,
+    val useAmoledOnDarkSystem: Boolean = false,
+    val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
     val desktopHomeSplit: Float = 1.0f,
 ) {
     val selectedFirebaseUrl: String
@@ -116,8 +135,8 @@ object AppSettings {
         _state.value = _state.value.copy(theme = mode)
     }
 
-    fun setCustomChatId(id: Int) {
-        _state.value = _state.value.copy(customChatId = id)
+    fun setChatBackgroundId(id: Int) {
+        _state.value = _state.value.copy(chatBackgroundId = id)
     }
 
     fun selectFirebaseAddress(id: String) {
@@ -126,6 +145,10 @@ object AppSettings {
 
     fun setHideSendBarWhenNoNetwork(v: Boolean) {
         _state.value = _state.value.copy(hideSendBarWhenNoNetwork = v)
+    }
+
+    fun setUseAmoledOnDarkSystem(v: Boolean) {
+        _state.value = _state.value.copy(useAmoledOnDarkSystem = v)
     }
 
     fun setAmoledUnlocked(v: Boolean) {

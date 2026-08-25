@@ -23,7 +23,7 @@ fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
 
     setStatusBarIcons(AppSettings.isLightTheme(settings))
 
-    theme.AppTheme(theme = settings.theme) {
+    theme.AppTheme(theme = settings.theme, useAmoledOnDarkSystem = settings.useAmoledOnDarkSystem) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
         Scaffold(Modifier.fillMaxSize()) {
             val navController = rememberNavController()

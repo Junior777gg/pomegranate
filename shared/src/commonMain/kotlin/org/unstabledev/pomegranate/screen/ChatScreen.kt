@@ -39,6 +39,8 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FileCopy
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
@@ -60,7 +62,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -87,8 +88,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.AudioRecorder
-import org.unstabledev.pomegranate.ChooseFiles
+import org.unstabledev.pomegranate.ChooseFile
+import org.unstabledev.pomegranate.ChooseMultipleFiles
+import org.unstabledev.pomegranate.ChooseMultipleImages
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.NavigationWays
@@ -553,7 +555,7 @@ private fun MessageInput(
     state: TextFieldState,
     viewModel: ChatScreenController
 ) {
-    //val scope = rememberCoroutineScope()
+    val isAttachMediaOpen = remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
     //val recorder = remember { AudioRecorder() }
     var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
@@ -573,205 +575,247 @@ private fun MessageInput(
             }
             recorder.release()
         }
-    }
-*/
-    Row(
-        modifier = Modifier
-            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0f), Color.Black.copy(alpha = 0.2f))))
-            .fillMaxWidth()
-            .padding(
-                horizontal = 8.dp, vertical = if (isMobile) {
-                    if (Util.isKeyboardVisible()) 48.dp else 25.dp
-                } else 10.dp
-            ),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        Spacer(modifier = Modifier.width(8.dp))
+    }*/
 
-        Box(
+    Column {
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .shadow(2.dp, CircleShape)
-                .heightIn(min = 40.dp, max = 120.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row {
-                AnimatedVisibility(
-                    visible = (state.text.isEmpty() && !isRecording),
-                    enter = fadeIn() + slideInHorizontally(initialOffsetX = { -it / 2 }),
-                    exit = fadeOut() + slideOutHorizontally(targetOffsetX = { -it / 2 })
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .height(22.5.dp)
-                            .clickable {
-                                ChooseFiles().getFiles { files ->
-                                    if (files.isNotEmpty()) {
-                                        viewModel.send(files = files, type = MessageDC.FILE)
-                                    }
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Attachment,
-                            contentDescription = "Отправить",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(22.5.dp).rotate(315.0f)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0f),
+                            Color.Black.copy(alpha = 0.2f)
                         )
-                    }
-                    Spacer(Modifier.width(6.dp))
-                }
-
-                if (isRecording) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        var alpha by remember { mutableStateOf(1f) }
-                        LaunchedEffect(Unit) {
-                            while (true) {
-                                alpha = if (alpha == 1f) 0.3f else 1f
-                                delay(500.milliseconds)
-                            }
-                        }
-                        Box(
-                            Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(Color.Red.copy(alpha = alpha))
-                        )
-                        Text(
-                            elapsedSeconds.buildTimeMarkMillis(),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp
-                        )
-                    }
-                } else {
-                    BasicTextField(
-                        state = state,
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = TextStyle(
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 15.sp
-                        ),
-                        cursorBrush = SolidColor(ColorTheme.MessageAccent),
-                        lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
-                        decorator = { innerTextField ->
-                            if (state.text.isEmpty()) {
-                                Text(
-                                    text = "Сообщение",
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 15.sp
-                                )
-                            }
-                            innerTextField()
-                        }
                     )
+                )
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 8.dp, vertical = if (isMobile) {
+                        if (Util.isKeyboardVisible()) 48.dp else 25.dp
+                    } else 10.dp
+                ),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .shadow(2.dp, CircleShape)
+                    .heightIn(min = 40.dp, max = 120.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row {
+                    AnimatedVisibility(
+                        visible = (state.text.isEmpty() && !isRecording),
+                        enter = fadeIn() + slideInHorizontally(initialOffsetX = { -it / 2 }),
+                        exit = fadeOut() + slideOutHorizontally(targetOffsetX = { -it / 2 })
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(22.5.dp)
+                                .clickable { isAttachMediaOpen.value = !isAttachMediaOpen.value },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Attachment,
+                                contentDescription = "Файл",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.5.dp).rotate(315.0f)
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
+                    }
+
+                    if (isRecording) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            var alpha by remember { mutableStateOf(1f) }
+                            LaunchedEffect(Unit) {
+                                while (true) {
+                                    alpha = if (alpha == 1f) 0.3f else 1f
+                                    delay(500.milliseconds)
+                                }
+                            }
+                            Box(
+                                Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Red.copy(alpha = alpha))
+                            )
+                            Text(
+                                elapsedSeconds.buildTimeMarkMillis(),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 15.sp
+                            )
+                        }
+                    } else {
+                        BasicTextField(
+                            state = state,
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = TextStyle(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 15.sp
+                            ),
+                            cursorBrush = SolidColor(ColorTheme.MessageAccent),
+                            lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
+                            decorator = { innerTextField ->
+                                if (state.text.isEmpty()) {
+                                    Text(
+                                        text = "Сообщение",
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 15.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-        if (isRecording) {
+            if (isRecording) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .shadow(2.dp, CircleShape)
+                        .clip(CircleShape)
+                        .background(ColorTheme.Warning)
+                        .clickable {
+                            try {
+                                //recorder.stop()
+                                isRecording = false
+
+                                currentVoiceFile?.let { voiceFile ->
+                                    voiceFile.delete()
+                                    currentVoiceFile = null
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                isRecording = false
+                                currentVoiceFile = null
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Отменить",
+                        tint = MaterialTheme.colorScheme.background,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .shadow(2.dp, CircleShape)
                     .clip(CircleShape)
-                    .background(ColorTheme.Warning)
+                    .background(ColorTheme.MessageAccent)
                     .clickable {
-                        try {
-                            //recorder.stop()
-                            isRecording = false
+                        val text = state.text.toString().trim()
+                        if (isRecording) {
+                            try {
+                                //recorder.stop()
+                                isRecording = false
 
-                            currentVoiceFile?.let { voiceFile ->
-                                voiceFile.delete()
+                                currentVoiceFile?.let { voiceFile ->
+                                    if (voiceFile.exists() && voiceFile.length() > 0) {
+                                        /*scope.launch {
+                                        viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
+                                    }*/
+                                    } else {
+                                        println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
+                                    }
+                                    currentVoiceFile = null
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                isRecording = false
                                 currentVoiceFile = null
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            isRecording = false
-                            currentVoiceFile = null
+                        } else if (text.isNotEmpty()) {
+                            viewModel.send(text, type = MessageDC.TEXT)
+                            state.clearText()
+                        } else {
+                            try {
+                                val tempDir = KMPFile(Repository.pomegranatePath, "temp")
+                                if (!tempDir.exists()) {
+                                    tempDir.mkdirs()
+                                }
+
+                                val voiceFile = KMPFile(
+                                    tempDir,
+                                    "voice_${Clock.System.now().hashCode()}.ogg"
+                                )
+
+                                currentVoiceFile = voiceFile
+                                //recorder.start(voiceFile)
+                                isRecording = true
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                isRecording = false
+                                currentVoiceFile = null
+                            }
                         }
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Отменить",
+                    imageVector = if (isRecording || !state.text.isEmpty()) Icons.Default.Send else Icons.Default.Mic,
+                    contentDescription = if (isRecording || !state.text.isEmpty()) "Отправить" else "Записать/Отправить",
                     tint = MaterialTheme.colorScheme.background,
                     modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
         }
-
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .shadow(2.dp, CircleShape)
-                .clip(CircleShape)
-                .background(ColorTheme.MessageAccent)
-                .clickable {
-                    val text = state.text.toString().trim()
-                    if (isRecording) {
-                        try {
-                            //recorder.stop()
-                            isRecording = false
-
-                            currentVoiceFile?.let { voiceFile ->
-                                if (voiceFile.exists() && voiceFile.length() > 0) {
-                                    /*scope.launch {
-                                        viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
-                                    }*/
-                                } else {
-                                    println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
-                                }
-                                currentVoiceFile = null
+        if (isAttachMediaOpen.value) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth().height(100.dp).background(MaterialTheme.colorScheme.background)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.clickable {
+                        ChooseMultipleImages().get { files ->
+                            if (files.isNotEmpty()) {
+                                viewModel.send(files = files, type = MessageDC.FILE)
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            isRecording = false
-                            currentVoiceFile = null
+                            isAttachMediaOpen.value = false
                         }
-                    } else if (text.isNotEmpty()) {
-                        viewModel.send(text, type = MessageDC.TEXT)
-                        state.clearText()
-                    } else {
-                        try {
-                            val tempDir = KMPFile(Repository.pomegranatePath, "temp")
-                            if (!tempDir.exists()) {
-                                tempDir.mkdirs()
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(35.dp)
+                    )
+                    Text("Изображение", color = MaterialTheme.colorScheme.onSurface)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.clickable {
+                        ChooseMultipleFiles().get { files ->
+                            if (files.isNotEmpty()) {
+                                viewModel.send(files = files, type = MessageDC.FILE)
                             }
-
-                            val voiceFile = KMPFile(
-                                tempDir,
-                                "voice_${Clock.System.now().hashCode()}.ogg"
-                            )
-
-                            currentVoiceFile = voiceFile
-                            //recorder.start(voiceFile)
-                            isRecording = true
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            isRecording = false
-                            currentVoiceFile = null
+                            isAttachMediaOpen.value = false
                         }
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isRecording||!state.text.isEmpty()) Icons.Default.Send else Icons.Default.Mic,
-                contentDescription = if (isRecording||!state.text.isEmpty()) "Отправить" else "Записать/Отправить",
-                tint = MaterialTheme.colorScheme.background,
-                modifier = Modifier.size(20.dp)
-            )
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.FileCopy,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(35.dp)
+                    )
+                    Text("Файл", color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
         }
     }
 }
