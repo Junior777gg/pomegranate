@@ -6,9 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.intl.Locale
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
-import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.math.roundToLong
 import kotlin.random.Random
@@ -138,6 +139,14 @@ class Util {
                 append(',')
                 append(elapsed100Ms.toString().padStart(1, '0'))
             }
+        }
+
+        fun Long.toHHMMTime(): String {
+            val timeZone = TimeZone.currentSystemDefault()
+            val localDateTime = Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
+            val hours = localDateTime.hour.toString().padStart(2, '0')
+            val minutes = localDateTime.minute.toString().padStart(2, '0')
+            return "$hours:$minutes"
         }
     }
 }

@@ -13,7 +13,7 @@ data class MessageDC(
     var isDelivered: Boolean = false,
     var data: ByteArray,
     val type: String = "",
-    val time: String = "",
+    val time: Long = 0,
     var isMine: Boolean = false,
 ){
     companion object{

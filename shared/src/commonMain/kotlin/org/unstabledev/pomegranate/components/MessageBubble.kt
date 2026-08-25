@@ -69,6 +69,7 @@ import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
 import org.unstabledev.pomegranate.database.ChatDC
@@ -278,7 +279,7 @@ fun MessageBubble(
                                         .background(Color.Black.copy(alpha = 0.4f))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text(message.time, color = Color.White, fontSize = 11.sp)
+                                    Text(message.time.toHHMMTime(), color = Color.White, fontSize = 11.sp)
                                     Spacer(Modifier.width(2.dp))
                                     Icon(
                                         modifier = Modifier.size(14.dp),
@@ -347,7 +348,7 @@ fun MessageBubble(
                                         .background(Color.Black.copy(alpha = 0.4f))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text(message.time, color = Color.White, fontSize = 11.sp)
+                                    Text(message.time.toHHMMTime(), color = Color.White, fontSize = 11.sp)
                                     Spacer(Modifier.width(2.dp))
                                     Icon(
                                         modifier = Modifier.size(14.dp),
@@ -407,7 +408,7 @@ fun MessageBubble(
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 Text(
-                                    text = message.time,
+                                    text = message.time.toHHMMTime(),
                                     color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 11.sp
                                 )
@@ -462,7 +463,7 @@ fun MessageBubble(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = message.time,
+                            text = message.time.toHHMMTime(),
                             color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 11.sp
                         )

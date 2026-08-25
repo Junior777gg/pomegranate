@@ -21,6 +21,7 @@ import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
 import kotlin.getValue
+import kotlin.time.Clock
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -105,34 +106,32 @@ object Repository {
 
     fun createMessage(chatDC: ChatDC, message: String? = null, file: KMPFile? = null, type: String): MessageDC {
         var currentMessage: MessageDC? = null
+        val time = now().toEpochMilliseconds()
         when (type) {
             MessageDC.TEXT -> {
                 println("input from repository $message")
-                val time = now().toString().split("T")[1].split(":")
                 val messageDC = MessageDC(
                     email = chatDC.partnerEmail,
                     data = message!!.encodeToByteArray(),
                     type = MessageDC.TEXT,
-                    time = "${time[0].toInt() + 3}:${time[1]}",
+                    time = time,
                     isMine = true,
                 )
                 currentMessage = messageDC
             }
 
             MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> {
-                val time = now().toString().split("T")[1].split(":")
                 val messageDC = MessageDC(
                     email = chatDC.partnerEmail,
                     data = ByteArray(0),
                     type = type,
-                    time = "${time[0].toInt() + 3}:${time[1]}",
+                    time = time,
                     isMine = true,
                 )
                 currentMessage = messageDC
             }
             else -> {
                 if (file != null) {
-                    val time = now().toString().split("T")[1].split(":")
                     val type = when (file.getName().substringAfter(".")) {
                         "png", "jpg", "jpeg" -> MessageDC.IMAGE
                         "gif", "webp" -> MessageDC.ANIMATED_IMAGE
@@ -143,7 +142,7 @@ object Repository {
                         email = chatDC.partnerEmail,
                         data = file.getAbsolutePath().encodeToByteArray(),
                         type = type,
-                        time = "${time[0].toInt() + 3}:${time[1]}",
+                        time = time,
                         isMine = true,
                     )
                     currentMessage = messageDC

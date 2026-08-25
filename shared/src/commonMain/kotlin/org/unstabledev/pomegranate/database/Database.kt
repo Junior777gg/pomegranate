@@ -31,7 +31,7 @@ fun getChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
 
 @Database(
     entities = [MessageDC::class],
-    version = 17,
+    version = 18,
 )
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {
