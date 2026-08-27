@@ -59,6 +59,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
 import org.unstabledev.pomegranate.ChatBackgroundIds
+import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -68,6 +69,7 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
+import org.unstabledev.pomegranate.sendHaptic
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.menu
 import pomegranate.shared.generated.resources.welcome_mobile
@@ -244,7 +246,10 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
                     .height(64.dp)
                     .pointerInput(Unit) {
                         detectTapGestures(
-                            onLongPress = { menuExpanded.value = true },
+                            onLongPress = {
+                                menuExpanded.value = true
+                                sendHaptic(HAPTIC_EFFECT_CLICK)
+                            },
                             onTap = { onChatClick(chat) }
                         )
                     }

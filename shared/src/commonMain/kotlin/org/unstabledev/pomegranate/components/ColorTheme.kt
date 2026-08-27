@@ -74,7 +74,7 @@ class ColorTheme {
             ThemeMode.AMOLED -> true
         }
         val colorScheme =
-            if (theme==ThemeMode.AMOLED || (useAmoledOnDarkSystem && theme==ThemeMode.SYSTEM)) AmoledColorScheme
+            if (theme==ThemeMode.AMOLED || (useAmoledOnDarkSystem && theme==ThemeMode.SYSTEM && darkTheme)) AmoledColorScheme
             else if (darkTheme) DarkColorScheme
             else LightColorScheme
 

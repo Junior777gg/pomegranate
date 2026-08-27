@@ -67,6 +67,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.FileSaver
+import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
+import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
@@ -77,6 +79,7 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
+import org.unstabledev.pomegranate.sendHaptic
 
 @Composable
 fun MessageBubble(
@@ -121,7 +124,10 @@ fun MessageBubble(
             modifier = applyMessageBubble(Modifier
                 .pointerInput(Unit) {
                     detectTapGestures(
-                        onLongPress = { menuOpen.value = true },
+                        onLongPress = {
+                            menuOpen.value = true
+                            sendHaptic(HAPTIC_EFFECT_CLICK)
+                        },
                         onTap = { if (message.type == MessageDC.IMAGE) { setImagePreview(message) } }
                     )
                 }

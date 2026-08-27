@@ -54,6 +54,8 @@ import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
 import org.unstabledev.pomegranate.ChatBackgroundIds
 import org.unstabledev.pomegranate.ChooseImage
+import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
+import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
@@ -65,6 +67,7 @@ import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpCopyTo
 import org.unstabledev.pomegranate.kmpReadBytes
+import org.unstabledev.pomegranate.sendHaptic
 
 @Composable
 fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
@@ -114,7 +117,10 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                IconButton(onClick = { AppSettings.setTheme(ThemeMode.SYSTEM) }) {
+                                IconButton(onClick = {
+                                    AppSettings.setTheme(ThemeMode.SYSTEM)
+                                    sendHaptic(HAPTIC_EFFECT_TICK)
+                                }) {
                                     Icon(
                                         imageVector = Icons.Default.BrightnessAuto,
                                         contentDescription = "Системная тема",
@@ -126,7 +132,10 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                     thickness = 3.dp,
                                     modifier = Modifier.padding(start = 16.dp)
                                 )
-                                IconButton(onClick = { AppSettings.setTheme(ThemeMode.LIGHT) }) {
+                                IconButton(onClick = {
+                                    AppSettings.setTheme(ThemeMode.LIGHT)
+                                    sendHaptic(HAPTIC_EFFECT_TICK)
+                                }) {
                                     Icon(
                                         imageVector = Icons.Default.LightMode,
                                         contentDescription = "Светлая",
@@ -140,6 +149,7 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                 )
                                 IconButton(onClick = {
                                     AppSettings.setTheme(ThemeMode.DARK)
+                                    sendHaptic(HAPTIC_EFFECT_TICK)
                                     amoledClicks.value += 1
                                     if (amoledClicks.value>3) AppSettings.setAmoledUnlocked(true)
                                 }) {
@@ -157,6 +167,7 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                     )
                                     IconButton(onClick = {
                                         AppSettings.setTheme(ThemeMode.AMOLED)
+                                        sendHaptic(HAPTIC_EFFECT_TICK)
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.ShieldMoon,
