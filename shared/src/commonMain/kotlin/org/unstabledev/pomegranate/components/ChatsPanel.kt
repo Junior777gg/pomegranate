@@ -71,6 +71,14 @@ import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.sendHaptic
 import pomegranate.shared.generated.resources.Res
+import pomegranate.shared.generated.resources.def01
+import pomegranate.shared.generated.resources.def02
+import pomegranate.shared.generated.resources.def03
+import pomegranate.shared.generated.resources.def04
+import pomegranate.shared.generated.resources.def05
+import pomegranate.shared.generated.resources.def06
+import pomegranate.shared.generated.resources.def07
+import pomegranate.shared.generated.resources.def08
 import pomegranate.shared.generated.resources.menu
 import pomegranate.shared.generated.resources.welcome_mobile
 
@@ -207,7 +215,7 @@ fun addChatBackground(base: Modifier = Modifier): Modifier {
             }
         }
 
-        else -> base.paint(painterResource(Res.drawable.welcome_mobile))
+        else -> addChatBackground_defImage(settings.chatBackgroundId, base)
     }
 }
 
@@ -224,6 +232,25 @@ fun addChatBackground_defPrimary(base: Modifier = Modifier): Modifier {
                 MaterialTheme.colorScheme.primary
             )
         )
+    )
+}
+@Composable
+fun addChatBackground_defImage(id: Int, base: Modifier = Modifier): Modifier {
+    return base.paint(
+        painter = painterResource(
+            when (id) {
+                1->Res.drawable.def01
+                2->Res.drawable.def02
+                3->Res.drawable.def03
+                4->Res.drawable.def04
+                5->Res.drawable.def05
+                6->Res.drawable.def06
+                7->Res.drawable.def07
+                8->Res.drawable.def08
+                else->Res.drawable.def01
+            }
+        ),
+        contentScale = ContentScale.Crop
     )
 }
 

@@ -25,6 +25,14 @@ data class FirebaseAddress(
 
 object ChatBackgroundIds {
     const val DEFAULT_PRIMARY = 0
+    const val DEFAULT_IMG01 = 1
+    const val DEFAULT_IMG02 = 2
+    const val DEFAULT_IMG03 = 3
+    const val DEFAULT_IMG04 = 4
+    const val DEFAULT_IMG05 = 5
+    const val DEFAULT_IMG06 = 6
+    const val DEFAULT_IMG07 = 7
+    const val DEFAULT_IMG08 = 8
     const val CUSTOM = 16
 }
 

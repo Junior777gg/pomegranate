@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -62,6 +63,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.components.addChatBackground_defImage
 import org.unstabledev.pomegranate.components.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.getBitmapFromBytes
@@ -187,84 +189,123 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                             }
                         }
                         Text("Обои", Modifier.padding(bottom = 3.dp))
-                        Row(
+                        LazyRow(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Box(
-                                addChatBackground_defPrimary(
+                            item {
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_PRIMARY,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG01,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG02,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG03,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG04,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG05,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG06,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG07,
+                                    settings.chatBackgroundId
+                                )
+                                BackgroundSelectButton(
+                                    ChatBackgroundIds.DEFAULT_IMG08,
+                                    settings.chatBackgroundId
+                                )
+
+                                val customBgFile = BackgroundStorage.getCustomBackgroundFile()
+                                if (customBgFile.exists()) {
+                                    Box(
+                                        addChatBackground_defPrimary(
+                                            Modifier
+                                                .size(70.dp)
+                                                .clip(RoundedCornerShape(5.dp))
+                                                .then(
+                                                    if (settings.chatBackgroundId == ChatBackgroundIds.CUSTOM) {
+                                                        Modifier.border(
+                                                            3.dp,
+                                                            MaterialTheme.colorScheme.primary,
+                                                            RoundedCornerShape(5.dp)
+                                                        )
+                                                    } else Modifier
+                                                )
+                                        ).clickable {
+                                            AppSettings.setChatBackgroundId(ChatBackgroundIds.CUSTOM)
+                                        }
+                                    ) {
+                                        val bitmap = remember(customBgFile.lastModified()) {
+                                            getBitmapFromBytes(customBgFile.kmpReadBytes())
+                                        }
+                                        Image(
+                                            bitmap = bitmap,
+                                            contentDescription = "Custom background",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    Spacer(Modifier.width(5.dp))
+                                }
+                                Box(
                                     Modifier
                                         .size(70.dp)
                                         .clip(RoundedCornerShape(5.dp))
-                                        .then(
-                                            if (settings.chatBackgroundId == ChatBackgroundIds.DEFAULT_PRIMARY) {
-                                                Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp))
-                                            } else Modifier
+                                        .background(MaterialTheme.colorScheme.background)
+                                        .border(
+                                            3.dp,
+                                            MaterialTheme.colorScheme.onSurface
                                         )
-                                ).clickable {
-                                    AppSettings.setChatBackgroundId(ChatBackgroundIds.DEFAULT_PRIMARY)
-                                }
-                            ) {}
-
-                            Spacer(Modifier.width(5.dp))
-
-                            val customBgFile = BackgroundStorage.getCustomBackgroundFile()
-                            if (customBgFile.exists()) {
-                                Box(
-                                    addChatBackground_defPrimary(
-                                        Modifier
-                                            .size(70.dp)
-                                            .clip(RoundedCornerShape(5.dp))
-                                            .then(
-                                                if (settings.chatBackgroundId == ChatBackgroundIds.CUSTOM) {
-                                                    Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp))
-                                                } else Modifier
-                                            )
-                                    ).clickable {
-                                        AppSettings.setChatBackgroundId(ChatBackgroundIds.CUSTOM)
-                                    }
-                                ) {
-                                    val bitmap = remember(customBgFile.lastModified()) { getBitmapFromBytes(customBgFile.kmpReadBytes()) }
-                                    Image(
-                                        bitmap = bitmap,
-                                        contentDescription = "Custom background",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                                Spacer(Modifier.width(5.dp))
-                            }
-                            Box(
-                                Modifier
-                                    .size(70.dp)
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .border(
-                                        3.dp,
-                                        MaterialTheme.colorScheme.onSurface
-                                    )
-                                    .clickable {
-                                        ChooseImage().get { image ->
-                                            scope.launch(Dispatchers.IO) {
-                                                try {
-                                                    val destFile = BackgroundStorage.getCustomBackgroundFile()
-                                                    if(destFile.exists()) destFile.delete()
-                                                    image.kmpCopyTo(destFile)
-                                                    AppSettings.setChatBackgroundId(ChatBackgroundIds.CUSTOM)
-                                                } catch (e: Exception) {
-                                                    e.printStackTrace()
+                                        .clickable {
+                                            ChooseImage().get { image ->
+                                                scope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        val destFile =
+                                                            BackgroundStorage.getCustomBackgroundFile()
+                                                        if (destFile.exists()) destFile.delete()
+                                                        image.kmpCopyTo(destFile)
+                                                        AppSettings.setChatBackgroundId(
+                                                            ChatBackgroundIds.CUSTOM
+                                                        )
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
+                                                    }
                                                 }
                                             }
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Camera,
-                                    contentDescription = "Свои обои",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Camera,
+                                        contentDescription = "Свои обои",
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
+                        }
+                        if (settings.chatBackgroundId!=ChatBackgroundIds.CUSTOM) {
+                            Text(
+                                when (settings.chatBackgroundId) {
+                                    ChatBackgroundIds.DEFAULT_IMG08 -> "BatoonTech"
+                                    else -> "Sanya Alabai"
+                                }, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                            )
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -355,4 +396,22 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
             }
         }
     }
+}
+
+@Composable
+fun BackgroundSelectButton(bgId: Int, currentId: Int) {
+    val mod = Modifier
+        .size(70.dp)
+        .clip(RoundedCornerShape(5.dp))
+        .then(
+            if (currentId == bgId) {
+                Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp))
+            } else Modifier
+        )
+    Box(
+        (if(bgId in 1..15) addChatBackground_defImage(bgId, mod)
+        else addChatBackground_defPrimary(mod))
+            .clickable { AppSettings.setChatBackgroundId(bgId) }
+    ) {}
+    Spacer(Modifier.width(5.dp))
 }
