@@ -43,6 +43,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.ktor.client.cio)
             implementation(files("libs/HideP2P.jar"))
+            implementation("tech.kwik:kwik:0.11")
+            implementation("tech.kwik:flupke:0.9.4")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
             implementation("com.google.crypto.tink:tink:1.21.0")
             implementation("org.bytedeco:javacv-platform:1.5.10")
@@ -52,6 +54,8 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(files("libs/HideP2P.jar"))
+            implementation("tech.kwik:kwik:0.11")
+            implementation("tech.kwik:flupke:0.9.4")
             implementation(libs.ktor.client.okhttp)
             implementation(libs.compose.uiToolingPreview)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
