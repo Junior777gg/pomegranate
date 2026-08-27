@@ -32,15 +32,11 @@ actual class P2PManagerImpl actual constructor(tempDir: String) {
     }
 
     actual fun breakConnection() {
-        manager.breakConnection()
+
     }
 
     actual suspend fun fork(): P2PManagerImpl{
-        val newP2P = manager.fork()
-        val impl = P2PManagerImpl(manager.tempDir)
-        impl.manager = newP2P!!
-        impl.channel = P2PChannelImpl(newP2P.channel)
-        return impl
+        return this
         }
 
 }

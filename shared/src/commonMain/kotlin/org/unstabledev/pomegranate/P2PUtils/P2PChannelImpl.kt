@@ -9,8 +9,6 @@ sealed class Data {
 }
 
 expect class P2PChannelImpl(actChannel: Any) {
-    var remoteIP: String
-    var remotePort: Int
     suspend fun send(file: KMPFile, code: Byte)
     suspend fun send(stream: KMPInputStream, code: Byte)
     suspend fun send(bytes: ByteArray, code: Byte = 0)

@@ -6,23 +6,12 @@ import org.unstabledev.pomegranate.KMPInputStream
 
 actual class P2PChannelImpl actual constructor(actChannel: Any) {
     val channel = actChannel as P2PChannel
-    actual var remoteIP: String
-        get() = channel.remoteIp
-        set(value) {
-            channel.remoteIp = value
-        }
-    actual var remotePort: Int
-        get() = channel.remotePort
-        set(value) {
-            channel.remotePort = value
-        }
-
     actual suspend fun send(file: KMPFile, code: Byte) {
         channel.send(file, code)
     }
 
     actual suspend fun send(stream: KMPInputStream, code: Byte) {
-        channel.send(stream, code)
+
     }
 
     actual suspend fun send(bytes: ByteArray, code: Byte) {
