@@ -54,6 +54,7 @@ import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.Routes
@@ -82,6 +83,14 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     var splitPosition by remember { mutableFloatStateOf(settings.desktopHomeSplit) }
     val minLeftWidth = 0.5f
     val maxLeftWidth = 2.0f
+
+    PlatformKeyEvents.Instance?.onBackCallback = {
+        if(panelSubScreen != PanelSubScreen.CHATS) {
+            panelSubScreen = PanelSubScreen.CHATS
+        } else {
+            Repository.setLastContact(null)
+        }
+    }
 
     Box(
         modifier = Modifier
