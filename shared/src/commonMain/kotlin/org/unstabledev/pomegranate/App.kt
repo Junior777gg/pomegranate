@@ -13,7 +13,7 @@ import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
 
 @Composable
-fun App(chatDao: ChatDao, messagesDao: MessagesDao, backCallback: (()->Unit)? = null) {
+fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
     val theme = ColorTheme()
     val settings by AppSettings.state.collectAsState()
 
