@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
@@ -98,6 +99,13 @@ object Repository {
                 delay(3000.milliseconds)
             }
         }
+    }
+
+    suspend fun isChatOpen(email: String): Boolean {
+        return isChatOpen(chatDao.getChatByEmailFlow(email).first())
+    }
+    suspend fun isChatOpen(chat: ChatDC?): Boolean {
+        return if(chat!=null) availableChats[chat]?.first()!=null else false
     }
 
     fun setLastContact(contact: ChatDC?) {
