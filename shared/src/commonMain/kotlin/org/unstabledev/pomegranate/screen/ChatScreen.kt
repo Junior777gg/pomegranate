@@ -62,6 +62,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -83,11 +84,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.AudioRecorder
 import org.unstabledev.pomegranate.ChooseFile
 import org.unstabledev.pomegranate.ChooseMultipleFiles
 import org.unstabledev.pomegranate.ChooseMultipleImages
@@ -165,7 +169,6 @@ fun ChatScreen(
     LaunchedEffect(messages.value.size) {
         if (messages.value.isNotEmpty()) listState.animateScrollToItem(0)
     }
-
 
     val onImagePreviewClick: (MessageDC) -> Unit = remember {
         { msg -> messagePreview.value = msg }
@@ -272,10 +275,7 @@ fun ChatScreen(
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
                     ) {
-                        MessageInput(
-                            state = inputState,
-                            viewModel
-                        )
+                        MessageInput(inputState, viewModel, scope)
                     }
                 }
             }
@@ -400,6 +400,7 @@ private fun ChatHeader(
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
             .height(56.dp)
+            .zIndex(2.0f)
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -553,11 +554,12 @@ private fun ChatHeader(
 @Composable
 private fun MessageInput(
     state: TextFieldState,
-    viewModel: ChatScreenController
+    viewModel: ChatScreenController,
+    scope: CoroutineScope
 ) {
     val isAttachMediaOpen = remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
-    //val recorder = remember { AudioRecorder() }
+    val recorder = remember { AudioRecorder() }
     var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
     val elapsedSeconds = remember { mutableStateOf(0) }
 
@@ -568,14 +570,14 @@ private fun MessageInput(
             elapsedSeconds.value++
         }
     }
-    /*DisposableEffect(Unit) {
+    DisposableEffect(Unit) {
         onDispose {
             if (recorder.isRecording()) {
                 recorder.stop()
             }
             recorder.release()
         }
-    }*/
+    }
 
     Column {
         Row(
@@ -690,7 +692,7 @@ private fun MessageInput(
                         .background(ColorTheme.Warning)
                         .clickable {
                             try {
-                                //recorder.stop()
+                                recorder.stop()
                                 isRecording = false
 
                                 currentVoiceFile?.let { voiceFile ->
@@ -725,17 +727,13 @@ private fun MessageInput(
                         val text = state.text.toString().trim()
                         if (isRecording) {
                             try {
-                                //recorder.stop()
+                                recorder.stop()
                                 isRecording = false
 
                                 currentVoiceFile?.let { voiceFile ->
-                                    if (voiceFile.exists() && voiceFile.length() > 0) {
-                                        /*scope.launch {
-                                        viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE)
-                                    }*/
-                                    } else {
-                                        println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
-                                    }
+                                    if (voiceFile.exists() && voiceFile.length() > 0)
+                                        scope.launch { viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE) }
+                                    else println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
                                     currentVoiceFile = null
                                 }
                             } catch (e: Exception) {
@@ -759,7 +757,7 @@ private fun MessageInput(
                                 )
 
                                 currentVoiceFile = voiceFile
-                                //recorder.start(voiceFile)
+                                recorder.start(voiceFile)
                                 isRecording = true
                             } catch (e: Exception) {
                                 e.printStackTrace()
@@ -898,21 +896,26 @@ private fun NewContactWidget(
                 )
             }*/
 
-            Spacer(modifier = Modifier.width(4.dp))
+            if (!Util.isValidEmail(chat.partnerEmail)) {
+                Spacer(modifier = Modifier.width(4.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(
-                    Icons.Default.Warning,
-                    contentDescription = "Предупреждение",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = "Не официальный аккаунт",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Normal
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Неподтверждённый аккаунт",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
             }
         }
     }

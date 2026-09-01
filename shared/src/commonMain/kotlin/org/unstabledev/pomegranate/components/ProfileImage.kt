@@ -43,7 +43,6 @@ fun ProfileImage(profile: Profile?, partnerEmail: String, size: Dp=50.dp, fontSi
 
 @Composable
 fun GeneratedProfileImage(name: String, size: Dp=50.dp, fontSize: TextUnit = 18.sp) {
-    val settings by AppSettings.state.collectAsState()
     Box(
         modifier = Modifier
             .size(size)
