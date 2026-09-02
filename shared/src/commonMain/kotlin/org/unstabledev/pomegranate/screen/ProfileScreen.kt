@@ -61,6 +61,7 @@ import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpReadBytes
 
 
@@ -167,7 +168,7 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 @Composable
 private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(0) }
-    LazyColumn(Modifier.padding(top = 50.dp)) {
+    LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
