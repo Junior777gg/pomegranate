@@ -18,6 +18,7 @@ import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import java.awt.FileDialog
 import java.awt.Frame
+import java.awt.SystemTray
 import java.io.File
 import java.io.FilenameFilter
 
@@ -80,8 +81,19 @@ fun main(args: Array<String>) {
     BackgroundStorage.ensureBackgroundDir()
     application {
         val trayState = rememberTrayState()
-        Notifications.currentPush = { title, message ->
+        Notifications.currentPush = { title, message, callback ->
             trayState.sendNotification(Notification(title, message))
+            if (SystemTray.isSupported()) {
+                val tray = SystemTray.getSystemTray()
+                val icon = tray.trayIcons.firstOrNull()
+                if (icon!=null) {
+                    for (listener in icon.actionListeners) icon.removeActionListener(listener)
+                    icon.addActionListener {
+                        isOpen.value = true
+                        callback()
+                    }
+                }
+            }
         }
         if (runBg) {
             Tray(
