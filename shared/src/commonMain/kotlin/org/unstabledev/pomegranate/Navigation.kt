@@ -34,6 +34,7 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 
 @Composable
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
+    PlatformKeyEvents.Instance = PlatformKeyEvents()
     Repository.messagesDao = messagesDao
     Repository.chatDao = chatDao
     if (currentCall.value != null) {
@@ -43,11 +44,8 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
     val fistFilePath = remember { Repository.fistFilePath }
     if (KMPFile(fistFilePath).exists()) {
         KMPFile("$pomegranatePath${separator}temp").createNewFile()
-        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") {
-            Routes.HOME_SCREEN
-        } else {
-            Routes.WELCOME_SCREEN
-        }
+        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") Routes.HOME_SCREEN
+        else Routes.WELCOME_SCREEN
     } else {
         if (KMPFile(Repository.pomegranatePath).exists()) {
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
@@ -81,7 +79,10 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
         composable(Routes.HOME_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
+                    goTo = { route: String ->
+                        navController.navigate(route)
+                        PlatformKeyEvents.Instance?.onBackCallback = {}
+                    },
                     back = {}
                 )
             }

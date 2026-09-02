@@ -60,6 +60,7 @@ import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.NavigationWays
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Routes
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.applyScreenPadding
@@ -324,7 +325,7 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     }
                     Spacer(modifier = Modifier.padding(vertical = 5.dp))
                     Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
-                        navWayObj.goTo("select_firebase")
+                        navWayObj.goTo(Routes.SETTINGS_SELECT_FIREBASE_SCREEN)
                     }) {
                         Row(
                             Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),

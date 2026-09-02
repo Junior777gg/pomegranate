@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -266,6 +267,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
             val message by getLastMessageTextFlow(chat.partnerEmail)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
+            val isOnline = produceState(false) { value = Repository.isChatOpen(chat) }
             //if (!hasLast) return@items
             Row(
                 modifier = Modifier
@@ -289,7 +291,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        ProfileImage(profile, chat)
+                        ProfileImage(profile, chat, isOnline = isOnline.value)
                     }
                     Column(modifier = Modifier.fillMaxSize().padding(5.dp), verticalArrangement = Arrangement.Center) {
                         val displayName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)

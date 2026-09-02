@@ -1,6 +1,10 @@
 package org.unstabledev.pomegranate
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.Tray
@@ -96,6 +100,12 @@ fun main(args: Array<String>) {
                     AppSettings.save()
                     isOpen.value = false
                     if (!runBg) shutdownJavaFx()
+                },
+                onKeyEvent = {
+                    if (it.key==Key.Escape && it.type==KeyEventType.KeyDown) {
+                        PlatformKeyEvents.Instance?.onBack()
+                    }
+                    return@Window false
                 },
                 title = "pomegranate",
                 icon = painterResource("pomegranate.png")

@@ -393,6 +393,7 @@ private fun ChatHeader(
     val profile = chat.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
     val menuExpanded = remember { mutableStateOf(false) }
+    val isOnline = produceState(false) {value = Repository.isChatOpen(chat)}
 
     Row(
         modifier = Modifier
@@ -417,7 +418,7 @@ private fun ChatHeader(
             Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ProfileImage(profile, chat)
+            ProfileImage(profile, chat, isOnline = isOnline.value)
 
             Spacer(modifier = Modifier.width(12.dp))
 

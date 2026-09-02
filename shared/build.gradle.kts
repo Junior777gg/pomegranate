@@ -87,7 +87,7 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
