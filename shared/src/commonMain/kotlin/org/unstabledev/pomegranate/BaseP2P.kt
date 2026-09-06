@@ -4,8 +4,8 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
-import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.database.sha256
+
 
 class BaseP2P {
     init {
@@ -20,16 +20,16 @@ class BaseP2P {
             while (email == "") {
                 try {
                     email = Firebase.get<String>("p2p/${myEmail}") ?: ""
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                 }
-                delay(100)
+                delay(1000)
             }
             println("New connection: $email")
             Firebase.delete("p2p/${myEmail}")
             val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
             Firebase.put(
                 "p2p/${myEmail}/${email.sha256()}/offer",
-                "${manager.getAddress()}&${manager.getLocalAddress()}"
+                manager.getICECandidates()
             )
             var answer = ""
             while (answer == "") {
@@ -38,8 +38,7 @@ class BaseP2P {
                 } catch (_: Exception) { }
                 delay(100)
             }
-            val splitAnswer = answer.split("&")
-            manager.createConnection(splitAnswer[0], splitAnswer[1])
+            manager.createConnection(answer)
             return email to manager
         }
     }
@@ -51,7 +50,7 @@ class BaseP2P {
         } catch (_: Exception) { }
         var offer = ""
         try {
-            withTimeout(5000) {
+            withTimeout(7000) {
                 while (offer == "") {
                     offer = Firebase.get<String>("p2p/${email.sha256()}/${myEmail.sha256()}/offer") ?: ""
                     delay(100)
@@ -62,13 +61,11 @@ class BaseP2P {
         } finally {
             Firebase.delete("p2p/${email.sha256()}")
         }
-        val splitOffer = offer.split("&")
         val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
-        val answer = "${manager.getAddress()}&${manager.getLocalAddress()}"
         try {
-            Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", answer)
+            Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", manager.getICECandidates())
         } catch (_: Exception) { }
-        manager.createConnection(splitOffer[0],splitOffer[1])
+        manager.createConnection(offer)
         return manager
     }
 }
