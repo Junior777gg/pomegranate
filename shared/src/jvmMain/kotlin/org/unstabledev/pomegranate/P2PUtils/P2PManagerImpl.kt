@@ -32,7 +32,6 @@ actual class P2PManagerImpl actual constructor(val tempDir: String) {
         newManager.manager = newLibManager!!
         newManager.channel = P2PChannelImpl(newLibManager.channel)
         return newManager
-
     }
 
     actual fun getICECandidates(): String {
