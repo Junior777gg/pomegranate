@@ -2,6 +2,8 @@ package org.unstabledev.pomegranate
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -68,6 +70,7 @@ data class AppSettingsState(
     val chatTripleColumn: Boolean = false,
     val amoledUnlocked: Boolean = false,
     val useAmoledOnDarkSystem: Boolean = false,
+    val messageColor: Int = 0x8BFF1A,
     val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
     val desktopHomeSplit: Float = 1.0f,
 ) {
@@ -173,6 +176,10 @@ object AppSettings {
 
     fun setDesktopHomeSplit(v: Float) {
         _state.value = _state.value.copy(desktopHomeSplit = v)
+    }
+
+    fun setMessageColor(v: Color) {
+        _state.value = _state.value.copy(messageColor = v.toArgb())
     }
 
     fun addFirebaseAddress(title: String, url: String) {

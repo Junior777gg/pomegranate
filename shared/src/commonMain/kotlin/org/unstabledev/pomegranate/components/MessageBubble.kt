@@ -38,6 +38,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -52,8 +53,6 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
@@ -66,9 +65,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
-import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
@@ -76,6 +76,7 @@ import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
@@ -90,38 +91,41 @@ fun MessageBubble(
     snackbarHostState: SnackbarHostState,
     renderMarkdown: Boolean
 ) {
+    val settings by AppSettings.state.collectAsState()
+
+    val profile = chat.profile?.deserialize()
+    val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+    val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
+
     val menuOpen = remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
+    val msgColor = if (message.isMine) /*Color(settings.messageColor)*/ ColorTheme.MyMessageBubble else MaterialTheme.colorScheme.surface
+    val needPadding = message.type != MessageDC.IMAGE
+    val noNeedForBubble = message.isCall()
+    @Composable
+    fun applyMessageBubble(apply: Boolean, base: Modifier): Modifier {
+        if(!apply) {
+            return base.widthIn(max = 280.dp)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (message.isMine) 16.dp else 4.dp,
+                        bottomEnd = if (message.isMine) 4.dp else 16.dp
+                    )
+                )
+                .background(msgColor)
+                .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
+        }
+        return base
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
     ) {
-        val needPadding = message.type != MessageDC.IMAGE
-        val noNeedForBubble = message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL
-        val profile = chat.profile?.deserialize()
-        val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-        val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
-        @Composable
-        fun applyMessageBubble(base: Modifier): Modifier {
-            if(!noNeedForBubble) {
-                return base.widthIn(max = 280.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = if (message.isMine) 16.dp else 4.dp,
-                            bottomEnd = if (message.isMine) 4.dp else 16.dp
-                        )
-                    )
-                    .background(if (message.isMine) ColorTheme.MyMessageBubble else MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
-            }
-            return base
-        }
         Box(
-            modifier = applyMessageBubble(Modifier
+            modifier = applyMessageBubble(noNeedForBubble, Modifier
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = {
@@ -505,7 +509,7 @@ fun MessageBubble(
                         },
                         onClick = {
                             scope.launch {
-                                clipboardManager.setText(AnnotatedString(message.data.decodeToString()))
+                                Clipboard().copyText(message.data.decodeToString())
                             }
                             menuOpen.value = false
                         }

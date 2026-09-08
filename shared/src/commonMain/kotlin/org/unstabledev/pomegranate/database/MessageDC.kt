@@ -24,6 +24,11 @@ data class MessageDC(
         const val AUDIO = "audio"
         const val BEGIN_CALL = "call:begin_video"
         const val ACCEPT_CALL = "call:accept"
+
+        fun MessageDC.isCall(): Boolean {
+            return type==BEGIN_CALL ||
+                    type==ACCEPT_CALL
+        }
     }
 }
 

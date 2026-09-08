@@ -48,8 +48,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,6 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.NavigationWays
@@ -77,7 +76,6 @@ import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
-
 
 @Serializable
 data class Profile(
@@ -480,7 +478,6 @@ private fun ChatSwitcherButton(modifier: Modifier, text: String) {
 private fun InfoRow(label: String, value: String, snackbarHostState: SnackbarHostState? = null, valueColor: Color = MaterialTheme.colorScheme.onBackground, canBeCopied: Boolean = false) {
     if(value.isBlank()) return
     var showSnackbar by remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
     val baseMod = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth()
 
     if (showSnackbar) {
@@ -491,7 +488,7 @@ private fun InfoRow(label: String, value: String, snackbarHostState: SnackbarHos
     }
 
     Column(if(!canBeCopied) baseMod else baseMod.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-        clipboardManager.setText(AnnotatedString(value))
+        Clipboard().copyText(value)
         showSnackbar = true
     }) {
         Text(text = value, color = valueColor, fontSize = 16.sp)

@@ -18,3 +18,17 @@ const val HAPTIC_EFFECT_TICK = 2
 
 expect fun sendHaptic(amplitude: Int)
 expect fun sendHaptic(milliseconds: Long, amplitude: Int)
+
+sealed class ClipboardEntry {
+    data class Text(val text: String): ClipboardEntry()
+    data class Image(val data: ByteArray): ClipboardEntry()
+}
+
+expect class Clipboard() {
+    fun copyText(str: String)
+    fun copyImage(data: String)
+
+    fun get(): ClipboardEntry?
+    fun getText(): String?
+    fun getImage(): ByteArray?
+}

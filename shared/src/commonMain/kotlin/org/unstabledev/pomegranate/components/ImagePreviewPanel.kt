@@ -39,13 +39,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.applyScreenPadding
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
-import kotlin.time.Clock
 
 @Composable
 fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: SnackbarHostState) {
@@ -147,6 +147,18 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
                         .width(230.dp)
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("Скопировать", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        onClick = {
+                            scope.launch {
+                                Clipboard().copyImage(message.data.decodeToString())
+                                snackbarHostState.showSnackbar("Изображение скопировано")
+                            }
+                            menuExpanded.value = false
+                        }
+                    )
                     DropdownMenuItem(
                         text = {
                             Text("Скачать", color = MaterialTheme.colorScheme.onBackground)
