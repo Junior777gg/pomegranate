@@ -9,7 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.ClipEntry
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 expect val rootDirectory: String
 expect val separator : String
@@ -138,6 +140,7 @@ expect fun Modifier.fileDropArea(
 ): Modifier
 
 expect fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap
+expect suspend fun getBitmapFromBytesAsync(bytes: ByteArray): ImageBitmap?
 
 data class ClipImage(
     val bitmap: ImageBitmap,

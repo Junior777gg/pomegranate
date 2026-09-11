@@ -184,6 +184,7 @@ actual fun Modifier.fileDropArea(
 }
 
 actual fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()
+actual suspend fun getBitmapFromBytesAsync(bytes: ByteArray): ImageBitmap? = withContext(Dispatchers.IO){BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()}
 
 actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): ClipImage? {
     return try {
