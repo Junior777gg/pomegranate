@@ -10,11 +10,14 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.platform.ClipEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
+import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -24,10 +27,11 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.URI
 import java.nio.charset.Charset
+import javax.imageio.ImageIO
 import kotlin.io.appendText
-import kotlin.io.readLines
 import kotlin.io.readText
 import kotlin.io.writeText
+import kotlin.time.Clock
 
 import java.io.File as FileAccess
 
@@ -58,8 +62,8 @@ actual fun KMPFile.inputStream(): KMPInputStream = FileInputStream(this)
 actual fun KMPFile.outputStream(): KMPOutputStream = FileOutputStream(this)
 actual fun ByteArray.inputStream(): KMPInputStream = ByteArrayInputStream(this)
 
-actual class FileSaver {
-    actual suspend fun saveFile(path: String): Boolean = withContext(Dispatchers.IO) {
+actual object FileSaver {
+    actual suspend fun save(path: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val currentFile = File(path)
             val userHome = System.getProperty("user.home") ?: return@withContext false
@@ -78,42 +82,6 @@ actual class FileSaver {
             e.printStackTrace()
             false
         }
-    }
-}
-
-actual class ChooseFile actual constructor(){
-    companion object {
-        lateinit var choose: (onResult: (KMPFile) -> Unit) -> Unit
-    }
-    actual fun get(onResult: (KMPFile) -> Unit) {
-        choose(onResult)
-    }
-}
-
-actual class ChooseMultipleFiles actual constructor(){
-    companion object {
-        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
-    }
-    actual fun get(onResult: (List<KMPFile>) -> Unit) {
-        choose(onResult)
-    }
-}
-
-actual class ChooseImage actual constructor(){
-    companion object {
-        lateinit var choose: (onResult: (KMPFile) -> Unit) -> Unit
-    }
-    actual fun get(onResult: (KMPFile) -> Unit) {
-        choose(onResult)
-    }
-}
-
-actual class ChooseMultipleImages actual constructor(){
-    companion object {
-        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
-    }
-    actual fun get(onResult: (List<KMPFile>) -> Unit) {
-        choose(onResult)
     }
 }
 
@@ -204,3 +172,63 @@ private fun DragAndDropEvent.transferableOrNull(): Transferable? = runCatching {
 }.getOrNull()
 
 actual fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap = Image.makeFromEncoded(bytes).toComposeImageBitmap()
+
+actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): ClipImage? {
+    return try {
+        val clipboard=Toolkit.getDefaultToolkit().systemClipboard
+
+        if (clipboard.isDataFlavorAvailable(DataFlavor.imageFlavor)) {
+            val image=clipboard.getData(DataFlavor.imageFlavor) as? BufferedImage
+
+            if (image != null) {
+                val fileName="pasted_${Clock.System.now().toEpochMilliseconds()}.png"
+                val tempFile=KMPFile(tempDir, fileName)
+                val javaFile=File(tempFile.absolutePath)
+                withContext(Dispatchers.IO) {
+                    ImageIO.write(image, "png", javaFile)
+                }
+
+                if (tempFile.exists() && tempFile.length() > 0) {
+                    val bitmap = getBitmapFromBytes(tempFile.kmpReadBytes())
+                    return ClipImage(
+                        bitmap = bitmap,
+                        file = tempFile,
+                        mimeType = "image/png",
+                        fileName = fileName
+                    )
+                }
+            }
+        }
+
+        if (clipboard.isDataFlavorAvailable(DataFlavor.javaFileListFlavor)) {
+            @Suppress("UNCHECKED_CAST")
+            val fileList=withContext(Dispatchers.IO) {
+                clipboard.getData(DataFlavor.javaFileListFlavor)
+            } as? List<File>
+
+            fileList?.firstOrNull()?.let { file ->
+                if (file.extension.lowercase() in listOf("png", "jpg", "jpeg", "gif", "webp")) {
+                    val fileName="pasted_${Clock.System.now().toEpochMilliseconds()}.${file.extension}"
+                    val tempFile=KMPFile(tempDir, fileName)
+                    file.copyTo(File(tempFile.absolutePath), overwrite = true)
+
+                    if (tempFile.exists() && tempFile.length() > 0) {
+                        val bitmap=getBitmapFromBytes(tempFile.kmpReadBytes())
+                        return ClipImage(
+                            bitmap = bitmap,
+                            file = tempFile,
+                            mimeType = "image/${file.extension}",
+                            fileName = fileName
+                        )
+                    }
+                }
+            }
+        }
+
+        null
+    } catch (e: Exception) {
+        println("Error in processPastedImageDesktop: ${e.message}")
+        e.printStackTrace()
+        null
+    }
+}

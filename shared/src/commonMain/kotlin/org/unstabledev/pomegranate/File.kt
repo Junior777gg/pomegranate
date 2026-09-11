@@ -1,8 +1,15 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.foundation.content.TransferableContent
+import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.ClipEntry
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 expect val rootDirectory: String
 expect val separator : String
@@ -11,7 +18,6 @@ expect open class KMPFile {
     constructor(parent: String, child: String)
     constructor(parent: KMPFile, child: String)
 
-    // Информация о файле
     fun getName(): String
     fun getParent(): String?
     fun getParentFile(): KMPFile?
@@ -21,14 +27,12 @@ expect open class KMPFile {
     fun getCanonicalPath(): String
     fun getCanonicalFile(): KMPFile
 
-    // Проверки
     fun exists(): Boolean
     fun isDirectory(): Boolean
     fun isFile(): Boolean
     fun isHidden(): Boolean
     fun isAbsolute(): Boolean
 
-    // Права
     fun canRead(): Boolean
     fun canWrite(): Boolean
     fun canExecute(): Boolean
@@ -40,28 +44,22 @@ expect open class KMPFile {
     fun setExecutable(executable: Boolean): Boolean
     fun setExecutable(executable: Boolean, ownerOnly: Boolean): Boolean
 
-    // Создание / удаление
     fun createNewFile(): Boolean
     fun delete(): Boolean
     fun deleteOnExit()
 
-    // Директории
     fun mkdir(): Boolean
     fun mkdirs(): Boolean
 
-    // Метаданные
     fun length(): Long
     fun lastModified(): Long
     fun setLastModified(time: Long): Boolean
 
-    // Листинг
     fun list(): Array<String>?
     fun listFiles(): Array<KMPFile>?
 
-    // Переименование
     fun renameTo(dest: KMPFile): Boolean
 
-    // Свободное место
     fun getTotalSpace(): Long
     fun getFreeSpace(): Long
     fun getUsableSpace(): Long
@@ -121,24 +119,8 @@ expect open class KMPByteArrayOutputStream() : KMPOutputStream {
     open fun reset()
 }
 
-expect class FileSaver() {
-    suspend fun saveFile(path: String): Boolean
-}
-
-expect class ChooseMultipleFiles() {
-    fun get(onResult: (List<KMPFile>) -> Unit)
-}
-
-expect class ChooseFile() {
-    fun get(onResult: (KMPFile) -> Unit)
-}
-
-expect class ChooseMultipleImages() {
-    fun get(onResult: (List<KMPFile>) -> Unit)
-}
-
-expect class ChooseImage() {
-    fun get(onResult: (KMPFile) -> Unit)
+expect object FileSaver {
+    suspend fun save(path: String): Boolean
 }
 
 data class DroppedFile(
@@ -156,3 +138,49 @@ expect fun Modifier.fileDropArea(
 ): Modifier
 
 expect fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap
+
+data class ClipImage(
+    val bitmap: ImageBitmap,
+    val file: KMPFile?,
+    val mimeType: String,
+    val fileName: String
+)
+expect suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): ClipImage?
+
+@OptIn(ExperimentalFoundationApi::class)
+fun handlePastedClipContent(
+    transferableContent: TransferableContent,
+    pastedImages: MutableList<ClipImage>,
+    scope: CoroutineScope
+): TransferableContent? {
+    val hasImage=transferableContent.hasMediaType(MediaType.Image)
+    if (!hasImage) return transferableContent
+
+    scope.launch {
+        try {
+            val clipEntry = transferableContent.clipEntry
+            processPastedClipImage(clipEntry, pastedImages)
+        } catch (e: Exception) {
+            println("Failed to handle pasted content: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    return null
+}
+@OptIn(ExperimentalFoundationApi::class)
+private suspend fun processPastedClipImage(
+    clipEntry: ClipEntry,
+    pastedImages: MutableList<ClipImage>
+) {
+    try {
+        val tempDir = KMPFile(Repository.pomegranatePath, "temp")
+        if (!tempDir.exists()) tempDir.mkdirs()
+
+        val pastedImage = processClipImage(clipEntry, tempDir)
+        if (pastedImage != null) pastedImages.add(pastedImage)
+    } catch (e: Exception) {
+        println("Failed to process pasted image: ${e.message}")
+        e.printStackTrace()
+    }
+}

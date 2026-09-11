@@ -22,6 +22,7 @@ import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.kmpCopyTo
@@ -134,7 +135,7 @@ class Observer(
                                                 MessageDC.TEXT -> messageDC.data.decodeToString()
                                                     .stripMarkdown()
 
-                                                MessageDC.BEGIN_CALL -> "📞 Звонок"
+                                                MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "📞 Звонок"
                                                 MessageDC.IMAGE -> "🖼 Изображение"
                                                 MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
                                                 MessageDC.AUDIO -> "🎵 Аудио"
@@ -143,8 +144,7 @@ class Observer(
                                             }
                                         )
                                     }
-                                    val isCall =
-                                        (messageDC.type == MessageDC.BEGIN_CALL || messageDC.type == MessageDC.ACCEPT_CALL)
+                                    val isCall = messageDC.isCall()
                                     if (isCall) {
                                         val videoManager = manager.fork()
                                         val audioManager = manager.fork()
@@ -174,7 +174,7 @@ class Observer(
             var data = message.data
             val msg = message.copy()
             val code = Random.nextInt(1, 255).toByte()
-            val isCall = (message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL)
+            val isCall = message.isCall()
             if (isCall && data.isEmpty()) {
                 launch {
                     val videoManager = manager.fork()

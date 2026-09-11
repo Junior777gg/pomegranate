@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
@@ -165,7 +165,7 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
                         },
                         onClick = {
                             scope.launch {
-                                FileSaver().saveFile(message.data.decodeToString())
+                                FileSaver.save(message.data.decodeToString())
                                 snackbarHostState.showSnackbar("Изображение сохранено")
                             }
                             menuExpanded.value = false

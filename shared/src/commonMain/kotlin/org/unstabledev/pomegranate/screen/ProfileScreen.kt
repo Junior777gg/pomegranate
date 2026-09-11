@@ -63,10 +63,10 @@ import kotlinx.serialization.Serializable
 import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
@@ -332,7 +332,7 @@ private fun FilesList(snackbarHostState: SnackbarHostState, scope: CoroutineScop
                     .padding(8.dp)
                     .clickable {
                         scope.launch {
-                            FileSaver().saveFile(path)
+                            FileSaver.save(path)
                             snackbarHostState.showSnackbar("Файл сохранён")
                         }
                     },

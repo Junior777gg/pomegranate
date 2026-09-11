@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
             pendingFilesResult?.invoke(selectedFiles)
             pendingFilesResult = null
         }
-        ChooseMultipleFiles.choose = { onResult ->
+        MediaSelector.multipleFilesChoose = { onResult ->
             pendingFilesResult = onResult
             pickFiles.launch(arrayOf("*/*"))
         }
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
             pendingFileResult?.invoke(selectedFile.value!!)
             pendingFileResult = null
         }
-        ChooseFile.choose = { onResult ->
+        MediaSelector.fileChoose = { onResult ->
             pendingFileResult = onResult
             pickFile.launch(arrayOf("*/*"))
         }
@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
             pendingImagesResult?.invoke(selectedImages)
             pendingImagesResult = null
         }
-        ChooseMultipleImages.choose = { onResult ->
+        MediaSelector.multipleImagesChoose = { onResult ->
             pendingImagesResult = onResult
             pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
             pendingImageResult?.invoke(selectedFile.value!!)
             pendingImageResult = null
         }
-        ChooseImage.choose = { onResult ->
+        MediaSelector.imageChoose = { onResult ->
             pendingImageResult = onResult
             pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }

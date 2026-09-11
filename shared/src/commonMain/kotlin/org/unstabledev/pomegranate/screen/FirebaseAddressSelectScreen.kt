@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.dp
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.FirebaseAddress
-import org.unstabledev.pomegranate.NavigationWays
-import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
 @Composable
 fun FirebaseAddressSelectScreen(navWayObj: NavigationWays) {

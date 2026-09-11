@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
@@ -20,14 +21,13 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.unstabledev.pomegranate.readBytes
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -37,6 +37,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
 import kotlin.io.outputStream
+import kotlin.time.Clock
 import java.io.File as FileAccess
 
 
@@ -71,11 +72,10 @@ actual fun KMPFile.inputStream(): KMPInputStream = FileInputStream(this)
 actual fun KMPFile.outputStream(): KMPOutputStream = FileOutputStream(this)
 actual fun ByteArray.inputStream(): KMPInputStream = ByteArrayInputStream(this)
 
-actual class FileSaver {
-    companion object {
-        lateinit var context: Context
-    }
-    actual suspend fun saveFile(path: String): Boolean = withContext(Dispatchers.IO) {
+@SuppressLint("StaticFieldLeak")
+actual object FileSaver {
+    lateinit var context: Context
+    actual suspend fun save(path: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val resolver = context.contentResolver
             val currentFile = File(path)
@@ -106,46 +106,6 @@ actual class FileSaver {
             e.printStackTrace()
             false
         }
-    }
-}
-
-actual class ChooseFile actual constructor() {
-    companion object {
-        lateinit var choose: (onResult: (KMPFile) -> Unit) -> Unit
-    }
-
-    actual fun get(onResult: (KMPFile) -> Unit) {
-        return choose(onResult)
-    }
-}
-
-actual class ChooseMultipleFiles actual constructor() {
-    companion object {
-        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
-    }
-
-    actual fun get(onResult: (List<KMPFile>) -> Unit) {
-        return choose(onResult)
-    }
-}
-
-actual class ChooseImage actual constructor() {
-    companion object {
-        lateinit var choose: (onResult: (KMPFile) -> Unit) -> Unit
-    }
-
-    actual fun get(onResult: (KMPFile) -> Unit) {
-        return choose(onResult)
-    }
-}
-
-actual class ChooseMultipleImages actual constructor() {
-    companion object {
-        lateinit var choose: (onResult: (List<KMPFile>) -> Unit) -> Unit
-    }
-
-    actual fun get(onResult: (List<KMPFile>) -> Unit) {
-        return choose(onResult)
     }
 }
 
@@ -224,3 +184,47 @@ actual fun Modifier.fileDropArea(
 }
 
 actual fun getBitmapFromBytes(bytes: ByteArray): ImageBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()
+
+actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): ClipImage? {
+    return try {
+        val clipData=clipEntry.clipData
+        if (clipData.itemCount > 0) {
+            for (i in 0 until clipData.itemCount) {
+                val item=clipData.getItemAt(i)
+                val uri=item.uri
+
+                if (uri != null) {
+                    val mimeType=clipData.description.getMimeType(0)
+                    val extension=when {
+                        mimeType.contains("gif") -> "gif"
+                        mimeType.contains("png") -> "png"
+                        mimeType.contains("jpeg") || mimeType.contains("jpg") -> "jpg"
+                        mimeType.contains("webp") -> "webp"
+                        else -> "png"
+                    }
+
+                    val fileName="pasted_${Clock.System.now().toEpochMilliseconds()}.$extension"
+                    val tempFile=KMPFile(tempDir, fileName)
+                    context?.contentResolver?.openInputStream(uri)?.use { input ->
+                        tempFile.kmpWriteBytes(input.readBytes())
+                    }
+
+                    if (tempFile.exists() && tempFile.length() > 0) {
+                        val bitmap=getBitmapFromBytes(tempFile.kmpReadBytes())
+                        return ClipImage(
+                            bitmap = bitmap,
+                            file = tempFile,
+                            mimeType = mimeType,
+                            fileName = fileName
+                        )
+                    }
+                }
+            }
+        }
+        null
+    } catch (e: Exception) {
+        println("Error in processPastedImageAndroid: ${e.message}")
+        e.printStackTrace()
+        null
+    }
+}

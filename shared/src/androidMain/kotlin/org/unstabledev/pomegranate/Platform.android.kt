@@ -30,6 +30,9 @@ import kotlin.jvm.java
 actual val isMobile: Boolean
     get() = true
 
+actual val handleTapGestures: Boolean
+    get() = true
+
 @Composable
 actual fun isLandscape(): Boolean {
     val configuration = LocalConfiguration.current

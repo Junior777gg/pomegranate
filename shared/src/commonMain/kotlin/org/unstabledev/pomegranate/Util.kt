@@ -1,10 +1,17 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -147,6 +154,88 @@ class Util {
             val hours = localDateTime.hour.toString().padStart(2, '0')
             val minutes = localDateTime.minute.toString().padStart(2, '0')
             return "$hours:$minutes"
+        }
+
+        val countryFlags = mapOf(
+            "Russia" to "🇷🇺",
+            "Ukraine" to "🇺🇦",
+            "Belarus" to "🇧🇾",
+            "Kazakhstan" to "🇰🇿",
+            "USA" to "🇺🇸",
+            "Canada" to "🇨🇦",
+            "Mexico" to "🇲🇽",
+            "Brazil" to "🇧🇷",
+            "Argentina" to "🇦🇷",
+            "UK" to "🇬🇧",
+            "Germany" to "🇩🇪",
+            "France" to "🇫🇷",
+            "Italy" to "🇮🇹",
+            "Spain" to "🇪🇸",
+            "Portugal" to "🇵🇹",
+            "Netherlands" to "🇳🇱",
+            "Belgium" to "🇧🇪",
+            "Switzerland" to "🇨🇭",
+            "Austria" to "🇦🇹",
+            "Poland" to "🇵🇱",
+            "Czech Republic" to "🇨🇿",
+            "Slovakia" to "🇸🇰",
+            "Hungary" to "🇭🇺",
+            "Romania" to "🇷🇴",
+            "Bulgaria" to "🇧🇬",
+            "Serbia" to "🇷🇸",
+            "Croatia" to "🇭🇷",
+            "Greece" to "🇬🇷",
+            "Turkey" to "🇹🇷",
+            "China" to "🇨🇳",
+            "Japan" to "🇯🇵",
+            "South Korea" to "🇰🇷",
+            "India" to "🇮🇳",
+            "Israel" to "🇮🇱",
+            "Saudi Arabia" to "🇸🇦",
+            "UAE" to "🇦🇪",
+            "Australia" to "🇦🇺",
+            "New Zealand" to "🇳🇿",
+            "South Africa" to "🇿🇦",
+            "Nigeria" to "🇳🇬",
+            "Egypt" to "🇪🇬"
+        )
+    }
+}
+
+@Composable
+fun Modifier.altClickable(onPrimary: ()->Unit, onSecondary: ()->Unit): Modifier {
+    return this.pointerInput(Unit) {
+        awaitEachGesture {
+            val downEvent = awaitPointerEvent()
+            val change = downEvent.changes.firstOrNull() ?: return@awaitEachGesture
+
+            if (downEvent.buttons.isSecondaryPressed) {
+                onSecondary()
+                change.consume()
+                return@awaitEachGesture
+            }
+
+            if (downEvent.buttons.isPrimaryPressed || downEvent.type == PointerEventType.Press) {
+                var isLongPress = false
+                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                withTimeoutOrNull(longPressTimeout) {
+                    val upEvent = awaitPointerEvent()
+                    if (upEvent.type == PointerEventType.Release) {
+                        onPrimary()
+                        upEvent.changes.forEach { it.consume() }
+                        change.consume()
+                        return@withTimeoutOrNull
+                    }
+                } ?: run {
+                    isLongPress=true
+                }
+
+                if (isLongPress && handleTapGestures) {
+                    onSecondary()
+                    change.consume()
+                    return@awaitEachGesture
+                }
+            }
         }
     }
 }

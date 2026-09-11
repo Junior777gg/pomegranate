@@ -1,60 +1,20 @@
 package org.unstabledev.pomegranate.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Attachment
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.FileCopy
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.VideoCall
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -62,7 +22,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,50 +33,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.AudioRecorder
-import org.unstabledev.pomegranate.ChooseFile
-import org.unstabledev.pomegranate.ChooseMultipleFiles
-import org.unstabledev.pomegranate.ChooseMultipleImages
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Routes
-import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.Util.Companion.buildTimeMarkMillis
-import org.unstabledev.pomegranate.components.ColorTheme
+import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.MessageBubble
+import org.unstabledev.pomegranate.components.chat.MessageInput
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
-import org.unstabledev.pomegranate.components.ProfileImage
+import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.ScrollToBottomButton
-import org.unstabledev.pomegranate.components.addChatBackground
-import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.components.chat.ChatHeader
+import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.fileDropArea
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -213,7 +153,10 @@ fun ChatScreen(
                         viewModel,
                         if (canBack) back else null,
                         {
-                            navWayObj.goTo(Routes.CALL_SCREEN)
+                            viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
+                        },
+                        {
+                            viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                         },
                         {
                             Repository.lastOpponentEmail = chat.partnerEmail
@@ -377,592 +320,3 @@ fun ChatScreen(
         }
     }
 }
-
-@Composable
-private fun ChatHeader(
-    chat: ChatDC,
-    viewModel: ChatScreenController,
-    onBackClick: (() -> Unit)?,
-    onCallClick: (() -> Unit),
-    onProfileClick: () -> Unit,
-    onScrollToTopClick: () -> Unit,
-    onClearHistoryClick: () -> Unit,
-    onNicknameEditClick: () -> Unit,
-    onDeleteChatClick: () -> Unit,
-) {
-    val profile = chat.profile?.deserialize()
-    val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-    val menuExpanded = remember { mutableStateOf(false) }
-    val isOnline = produceState(false) {value = Repository.isChatOpen(chat)}
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .statusBarsPadding()
-            .height(56.dp)
-            .zIndex(2.0f)
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (onBackClick != null) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
-        Row(
-            Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ProfileImage(profile, chat, isOnline = isOnline.value)
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column {
-                val displayName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
-                Text(
-                    text = displayName,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-
-        Row {
-            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.BEGIN_CALL) }) {
-                Icon(
-                    imageVector = Icons.Default.Call,
-                    contentDescription = "Звонок",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            IconButton(onClick = { viewModel.send(message = null, type = MessageDC.BEGIN_CALL) }) {
-                Icon(
-                    imageVector = Icons.Default.VideoCall,
-                    contentDescription = "Видео звонок",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            IconButton(onClick = { menuExpanded.value = true }) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Меню",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            DropdownMenu(
-                expanded = menuExpanded.value,
-                onDismissRequest = { menuExpanded.value = false },
-                modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null
-                        )
-                    },
-                    onClick = {
-                        menuExpanded.value = false
-                        onProfileClick()
-                    }
-                )
-
-                DropdownMenuItem(
-                    text = {
-                        Text("В начало", color = MaterialTheme.colorScheme.onBackground)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardDoubleArrowUp,
-                            contentDescription = null
-                        )
-                    },
-                    onClick = {
-                        menuExpanded.value = false
-                        onScrollToTopClick()
-                    }
-                )
-
-                DropdownMenuItem(
-                    text = {
-                        Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.EditNote,
-                            contentDescription = null
-                        )
-                    },
-                    onClick = {
-                        menuExpanded.value = false
-                        onNicknameEditClick()
-                    }
-                )
-
-                DropdownMenuItem(
-                    text = {
-                        Text("Очистить историю", color = MaterialTheme.colorScheme.onBackground)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = null
-                        )
-                    },
-                    onClick = {
-                        menuExpanded.value = false
-                        onClearHistoryClick()
-                    }
-                )
-
-                HorizontalDivider()
-
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = "Удалить чат",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    onClick = {
-                        menuExpanded.value = false
-                        onDeleteChatClick()
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MessageInput(
-    state: TextFieldState,
-    viewModel: ChatScreenController,
-    scope: CoroutineScope
-) {
-    val isAttachMediaOpen = remember { mutableStateOf(false) }
-    var isRecording by remember { mutableStateOf(false) }
-    val recorder = remember { AudioRecorder() }
-    var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
-    val elapsedSeconds = remember { mutableStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            if (!isRecording) elapsedSeconds.value = 0
-            delay(100.milliseconds)
-            elapsedSeconds.value++
-        }
-    }
-    DisposableEffect(Unit) {
-        onDispose {
-            if (recorder.isRecording()) {
-                recorder.stop()
-            }
-            recorder.release()
-        }
-    }
-
-    Column {
-        Row(
-            modifier = Modifier
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Black.copy(alpha = 0f),
-                            Color.Black.copy(alpha = 0.2f)
-                        )
-                    )
-                )
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 8.dp, vertical = if (isMobile) {
-                        if (Util.isKeyboardVisible()) 48.dp else 25.dp
-                    } else 10.dp
-                ),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .shadow(2.dp, CircleShape)
-                    .heightIn(min = 40.dp, max = 120.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row {
-                    AnimatedVisibility(
-                        visible = (state.text.isEmpty() && !isRecording),
-                        enter = fadeIn() + slideInHorizontally(initialOffsetX = { -it / 2 }),
-                        exit = fadeOut() + slideOutHorizontally(targetOffsetX = { -it / 2 })
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .height(22.5.dp)
-                                .clickable { isAttachMediaOpen.value = !isAttachMediaOpen.value },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Attachment,
-                                contentDescription = "Файл",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(22.5.dp).rotate(315.0f)
-                            )
-                        }
-                        Spacer(Modifier.width(6.dp))
-                    }
-
-                    if (isRecording) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            var alpha by remember { mutableStateOf(1f) }
-                            LaunchedEffect(Unit) {
-                                while (true) {
-                                    alpha = if (alpha == 1f) 0.3f else 1f
-                                    delay(500.milliseconds)
-                                }
-                            }
-                            Box(
-                                Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Red.copy(alpha = alpha))
-                            )
-                            Text(
-                                elapsedSeconds.buildTimeMarkMillis(),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 15.sp
-                            )
-                        }
-                    } else {
-                        BasicTextField(
-                            state = state,
-                            modifier = Modifier.fillMaxWidth(),
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = 15.sp
-                            ),
-                            cursorBrush = SolidColor(ColorTheme.MessageAccent),
-                            lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
-                            decorator = { innerTextField ->
-                                if (state.text.isEmpty()) {
-                                    Text(
-                                        text = "Сообщение",
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 15.sp
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            if (isRecording) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .shadow(2.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(ColorTheme.Warning)
-                        .clickable {
-                            try {
-                                recorder.stop()
-                                isRecording = false
-
-                                currentVoiceFile?.let { voiceFile ->
-                                    voiceFile.delete()
-                                    currentVoiceFile = null
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                isRecording = false
-                                currentVoiceFile = null
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Отменить",
-                        tint = MaterialTheme.colorScheme.background,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .shadow(2.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(ColorTheme.MessageAccent)
-                    .clickable {
-                        val text = state.text.toString().trim()
-                        if (isRecording) {
-                            try {
-                                recorder.stop()
-                                isRecording = false
-
-                                currentVoiceFile?.let { voiceFile ->
-                                    if (voiceFile.exists() && voiceFile.length() > 0)
-                                        scope.launch { viewModel.send(files = listOf(voiceFile), type = MessageDC.FILE) }
-                                    else println("Voice file doesn't exist or is empty: ${voiceFile.getAbsolutePath()}")
-                                    currentVoiceFile = null
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                isRecording = false
-                                currentVoiceFile = null
-                            }
-                        } else if (text.isNotEmpty()) {
-                            viewModel.send(text, type = MessageDC.TEXT)
-                            state.clearText()
-                        } else {
-                            try {
-                                val tempDir = KMPFile(Repository.pomegranatePath, "temp")
-                                if (!tempDir.exists()) {
-                                    tempDir.mkdirs()
-                                }
-
-                                val voiceFile = KMPFile(
-                                    tempDir,
-                                    "voice_${Clock.System.now().hashCode()}.ogg"
-                                )
-
-                                currentVoiceFile = voiceFile
-                                recorder.start(voiceFile)
-                                isRecording = true
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                isRecording = false
-                                currentVoiceFile = null
-                            }
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (isRecording || !state.text.isEmpty()) Icons.Default.Send else Icons.Default.Mic,
-                    contentDescription = if (isRecording || !state.text.isEmpty()) "Отправить" else "Записать/Отправить",
-                    tint = MaterialTheme.colorScheme.background,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-        if (isAttachMediaOpen.value) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceAround,
-                modifier = Modifier.fillMaxWidth().height(100.dp).background(MaterialTheme.colorScheme.background)) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.clickable {
-                        ChooseMultipleImages().get { files ->
-                            if (files.isNotEmpty()) {
-                                viewModel.send(files = files, type = MessageDC.FILE)
-                            }
-                            isAttachMediaOpen.value = false
-                        }
-                    }) {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(35.dp)
-                    )
-                    Text("Изображение", color = MaterialTheme.colorScheme.onSurface)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.clickable {
-                        ChooseMultipleFiles().get { files ->
-                            if (files.isNotEmpty()) {
-                                viewModel.send(files = files, type = MessageDC.FILE)
-                            }
-                            isAttachMediaOpen.value = false
-                        }
-                    }) {
-                    Icon(
-                        imageVector = Icons.Default.FileCopy,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(35.dp)
-                    )
-                    Text("Файл", color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NewContactWidget(
-    chat: ChatDC
-) {
-    val profile = chat.profile?.deserialize()
-    val displayName = if (profile?.displayName?.isNotBlank() == true) {
-        profile.displayName
-    } else {
-        chat.partnerEmail
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 320.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-
-            Text(
-                text = displayName,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Text(
-                text = "Новый контакт",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Страна",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (validProfile) {
-                        if (profile.location.isNotEmpty()) "${countryFlags[profile.location] ?: "🌍"} ${profile.location}"
-                        else "🏴‍☠️ Аноним"
-                    } else "🏴‍☠️ Аноним",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            /*Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Первое сообщение",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "${firstMessage.time}",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }*/
-
-            if (!Util.isValidEmail(chat.partnerEmail)) {
-                Spacer(modifier = Modifier.width(4.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Неподтверждённый аккаунт",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Normal
-                    )
-                }
-            }
-        }
-    }
-}
-
-private val countryFlags = mapOf(
-    "Russia" to "🇷🇺",
-    "Ukraine" to "🇺🇦",
-    "Belarus" to "🇧🇾",
-    "Kazakhstan" to "🇰🇿",
-    "USA" to "🇺🇸",
-    "Canada" to "🇨🇦",
-    "Mexico" to "🇲🇽",
-    "Brazil" to "🇧🇷",
-    "Argentina" to "🇦🇷",
-    "UK" to "🇬🇧",
-    "Germany" to "🇩🇪",
-    "France" to "🇫🇷",
-    "Italy" to "🇮🇹",
-    "Spain" to "🇪🇸",
-    "Portugal" to "🇵🇹",
-    "Netherlands" to "🇳🇱",
-    "Belgium" to "🇧🇪",
-    "Switzerland" to "🇨🇭",
-    "Austria" to "🇦🇹",
-    "Poland" to "🇵🇱",
-    "Czech Republic" to "🇨🇿",
-    "Slovakia" to "🇸🇰",
-    "Hungary" to "🇭🇺",
-    "Romania" to "🇷🇴",
-    "Bulgaria" to "🇧🇬",
-    "Serbia" to "🇷🇸",
-    "Croatia" to "🇭🇷",
-    "Greece" to "🇬🇷",
-    "Turkey" to "🇹🇷",
-    "China" to "🇨🇳",
-    "Japan" to "🇯🇵",
-    "South Korea" to "🇰🇷",
-    "India" to "🇮🇳",
-    "Israel" to "🇮🇱",
-    "Saudi Arabia" to "🇸🇦",
-    "UAE" to "🇦🇪",
-    "Australia" to "🇦🇺",
-    "New Zealand" to "🇳🇿",
-    "South Africa" to "🇿🇦",
-    "Nigeria" to "🇳🇬",
-    "Egypt" to "🇪🇬"
-)
-

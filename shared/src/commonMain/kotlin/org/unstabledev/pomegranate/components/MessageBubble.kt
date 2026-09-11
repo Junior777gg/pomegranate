@@ -132,10 +132,10 @@ fun MessageBubble(
                             menuOpen.value = true
                             sendHaptic(HAPTIC_EFFECT_CLICK)
                         },
-                        onTap = { if (message.type == MessageDC.IMAGE) { setImagePreview(message) } }
+                        onTap = { if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) { setImagePreview(message) } }
                     )
                 }
-                .pointerHoverIcon(if (message.type == MessageDC.IMAGE) PointerIcon.Hand else PointerIcon.Default))
+                .pointerHoverIcon(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) PointerIcon.Hand else PointerIcon.Default))
         ) {
             Row(
                 verticalAlignment = Alignment.Bottom,
@@ -382,7 +382,7 @@ fun MessageBubble(
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
                                     scope.launch {
-                                        FileSaver().saveFile(message.data.decodeToString())
+                                        FileSaver.save(message.data.decodeToString())
                                         snackbarHostState.showSnackbar("Файл сохранён")
                                         savedAlready.value = true
                                     }
@@ -526,11 +526,7 @@ fun MessageBubble(
                         },
                         onClick = {
                             scope.launch {
-                                if (message.type == MessageDC.FILE) {
-                                    FileSaver().saveFile(message.data.decodeToString())
-                                } else {
-                                    FileSaver().saveFile(message.data.decodeToString())
-                                }
+                                FileSaver.save(message.data.decodeToString())
                                 snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE) "Изображение сохранено" else "Файл сохранён")
                             }
                             menuOpen.value = false

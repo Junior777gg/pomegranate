@@ -14,6 +14,17 @@ import java.io.File
 import javax.imageio.ImageIO
 import java.awt.datatransfer.Clipboard as SystemClipboard
 
+actual val isMobile: Boolean
+    get() = false
+
+actual val handleTapGestures: Boolean
+    get() = false
+
+@Composable
+actual fun isLandscape(): Boolean {
+    return false
+}
+
 @Composable
 actual fun setStatusBarIcons(lightIcons: Boolean) { }
 

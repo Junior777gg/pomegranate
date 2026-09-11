@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.CallAudioPlayer
 import org.unstabledev.pomegranate.CallAudioRecorder
 import org.unstabledev.pomegranate.Camera
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.P2PUtils.Data
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.getBitmapFromBytes
@@ -60,7 +60,7 @@ class BetterCallSoulScreenController(
                 while (cameraActive.value) {
                     val frame = camera.getFrame()
                     videoManager.channel!!.send(frame)
-                    delay(30)
+                    delay(100)
                 }
             }
 

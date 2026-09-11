@@ -33,21 +33,21 @@ fun main(args: Array<String>) {
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()
     }
-    ChooseMultipleFiles.choose = { onResult ->
+    MediaSelector.multipleFilesChoose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите файлы", FileDialog.LOAD)
         dialog.isMultipleMode = true
         dialog.isVisible = true
         val files = dialog.files.toList()
         onResult(files)
     }
-    ChooseFile.choose = { onResult ->
+    MediaSelector.fileChoose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите файл", FileDialog.LOAD)
         dialog.isMultipleMode = false
         dialog.isVisible = true
         val file = dialog.files.toList().first()
         onResult(file)
     }
-    ChooseMultipleImages.choose = { onResult ->
+    MediaSelector.multipleImagesChoose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите изображения", FileDialog.LOAD)
         dialog.isMultipleMode = true
         dialog.filenameFilter = object : FilenameFilter {
@@ -62,16 +62,14 @@ fun main(args: Array<String>) {
         val files = dialog.files.toList()
         onResult(files)
     }
-    ChooseImage.choose = { onResult ->
+    MediaSelector.imageChoose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите изображение", FileDialog.LOAD)
         dialog.isMultipleMode = false
-        dialog.filenameFilter = object : FilenameFilter {
-            override fun accept(dir: File?, name: String?): Boolean {
-                val lowercaseName = name?.lowercase()?:""
-                return lowercaseName.endsWith(".jpg") ||
-                        lowercaseName.endsWith(".jpeg") ||
-                        lowercaseName.endsWith(".png")
-            }
+        dialog.filenameFilter = FilenameFilter { dir, name ->
+            val lowercaseName = name?.lowercase()?:""
+            lowercaseName.endsWith(".jpg") ||
+                    lowercaseName.endsWith(".jpeg") ||
+                    lowercaseName.endsWith(".png")
         }
         dialog.isVisible = true
         val file = dialog.files.toList().first()

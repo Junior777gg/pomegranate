@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.screen.nav.Navigation
 
 @Composable
 fun App(chatDao: ChatDao, messagesDao: MessagesDao) {

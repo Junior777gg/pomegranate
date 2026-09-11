@@ -3,7 +3,6 @@ package org.unstabledev.pomegranate.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,14 +52,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
-import org.unstabledev.pomegranate.Routes
-import org.unstabledev.pomegranate.components.SearchableChatsPanel
+import org.unstabledev.pomegranate.screen.nav.Routes
+import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.components.addChatBackground
+import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.kmpReadText
 

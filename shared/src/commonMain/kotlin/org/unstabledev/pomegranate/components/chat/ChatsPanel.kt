@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate.components
+package org.unstabledev.pomegranate.components.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,11 +64,16 @@ import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
+import org.unstabledev.pomegranate.altClickable
+import org.unstabledev.pomegranate.components.LabeledTextField
+import org.unstabledev.pomegranate.components.NetworkWarningHeader
+import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.handleTapGestures
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.sendHaptic
 import pomegranate.shared.generated.resources.Res
@@ -81,7 +86,6 @@ import pomegranate.shared.generated.resources.def06
 import pomegranate.shared.generated.resources.def07
 import pomegranate.shared.generated.resources.def08
 import pomegranate.shared.generated.resources.menu
-import pomegranate.shared.generated.resources.welcome_mobile
 
 @Composable
 fun SearchableChatsPanel(
@@ -177,8 +181,7 @@ fun getLastMessageTextFlow(email: String): Flow<String> {
                         MessageDC.ANIMATED_IMAGE -> "Изображение"
                         MessageDC.AUDIO -> "Аудио"
                         MessageDC.FILE -> "Файл"
-                        MessageDC.BEGIN_CALL -> "Начался звонок"
-                        MessageDC.ACCEPT_CALL -> "Принят звонок"
+                        MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "Звонок"
                         else -> "Неизвестно"
                     }
                 } catch (_: Exception) {
@@ -261,6 +264,7 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
     val showNicknameEditPopup = remember { mutableStateOf(false) }
     val settings by AppSettings.state.collectAsState()
+
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
         items(items = chats, key = { it.partnerEmail }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
@@ -273,15 +277,12 @@ fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenPr
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onLongPress = {
-                                menuExpanded.value = true
-                                sendHaptic(HAPTIC_EFFECT_CLICK)
-                            },
-                            onTap = { onChatClick(chat) }
-                        )
-                    }
+                    .altClickable({
+                        onChatClick(chat)
+                    },{
+                        menuExpanded.value = true
+                        sendHaptic(HAPTIC_EFFECT_CLICK)
+                    })
             ) {
                 val profile = chat.profile?.deserialize()
                 val validProfile = profile?.profileUrl?.isNotBlank() ?: false

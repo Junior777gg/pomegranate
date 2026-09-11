@@ -54,18 +54,17 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
 import org.unstabledev.pomegranate.ChatBackgroundIds
-import org.unstabledev.pomegranate.ChooseImage
-import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.MediaSelector
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Routes
+import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.applyScreenPadding
-import org.unstabledev.pomegranate.components.addChatBackground_defImage
-import org.unstabledev.pomegranate.components.addChatBackground_defPrimary
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
+import org.unstabledev.pomegranate.components.chat.addChatBackground_defImage
+import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpCopyTo
@@ -274,7 +273,7 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                             MaterialTheme.colorScheme.onSurface
                                         )
                                         .clickable {
-                                            ChooseImage().get { image ->
+                                            MediaSelector.Image { image ->
                                                 scope.launch(Dispatchers.IO) {
                                                     try {
                                                         val destFile =

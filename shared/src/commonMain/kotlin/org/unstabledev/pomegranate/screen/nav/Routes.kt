@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.screen.nav
 
 object Routes {
     const val WELCOME_SCREEN = "welcome"
