@@ -137,7 +137,7 @@ fun MessageInput(
                 ),
             verticalAlignment = Alignment.Bottom
         ) {
-            if (isRecording) {
+            /*if (isRecording) {
                 Row(
                     Modifier.fillMaxWidth().height(60.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -168,8 +168,8 @@ fun MessageInput(
                         )
                     }
                 }
-            }
-            Row {
+            }*/
+            //Row {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -397,6 +397,6 @@ fun MessageInput(
                     }
                 }
             }
-        }
+        //}
     }
 }
