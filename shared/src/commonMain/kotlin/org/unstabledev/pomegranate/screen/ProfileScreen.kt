@@ -178,7 +178,7 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 @Composable
 private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(0) }
-    val chat = produceState<ChatDC?>(null) { value = Repository.chatDao.getChatByEmailFlow(Repository.lastOpponentEmail).first() }
+    val chat = produceState<ChatDC?>(null) { value = Repository.chatDao.tryGetChatByEmailFlow(Repository.lastOpponentEmail).first() }
     val isOnline = produceState(false) { value = Repository.isChatOpen(chat.value) }
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
@@ -192,9 +192,9 @@ private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: 
 
                 Spacer(Modifier.height(12.dp))
 
-                val chat = Repository.lastContact.value!!
-                val displayName = chat.nickname?:profile?.displayName?:
-                    if (email == Repository.myEmail) email else chat.nickname?:chat.partnerEmail
+                val chat = Repository.lastContact.value
+                val displayName = chat?.nickname?:profile?.displayName ?:
+                    if (email==Repository.myEmail) email else chat?.nickname ?: Repository.lastOpponentEmail
 
                 Text(
                     text = displayName,
