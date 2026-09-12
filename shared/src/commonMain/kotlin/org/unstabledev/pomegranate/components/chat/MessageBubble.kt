@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate.components
+package org.unstabledev.pomegranate.components.chat
 
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownTypography
@@ -56,6 +56,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -72,11 +73,15 @@ import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
+import org.unstabledev.pomegranate.altClickable
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
+import org.unstabledev.pomegranate.components.AudioPlayerWidget
+import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
+import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
@@ -91,7 +96,9 @@ fun MessageBubble(
     snackbarHostState: SnackbarHostState,
     renderMarkdown: Boolean
 ) {
-    val settings by AppSettings.state.collectAsState()
+    if (!message.isDisplayable()) return
+
+    //val settings by AppSettings.state.collectAsState()
 
     val profile = chat.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
@@ -126,15 +133,12 @@ fun MessageBubble(
     ) {
         Box(
             modifier = applyMessageBubble(noNeedForBubble, Modifier
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = {
-                            menuOpen.value = true
-                            sendHaptic(HAPTIC_EFFECT_CLICK)
-                        },
-                        onTap = { if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) { setImagePreview(message) } }
-                    )
-                }
+                .altClickable({
+                    if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) setImagePreview(message)
+                }, {
+                    menuOpen.value = true
+                    sendHaptic(HAPTIC_EFFECT_CLICK)
+                })
                 .pointerHoverIcon(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) PointerIcon.Hand else PointerIcon.Default))
         ) {
             Row(
@@ -466,6 +470,10 @@ fun MessageBubble(
                             }
                         }
                     }
+
+                    else -> {
+                        Text("Неизвестный тип сообщения", color = ColorTheme.Warning, fontStyle = FontStyle.Italic)
+                    }
                 }
 
                 if (message.type == MessageDC.TEXT || message.type == MessageDC.FILE) {
@@ -487,68 +495,87 @@ fun MessageBubble(
                     }
                 }
             }
-        }
-
-        if (menuOpen.value) {
-            DropdownMenu(
-                expanded = menuOpen.value,
-                onDismissRequest = { menuOpen.value = false },
-                modifier = Modifier
-                    .width(230.dp)
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                if (message.type == MessageDC.TEXT) {
-                    DropdownMenuItem(
-                        text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        },
-                        onClick = {
-                            scope.launch {
-                                Clipboard().copyText(message.data.decodeToString())
+            if (menuOpen.value) {
+                DropdownMenu(
+                    expanded = menuOpen.value,
+                    onDismissRequest = { menuOpen.value = false },
+                    modifier = Modifier
+                        .width(230.dp)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    if (message.type == MessageDC.TEXT) {
+                        DropdownMenuItem(
+                            text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                scope.launch {
+                                    Clipboard().copyText(message.data.decodeToString())
+                                }
+                                menuOpen.value = false
                             }
-                            menuOpen.value = false
-                        }
-                    )
-                } else {
+                        )
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text("Сохранить", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.FileDownload,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                scope.launch {
+                                    FileSaver.save(message.data.decodeToString())
+                                    snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE)
+                                        "Изображение сохранено" else "Файл сохранён")
+                                }
+                                menuOpen.value = false
+                            }
+                        )
+                    }
+                    if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) {
+                        DropdownMenuItem(
+                            text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                scope.launch {
+                                    Clipboard().copyImage(message.data.decodeToString())
+                                    snackbarHostState.showSnackbar("Изображение скопировано")
+                                }
+                                menuOpen.value = false
+                            }
+                        )
+                    }
                     DropdownMenuItem(
-                        text = { Text("Сохранить", color = MaterialTheme.colorScheme.onBackground) },
+                        text = { Text("Удалить", color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.FileDownload,
+                                imageVector = Icons.Default.Delete,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.error
                             )
                         },
                         onClick = {
                             scope.launch {
-                                FileSaver.save(message.data.decodeToString())
-                                snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE) "Изображение сохранено" else "Файл сохранён")
+                                Repository.messagesDao.deleteMessage(message)
                             }
                             menuOpen.value = false
                         }
                     )
                 }
-                DropdownMenuItem(
-                    text = { Text("Удалить", color = MaterialTheme.colorScheme.error) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    onClick = {
-                        scope.launch {
-                            Repository.messagesDao.deleteMessage(message)
-                        }
-                        menuOpen.value = false
-                    }
-                )
             }
         }
     }

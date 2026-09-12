@@ -89,8 +89,7 @@ fun ContactsPanel(
                     null
                 }
 
-                val chat = ChatDC(email, null, profile?.serialize())
-
+                val chat = ChatDC(email, null, profile?.serialize(), null)
                 chatDao?.upsertChat(chat)
 
                 Repository.setLastContact(chat)

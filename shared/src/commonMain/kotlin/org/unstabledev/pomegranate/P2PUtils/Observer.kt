@@ -15,14 +15,17 @@ import org.unstabledev.pomegranate.Call
 import org.unstabledev.pomegranate.CallState
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Notifications
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
+import org.unstabledev.pomegranate.SecurityConfig
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
+import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.kmpCopyTo
@@ -127,7 +130,7 @@ class Observer(
                                         json
                                     }
                                     sendCode(key)
-                                    if (messageDC.type != MessageDC.ACCEPT_CALL) {
+                                    if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()) {
                                         Notifications().push(
                                             (chatDC.profile?.deserialize()?.displayName
                                                 ?: chatDC.partnerEmail),
@@ -150,6 +153,11 @@ class Observer(
                                         val audioManager = manager.fork()
                                         currentCallState.value = CallState.Calling
                                         currentCall.value = Call(chatDC.partnerEmail, videoManager,audioManager, false)
+                                    }
+                                    if (messageDC.type == MessageDC.SECURITY_CONFIG) {
+                                        val cfg=SecurityConfig().fromByteArray(messageDC.data)
+                                        chatDC.securityConfig=cfg.toString()
+                                        Repository.chatDao.upsertChat(chatDC)
                                     }
                                     messageDC.isMine = false
                                     messageDC.email = chatDC.partnerEmail

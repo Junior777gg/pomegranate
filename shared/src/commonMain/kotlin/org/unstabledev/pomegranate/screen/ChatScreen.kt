@@ -46,7 +46,7 @@ import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
-import org.unstabledev.pomegranate.components.MessageBubble
+import org.unstabledev.pomegranate.components.chat.MessageBubble
 import org.unstabledev.pomegranate.components.chat.MessageInput
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.components.chat.NewContactWidget

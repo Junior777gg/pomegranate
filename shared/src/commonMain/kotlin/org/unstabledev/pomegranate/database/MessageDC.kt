@@ -22,12 +22,16 @@ data class MessageDC(
         const val ANIMATED_IMAGE = "anim_img"
         const val FILE = "file"
         const val AUDIO = "audio"
+        const val SECURITY_CONFIG = "security:config"
         const val BEGIN_CALL = "call:begin_video"
         const val ACCEPT_CALL = "call:accept"
 
         fun MessageDC.isCall(): Boolean {
             return type==BEGIN_CALL ||
                     type==ACCEPT_CALL
+        }
+        fun MessageDC.isDisplayable(): Boolean {
+            return type!=SECURITY_CONFIG
         }
     }
 }

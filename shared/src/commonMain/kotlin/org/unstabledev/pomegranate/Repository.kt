@@ -3,6 +3,8 @@ package org.unstabledev.pomegranate
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
+import com.fleeksoft.charset.toByteArray
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -117,7 +119,6 @@ object Repository {
         val time = now().toEpochMilliseconds()
         when (type) {
             MessageDC.TEXT -> {
-                println("input from repository $message")
                 val messageDC = MessageDC(
                     email = chatDC.partnerEmail,
                     data = message!!.encodeToByteArray(),
@@ -138,6 +139,20 @@ object Repository {
                 )
                 currentMessage = messageDC
             }
+
+            MessageDC.SECURITY_CONFIG -> {
+                val cfg = AppSettings.state.value.securityConfigUnknown
+                println(cfg.toString())
+                val messageDC = MessageDC(
+                    email = chatDC.partnerEmail,
+                    data = cfg.toString().toByteArray(),
+                    type = type,
+                    time = time,
+                    isMine = true,
+                )
+                currentMessage = messageDC
+            }
+
             else -> {
                 if (file != null) {
                     val type = when (file.getName().substringAfter(".")) {
