@@ -144,6 +144,9 @@ class Observer(
                                                 MessageDC.AUDIO -> "🎵 Аудио"
                                                 MessageDC.FILE -> "📁 Файл"
                                                 else -> "Неизвестно"
+                                            },
+                                            {
+                                                TODO("Make notifications redirect to chat")
                                             }
                                         )
                                     }
