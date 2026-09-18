@@ -119,3 +119,15 @@ private class ImageTransferable(private val image: BufferedImage) : Transferable
         return image
     }
 }
+
+actual object Battery {
+    actual fun isPowerSaveMode(): Boolean {
+        return false
+    }
+    actual fun getLevel(): Int {
+        return 100
+    }
+    actual fun isCharging(): Boolean {
+        return true
+    }
+}

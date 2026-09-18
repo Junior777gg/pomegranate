@@ -92,8 +92,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation("io.github.panpf.sketch4:sketch-compose:4.4.0")
-            implementation("io.github.panpf.sketch4:sketch-animated-gif:4.4.0")
-            implementation("io.github.panpf.sketch4:sketch-animated-webp:4.4.0")
             implementation("com.fleeksoft.ksoup:ksoup:0.2.6")
             implementation("com.fleeksoft.ksoup:ksoup-network:0.2.6")
             implementation("com.mikepenz:multiplatform-markdown-renderer:0.41.0")

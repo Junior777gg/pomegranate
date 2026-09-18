@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,7 +49,11 @@ import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
 
 @Composable
-fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: SnackbarHostState) {
+fun ImagePreviewPanel(
+    onBack: () -> Unit,
+    message: MessageDC?,
+    snackbarHostState: SnackbarHostState
+) {
     if (message == null) {
         onBack()
         return
@@ -56,22 +61,21 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
 
     val menuExpanded = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val bitmap = getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+    val filePath = remember { message.data.decodeToString() }
+    val isAnimatedGif = remember(message.type) { message.type == MessageDC.ANIMATED_IMAGE }
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-    fun maxOffsetForScale(s: Float): Offset {
-        val bw = bitmap.width.toFloat()
-        val bh = bitmap.height.toFloat()
+    fun maxOffsetForScale(width: Float, height: Float, s: Float): Offset {
         val cw = containerSize.width.toFloat()
         val ch = containerSize.height.toFloat()
         if (cw <= 0f || ch <= 0f) return Offset.Zero
 
-        val fitScale = minOf(cw / bw, ch / bh)
-        val renderedW = bw * fitScale * s
-        val renderedH = bh * fitScale * s
+        val fitScale = minOf(cw / width, ch / height)
+        val renderedW = width * fitScale * s
+        val renderedH = height * fitScale * s
 
         return Offset(
             maxOf(0f, (renderedW - cw) / 2f),
@@ -85,44 +89,86 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
             .background(Color.Black)
             .onSizeChanged { containerSize = it }
     ) {
-        Image(
-            bitmap = bitmap,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTransformGestures(panZoomLock = true) { _, pan, zoom, _ ->
-                        val newScale = (scale * zoom).coerceIn(1f, 5f)
-                        val max = maxOffsetForScale(newScale)
-
-                        offset = Offset(
-                            (offset.x + pan.x).coerceIn(-max.x, max.x),
-                            (offset.y + pan.y).coerceIn(-max.y, max.y)
-                        )
-                        scale = newScale
-                    }
+        if (isAnimatedGif) {
+            val gifBytes = remember(filePath) {
+                try {
+                    KMPFile(filePath).kmpReadBytes()
+                } catch (_: Exception) {
+                    null
                 }
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            if (scale > 1.1f) {
-                                scale = 1f
-                                offset = Offset.Zero
-                            } else {
-                                scale = 2.5f
-                                offset = Offset.Zero
+            }
+
+            if (gifBytes != null) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AnimatedGifImage(
+                        bytes = gifBytes,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTransformGestures(panZoomLock = true) { _, pan, zoom, _ ->
+                                    val newScale = (scale * zoom).coerceIn(1f, 5f)
+                                    val max = maxOffsetForScale(scale, scale, newScale)
+                                    offset = Offset(
+                                        (offset.x + pan.x).coerceIn(-max.x, max.x),
+                                        (offset.y + pan.y).coerceIn(-max.y, max.y)
+                                    )
+                                    scale = newScale
+                                }
                             }
-                        }
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = offset.x
+                                translationY = offset.y
+                            },
+                        contentScale = ContentScale.Fit
                     )
                 }
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = offset.x
-                    translationY = offset.y
-                },
-            contentScale = ContentScale.Fit
-        )
+            }
+        } else {
+            val bitmap = remember(filePath) {
+                getBitmapFromBytes(KMPFile(filePath).kmpReadBytes())
+            }
+
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures(panZoomLock = true) { _, pan, zoom, _ ->
+                            val newScale = (scale * zoom).coerceIn(1f, 5f)
+                            val max = maxOffsetForScale(scale, scale, newScale)
+
+                            offset = Offset(
+                                (offset.x + pan.x).coerceIn(-max.x, max.x),
+                                (offset.y + pan.y).coerceIn(-max.y, max.y)
+                            )
+                            scale = newScale
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                if (scale > 1.1f) {
+                                    scale = 1f
+                                    offset = Offset.Zero
+                                } else {
+                                    scale = 2.5f
+                                    offset = Offset.Zero
+                                }
+                            }
+                        )
+                    }
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = offset.x
+                        translationY = offset.y
+                    },
+                contentScale = ContentScale.Fit
+            )
+        }
 
         Row(
             Modifier
@@ -133,7 +179,7 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
             IconButton(modifier = Modifier.size(56.dp), onClick = { onBack() }) {
                 Icon(Icons.Default.ArrowBack, "Назад", tint = Color.White)
             }
-            Row(Modifier.weight(2.0f)) {}
+            Spacer(Modifier.weight(1f))
             Box {
                 IconButton(modifier = Modifier.size(56.dp), onClick = {
                     menuExpanded.value = true
@@ -148,25 +194,21 @@ fun ImagePreviewPanel(onBack: ()->Unit, message: MessageDC?, snackbarHostState: 
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
                     DropdownMenuItem(
-                        text = {
-                            Text("Скопировать", color = MaterialTheme.colorScheme.onBackground)
-                        },
+                        text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
                         onClick = {
                             scope.launch {
-                                Clipboard().copyImage(message.data.decodeToString())
-                                snackbarHostState.showSnackbar("Изображение скопировано")
+                                Clipboard().copyImage(filePath)
+                                snackbarHostState.showSnackbar("Скопировано")
                             }
                             menuExpanded.value = false
                         }
                     )
                     DropdownMenuItem(
-                        text = {
-                            Text("Скачать", color = MaterialTheme.colorScheme.onBackground)
-                        },
+                        text = { Text("Скачать", color = MaterialTheme.colorScheme.onBackground) },
                         onClick = {
                             scope.launch {
-                                FileSaver.save(message.data.decodeToString())
-                                snackbarHostState.showSnackbar("Изображение сохранено")
+                                FileSaver.save(filePath)
+                                snackbarHostState.showSnackbar("Сохранено")
                             }
                             menuExpanded.value = false
                         }

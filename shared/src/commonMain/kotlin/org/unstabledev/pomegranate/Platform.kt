@@ -33,3 +33,9 @@ expect class Clipboard() {
     fun getText(): String?
     fun getImage(): ByteArray?
 }
+
+expect object Battery {
+    fun isPowerSaveMode(): Boolean
+    fun getLevel(): Int
+    fun isCharging(): Boolean
+}

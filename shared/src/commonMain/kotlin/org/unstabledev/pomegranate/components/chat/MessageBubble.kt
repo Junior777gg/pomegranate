@@ -25,10 +25,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -64,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.AppSettings
@@ -76,8 +79,10 @@ import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
 import org.unstabledev.pomegranate.altClickable
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
+import org.unstabledev.pomegranate.components.AnimatedGifImage
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ColorTheme
+import org.unstabledev.pomegranate.components.GifDecoder
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
@@ -98,14 +103,14 @@ fun MessageBubble(
 ) {
     if (!message.isDisplayable()) return
 
-    //val settings by AppSettings.state.collectAsState()
+    val settings by AppSettings.state.collectAsState()
 
     val profile = chat.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
     val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
 
     val menuOpen = remember { mutableStateOf(false) }
-    val msgColor = if (message.isMine) /*Color(settings.messageColor)*/ ColorTheme.MyMessageBubble else MaterialTheme.colorScheme.surface
+    val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
     val needPadding = message.type != MessageDC.IMAGE
     val noNeedForBubble = message.isCall()
     @Composable
@@ -124,6 +129,27 @@ fun MessageBubble(
                 .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
         }
         return base
+    }
+    @Composable
+    fun CantDecodeImagePlaceholder() {
+        Box(Modifier.clip(RoundedCornerShape(10.dp))) {
+            Row(
+                Modifier
+                    .background(Color.Gray.copy(alpha = 0.2f))
+                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Default.Image,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("Изображение", color = MaterialTheme.colorScheme.onBackground)
+                Spacer(Modifier.width(2.dp))
+            }
+        }
     }
     Row(
         modifier = Modifier
@@ -240,138 +266,199 @@ fun MessageBubble(
                     }
 
                     MessageDC.IMAGE -> {
-                        var bitmap by remember(message.key) {
-                            mutableStateOf<ImageBitmap?>(null)
-                        }
-                        var ratio by remember(message.key) {
-                            mutableStateOf<Float?>(null)
-                        }
-
-                        LaunchedEffect(message.key) {
-                            val bmp = withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+                        if (AppSettings.isInPowerSaveMode()&&!settings.powerSaveSettings.decodeImages) {
+                            CantDecodeImagePlaceholder()
+                        } else {
+                            var bitmap by remember(message.key) {
+                                mutableStateOf<ImageBitmap?>(null)
                             }
-                            bitmap = bmp
-                            ratio = bmp.width.toFloat() / bmp.height.toFloat()
-                        }
+                            var ratio by remember(message.key) {
+                                mutableStateOf<Float?>(null)
+                            }
 
-                        val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
-
-                        Box(
-                            modifier = Modifier
-                                .widthIn(min = 120.dp, max = 260.dp)
-                                .aspectRatio(clampedRatio)
-                                .animateContentSize()
-                        ) {
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap!!,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Gray.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            LaunchedEffect(message.key) {
+                                val bmp = withContext(Dispatchers.Default) {
+                                    getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                                 }
+                                bitmap = bmp
+                                ratio = bmp.width.toFloat() / bmp.height.toFloat()
                             }
+
+                            val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
 
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .widthIn(min = 120.dp, max = 260.dp)
+                                    .aspectRatio(clampedRatio)
+                                    .animateContentSize()
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .background(Color.Black.copy(alpha = 0.4f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(message.time.toHHMMTime(), color = Color.White, fontSize = 11.sp)
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        modifier = Modifier.size(14.dp),
-                                        imageVector = if (message.isDelivered || !message.isMine)
-                                            Icons.Default.Check
-                                        else Icons.Default.ArrowOutward,
+                                if (bitmap != null) {
+                                    Image(
+                                        bitmap = bitmap!!,
                                         contentDescription = null,
-                                        tint = Color.White
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Gray.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            message.time.toHHMMTime(),
+                                            color = Color.White,
+                                            fontSize = 11.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(
+                                            modifier = Modifier.size(14.dp),
+                                            imageVector = if (message.isDelivered || !message.isMine)
+                                                Icons.Default.Check
+                                            else Icons.Default.ArrowOutward,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
                     MessageDC.ANIMATED_IMAGE -> {
-                        var bitmap by remember(message.key) {
-                            mutableStateOf<ImageBitmap?>(null)
-                        }
-                        var ratio by remember(message.key) {
-                            mutableStateOf<Float?>(null)
-                        }
-
-                        LaunchedEffect(message.key) {
-                            val bmp = withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+                        if (AppSettings.isInPowerSaveMode()&&!settings.powerSaveSettings.decodeImages) {
+                            CantDecodeImagePlaceholder()
+                        } else {
+                            var gifBytes by remember(message.key) {
+                                mutableStateOf<ByteArray?>(null)
                             }
-                            bitmap = bmp
-                            ratio = bmp.width.toFloat() / bmp.height.toFloat()
-                        }
+                            var ratio by remember(message.key) {
+                                mutableStateOf<Float?>(null)
+                            }
+                            var isLoading by remember(message.key) {
+                                mutableStateOf(true)
+                            }
 
-                        val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+                            LaunchedEffect(message.key) {
+                                isLoading = true
+                                try {
+                                    val bytes = withContext(Dispatchers.IO) {
+                                        KMPFile(message.data.decodeToString()).kmpReadBytes()
+                                    }
 
-                        Box(
-                            modifier = Modifier
-                                .widthIn(min = 120.dp, max = 260.dp)
-                                .aspectRatio(clampedRatio)
-                                .animateContentSize()
-                        ) {
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap!!,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Gray.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                    withContext(Dispatchers.Default) {
+                                        val frames = try {
+                                            GifDecoder.decode(bytes)
+                                        } catch (_: Exception) {
+                                            emptyList()
+                                        }
+
+                                        if (frames.isNotEmpty()) {
+                                            val firstFrame = frames[0].bitmap
+                                            ratio = firstFrame.width.toFloat() / firstFrame.height.toFloat()
+                                            gifBytes = bytes
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                } finally {
+                                    isLoading = false
                                 }
                             }
 
+                            val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp)
+                                    .widthIn(min = 120.dp, max = 260.dp)
+                                    .aspectRatio(clampedRatio)
                                     .clip(RoundedCornerShape(12.dp))
+                                    .clickable { setImagePreview(message) }
+                                    .animateContentSize()
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
+                                when {
+                                    isLoading -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color.Gray.copy(alpha = 0.2f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                        }
+                                    }
+                                    gifBytes != null -> {
+                                        AnimatedGifImage(
+                                            bytes = gifBytes!!,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop,
+                                            animate = !(AppSettings.isInPowerSaveMode()&&!settings.powerSaveSettings.animateGifs)
+                                        )
+                                    }
+                                    else -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color.Gray.copy(alpha = 0.2f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.BrokenImage,
+                                                contentDescription = "Failed to load GIF",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Box(
                                     modifier = Modifier
-                                        .background(Color.Black.copy(alpha = 0.4f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp)
+                                        .clip(RoundedCornerShape(12.dp))
                                 ) {
-                                    Text(message.time.toHHMMTime(), color = Color.White, fontSize = 11.sp)
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        modifier = Modifier.size(14.dp),
-                                        imageVector = if (message.isDelivered || !message.isMine)
-                                            Icons.Default.Check
-                                        else Icons.Default.ArrowOutward,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            message.time.toHHMMTime(),
+                                            color = Color.White,
+                                            fontSize = 11.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(
+                                            modifier = Modifier.size(14.dp),
+                                            imageVector = if (message.isDelivered || !message.isMine)
+                                                Icons.Default.Check
+                                            else Icons.Default.ArrowOutward,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
                             }
                         }

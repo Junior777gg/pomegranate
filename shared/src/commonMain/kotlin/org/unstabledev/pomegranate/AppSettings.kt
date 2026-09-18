@@ -4,7 +4,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.fleeksoft.charset.toByteArray
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +62,16 @@ data class FirebaseAddress(
     val url: String
 )
 
+@Serializable
+data class PowerSaveSettings(
+    val percentageTrigger: Float = 20.0f,
+    val enableOnPowerSave: Boolean = true,
+    val accountCharging: Boolean = true,
+
+    val animateGifs: Boolean = false,
+    val decodeImages: Boolean = true,
+)
+
 object ChatBackgroundIds {
     const val DEFAULT_PRIMARY = 0
     const val DEFAULT_IMG01 = 1
@@ -100,6 +109,7 @@ data class AppSettingsState(
     val amoledUnlocked: Boolean = false,
     val useAmoledOnDarkSystem: Boolean = false,
     val desktopHomeSplit: Float = 1.0f,
+    val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(
         FirebaseAddress(
@@ -226,8 +236,17 @@ object AppSettings {
     }
 
     fun setUnknownSecurityConfig(v: SecurityConfig) {
-        _state.value = _state.value.copy(securityConfigKnown = v)
+        _state.value = _state.value.copy(securityConfigUnknown = v)
     }
+
+    fun setPowerSaveSettings(v: PowerSaveSettings) {
+        _state.value = _state.value.copy(powerSaveSettings = v)
+    }
+
+    fun isInPowerSaveMode(): Boolean =
+        ((Battery.isPowerSaveMode()&&_state.value.powerSaveSettings.enableOnPowerSave)
+                ||(Battery.getLevel()<=_state.value.powerSaveSettings.percentageTrigger))
+                &&!(Battery.isCharging()&&_state.value.powerSaveSettings.accountCharging)
 
     fun addFirebaseAddress(title: String, url: String) {
         val cleanUrl = normalizeFirebaseUrl(url)

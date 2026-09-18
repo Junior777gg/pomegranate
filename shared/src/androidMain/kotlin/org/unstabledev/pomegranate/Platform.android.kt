@@ -10,8 +10,10 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.MediaStore
@@ -182,5 +184,23 @@ actual class Clipboard {
             e.printStackTrace()
             null
         }
+    }
+}
+
+actual object Battery {
+    private val batteryManager=context?.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+    private val powerManager=context?.getSystemService(Context.POWER_SERVICE) as PowerManager
+    actual fun isPowerSaveMode(): Boolean = powerManager.isPowerSaveMode
+    actual fun getLevel(): Int {
+        return try {
+            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        } catch (e: Exception) {
+            -1
+        }
+    }
+    actual fun isCharging(): Boolean {
+        val status = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_STATUS)
+        return status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                status == BatteryManager.BATTERY_STATUS_FULL
     }
 }

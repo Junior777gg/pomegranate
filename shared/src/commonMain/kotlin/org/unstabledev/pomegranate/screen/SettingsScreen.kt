@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate.screen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Battery1Bar
+import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.BatteryStd
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.DarkMode
@@ -27,32 +31,44 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.ShieldMoon
+import androidx.compose.material.icons.filled.Usb
+import androidx.compose.material.icons.filled.UsbOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
+import org.unstabledev.pomegranate.Battery
 import org.unstabledev.pomegranate.ChatBackgroundIds
 import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
@@ -62,14 +78,18 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.components.HSVColorPicker
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpCopyTo
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.sendHaptic
+import kotlin.math.floor
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
@@ -316,6 +336,8 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         Checkbox(settings.chatTripleColumn, { AppSettings.setChatTripleColumn(it) })
                         Text("Три линии предпросмотра чата")
                     }
+                    Text("Цвет сообщений")
+                    HSVColorPicker(Color(settings.messageColor), { AppSettings.setMessageColor(it) })
                     Spacer(modifier = Modifier.padding(vertical = 10.dp))
                     Text("Сеть", fontWeight = FontWeight.SemiBold)
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -338,6 +360,119 @@ fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                             )
                             Spacer(Modifier.width(2.dp))
                             Text("Адрес Firebase")
+                        }
+                    }
+                    if (isMobile) {
+                        Spacer(modifier = Modifier.padding(vertical = 10.dp))
+                        Row {
+                            Text("Энергосбережение", fontWeight = FontWeight.SemiBold)
+                            AnimatedVisibility(AppSettings.isInPowerSaveMode()) {
+                                Text(" Активно", color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+
+                        val sliderColors = SliderDefaults.colors().copy(
+                            activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
+                            disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent
+                        )
+
+                        val currentPowerSave by rememberUpdatedState(settings.powerSaveSettings)
+
+                        val sliderValue = remember { mutableFloatStateOf(settings.powerSaveSettings.percentageTrigger) }
+
+                        val sliderState = rememberSliderState(
+                            value = settings.powerSaveSettings.percentageTrigger,
+                            steps = 99,
+                            valueRange = 0f..100f,
+                            onValueChangeFinished = {
+                                AppSettings.setPowerSaveSettings(
+                                    currentPowerSave.copy(percentageTrigger = sliderValue.value)
+                                )
+                            }
+                        )
+
+                        LaunchedEffect(sliderState.value) {
+                            sliderValue.value = sliderState.value
+                        }
+
+                        LaunchedEffect(settings.powerSaveSettings.percentageTrigger) {
+                            if (sliderState.value != settings.powerSaveSettings.percentageTrigger) {
+                                sliderState.value = settings.powerSaveSettings.percentageTrigger
+                                sliderValue.value = settings.powerSaveSettings.percentageTrigger
+                            }
+                        }
+
+                        val triggerCharge = floor(sliderState.value).toInt()
+
+                        Slider(sliderState, modifier = Modifier.fillMaxWidth(), colors = sliderColors)
+                        Text(
+                            when (triggerCharge) {
+                                100 -> "Всегда включено"
+                                0 -> "Всегда выключено"
+                                else -> "Включать при заряде менее: $triggerCharge%"
+                            }
+                        )
+
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
+                                .clip(RoundedCornerShape(32.dp)).height(64.dp)
+                        ) {
+                            Box(
+                                Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize()
+                            ) {
+                                Row(
+                                    Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    IconButton(onClick = {
+                                        AppSettings.setPowerSaveSettings(
+                                            settings.powerSaveSettings.copy(
+                                                accountCharging = !settings.powerSaveSettings.accountCharging
+                                            )
+                                        )
+                                        sendHaptic(HAPTIC_EFFECT_TICK)
+                                    }) {
+                                        Icon(
+                                            imageVector = if (settings.powerSaveSettings.accountCharging) Icons.Default.Usb else Icons.Default.UsbOff,
+                                            contentDescription = "Учитывать батарею",
+                                            tint = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
+                                    VerticalDivider(
+                                        color = MaterialTheme.colorScheme.background,
+                                        thickness = 3.dp,
+                                        modifier = Modifier.padding(start = 16.dp)
+                                    )
+                                    IconButton(onClick = {
+                                        AppSettings.setPowerSaveSettings(
+                                            settings.powerSaveSettings.copy(
+                                                enableOnPowerSave = !settings.powerSaveSettings.enableOnPowerSave
+                                            )
+                                        )
+                                        sendHaptic(HAPTIC_EFFECT_TICK)
+                                    }) {
+                                        Icon(
+                                            imageVector = if (settings.powerSaveSettings.enableOnPowerSave) Icons.Default.Battery1Bar else Icons.Default.BatteryAlert,
+                                            contentDescription = "Учитывать системный режим энергосбережения",
+                                            tint = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(settings.powerSaveSettings.animateGifs, {
+                                AppSettings.setPowerSaveSettings(settings.powerSaveSettings.copy(animateGifs = it))
+                            })
+                            Text("Анимировать изображения")
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(settings.powerSaveSettings.decodeImages, {
+                                AppSettings.setPowerSaveSettings(settings.powerSaveSettings.copy(decodeImages = it))
+                            })
+                            Text("Декодировать изображения")
                         }
                     }
                     Spacer(modifier = Modifier.padding(vertical = 10.dp))

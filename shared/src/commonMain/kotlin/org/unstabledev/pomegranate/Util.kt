@@ -17,6 +17,8 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToLong
 import kotlin.random.Random
@@ -236,6 +238,47 @@ fun Modifier.altClickable(onPrimary: ()->Unit, onSecondary: ()->Unit): Modifier 
                     return@awaitEachGesture
                 }
             }
+        }
+    }
+}
+
+fun Color.toHsv(): FloatArray {
+    val r = this.red
+    val g = this.green
+    val b = this.blue
+
+    val max = max(r, max(g, b))
+    val min = min(r, min(g, b))
+    val delta = max - min
+
+    val v = max
+    val s = if (max == 0f) 0f else delta / max
+    var h = 0f
+    if (delta != 0f) {
+        h = when (max) {
+            r -> ((g - b) / delta) + (if (g < b) 6f else 0f)
+            g -> ((b - r) / delta) + 2f
+            else -> ((r - g) / delta) + 4f
+        }
+        h *= 60f
+    }
+
+    return floatArrayOf(h, s, v)
+}
+
+fun Color.isDark(): Boolean = this.toHsv()[0]<0.5f
+
+data class HSVColor(
+    val hue: Float = 0f,
+    val saturation: Float = 1f,
+    val value: Float = 1f
+) {
+    fun toColor(): Color = Color.hsv(hue, saturation, value)
+
+    companion object {
+        fun fromColor(color: Color): HSVColor {
+            val hsv = color.toHsv()
+            return HSVColor(hue = hsv[0], saturation = hsv[1], value = hsv[2])
         }
     }
 }
