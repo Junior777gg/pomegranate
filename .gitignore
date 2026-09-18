@@ -20,3 +20,4 @@ node_modules/
 shared/src/commonMain/kotlin/org/unstabledev/pomegranate/Secrets.kt
 desktopApp/pomegranate
 /pomegranate/
+/shared/schemas

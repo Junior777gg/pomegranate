@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.screen.nav
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
@@ -11,10 +11,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.PlatformKeyEvents
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.isLandscape
+import org.unstabledev.pomegranate.isMobile
+import org.unstabledev.pomegranate.kmpReadText
 import org.unstabledev.pomegranate.screen.BetterCallSoulScreen
 import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
@@ -25,6 +31,7 @@ import org.unstabledev.pomegranate.screen.HomeScreen
 import org.unstabledev.pomegranate.screen.ProfileScreen
 import org.unstabledev.pomegranate.screen.SettingsScreen
 import org.unstabledev.pomegranate.screen.WelcomeScreen
+import org.unstabledev.pomegranate.separator
 
 @Composable
 fun applyScreenPadding(base: Modifier = Modifier): Modifier {
@@ -47,11 +54,11 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
         startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") Routes.HOME_SCREEN
         else Routes.WELCOME_SCREEN
     } else {
-        if (KMPFile(Repository.pomegranatePath).exists()) {
+        if (KMPFile(pomegranatePath).exists()) {
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
             KMPFile(fistFilePath).createNewFile()
         } else {
-            KMPFile(Repository.pomegranatePath).mkdir()
+            KMPFile(pomegranatePath).mkdir()
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
             KMPFile(fistFilePath).createNewFile()
         }

@@ -12,8 +12,10 @@ import org.unstabledev.pomegranate.screen.Profile
 @Entity(tableName = "chat")
 data class ChatDC(
     @PrimaryKey val partnerEmail: String,
-    val nickname: String?,
-    val profile: String?
+    val nickname: String?=null,
+    var profile: String?=null,
+    var securityConfig: String?=null,
+    val knownContact: Boolean=false,
 ){
 }
 fun Profile.serialize(): String {

@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.unstabledev.pomegranate.isMobile
 import org.jetbrains.compose.resources.painterResource
-import org.unstabledev.pomegranate.NavigationWays
-import org.unstabledev.pomegranate.Routes
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.Routes
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.welcome_mobile
 

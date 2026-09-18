@@ -21,16 +21,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.LabeledTextField
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Routes
-import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.screen.nav.Routes
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.kmpWriteText
 
 @Composable

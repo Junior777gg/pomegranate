@@ -25,7 +25,7 @@ object ConnectionReceiver {
             }
             val exChat = Repository.chatDao.tryGetChatByEmailFlow(opponent.first)
             val nickname = exChat.first()?.nickname
-            val chat = ChatDC(opponent.first, nickname, profile?.serialize())
+            val chat = ChatDC(opponent.first, nickname, profile?.serialize(), null)
             val observer = Observer(opponent.second, opponent.second.channel!!,chat, Repository.messagesDao)
             Repository.chatDao.upsertChat(chat)
             availableChats.getOrPut(chat, {MutableSharedFlow(1)}).emit(observer)

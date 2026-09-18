@@ -12,10 +12,10 @@ import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.CallAudioPlayer
 import org.unstabledev.pomegranate.CallAudioRecorder
 import org.unstabledev.pomegranate.Camera
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.P2PUtils.Data
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.getBitmapFromBytes
+import org.unstabledev.pomegranate.getBitmapFromBytesAsync
 
 class BetterCallSoulScreenController(
     val camera: Camera,
@@ -52,7 +52,12 @@ class BetterCallSoulScreenController(
             launch {
                 while (true) {
                     val data = videoManager.channel!!.receive()
-                    val bitmap = getBitmapFromBytes((data as Data.Bytes).bytes)
+                    val bitmap = try {
+                        getBitmapFromBytesAsync((data as Data.Bytes).bytes)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
                     image.value = bitmap
                 }
             }
@@ -60,7 +65,7 @@ class BetterCallSoulScreenController(
                 while (cameraActive.value) {
                     val frame = camera.getFrame()
                     videoManager.channel!!.send(frame)
-                    delay(30)
+                    delay(100)
                 }
             }
 

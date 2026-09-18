@@ -2,6 +2,9 @@ package org.unstabledev.pomegranate
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -9,6 +12,42 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
+@Serializable
+data class SecurityConfig(
+    var allowText: Boolean = true,
+    var allowImages: Boolean = true,
+    var allowAudio: Boolean = true,
+    var allowFiles: Boolean = true,
+    var allowCalls: Boolean = true,
+) {
+    override fun toString(): String {
+        var out=""
+        out += if(allowText) "1" else "0"
+        out += if(allowImages) "1" else "0"
+        out += if(allowAudio) "1" else "0"
+        out += if(allowFiles) "1" else "0"
+        out += if(allowCalls) "1" else "0"
+        return out
+    }
+    fun fromString(str: String) {
+        if (str.length!=5) return
+        fun b(str: Char) = str=='1'
+        allowText=b(str[0])
+        allowImages=b(str[1])
+        allowAudio=b(str[2])
+        allowFiles=b(str[3])
+        allowCalls=b(str[4])
+    }
+    fun toByteArray(): ByteArray {
+        return this.toString().toByteArray()
+    }
+    fun fromByteArray(bytes: ByteArray) {
+        fromString(bytes.decodeToString())
+    }
+
+    companion object {
+    }
+}
 @Serializable
 enum class ThemeMode {
     SYSTEM,
@@ -21,6 +60,16 @@ data class FirebaseAddress(
     val id: String,
     val title: String,
     val url: String
+)
+
+@Serializable
+data class PowerSaveSettings(
+    val percentageTrigger: Float = 20.0f,
+    val enableOnPowerSave: Boolean = true,
+    val accountCharging: Boolean = true,
+
+    val animateGifs: Boolean = false,
+    val decodeImages: Boolean = true,
 )
 
 object ChatBackgroundIds {
@@ -52,6 +101,15 @@ object BackgroundStorage {
 @Serializable
 data class AppSettingsState(
     val theme: ThemeMode = ThemeMode.SYSTEM,
+    val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
+    val messageColor: Int = 0x8BFF1A,
+    val hideSendBarWhenNoNetwork: Boolean = true,
+    val parseMarkdown: Boolean = true,
+    val chatTripleColumn: Boolean = false,
+    val amoledUnlocked: Boolean = false,
+    val useAmoledOnDarkSystem: Boolean = false,
+    val desktopHomeSplit: Float = 1.0f,
+    val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(
         FirebaseAddress(
@@ -60,16 +118,10 @@ data class AppSettingsState(
             url = Secrets.firebaseLink
         )
     ),
-
     val selectedFirebaseAddressId: String = "default",
 
-    val hideSendBarWhenNoNetwork: Boolean = true,
-    val parseMarkdown: Boolean = true,
-    val chatTripleColumn: Boolean = false,
-    val amoledUnlocked: Boolean = false,
-    val useAmoledOnDarkSystem: Boolean = false,
-    val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
-    val desktopHomeSplit: Float = 1.0f,
+    val securityConfigKnown: SecurityConfig = SecurityConfig(),
+    val securityConfigUnknown: SecurityConfig = SecurityConfig(),
 ) {
     val selectedFirebaseUrl: String
         get() = firebaseAddresses
@@ -174,6 +226,27 @@ object AppSettings {
     fun setDesktopHomeSplit(v: Float) {
         _state.value = _state.value.copy(desktopHomeSplit = v)
     }
+
+    fun setMessageColor(v: Color) {
+        _state.value = _state.value.copy(messageColor = v.toArgb())
+    }
+
+    fun setKnownSecurityConfig(v: SecurityConfig) {
+        _state.value = _state.value.copy(securityConfigKnown = v)
+    }
+
+    fun setUnknownSecurityConfig(v: SecurityConfig) {
+        _state.value = _state.value.copy(securityConfigUnknown = v)
+    }
+
+    fun setPowerSaveSettings(v: PowerSaveSettings) {
+        _state.value = _state.value.copy(powerSaveSettings = v)
+    }
+
+    fun isInPowerSaveMode(): Boolean =
+        ((Battery.isPowerSaveMode()&&_state.value.powerSaveSettings.enableOnPowerSave)
+                ||(Battery.getLevel()<=_state.value.powerSaveSettings.percentageTrigger))
+                &&!(Battery.isCharging()&&_state.value.powerSaveSettings.accountCharging)
 
     fun addFirebaseAddress(title: String, url: String) {
         val cleanUrl = normalizeFirebaseUrl(url)

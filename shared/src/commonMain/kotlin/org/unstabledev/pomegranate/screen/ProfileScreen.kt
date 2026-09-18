@@ -48,8 +48,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,12 +60,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
@@ -77,7 +76,6 @@ import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
-
 
 @Serializable
 data class Profile(
@@ -180,7 +178,7 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 @Composable
 private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(0) }
-    val chat = produceState<ChatDC?>(null) { value = Repository.chatDao.getChatByEmailFlow(Repository.lastOpponentEmail).first() }
+    val chat = produceState<ChatDC?>(null) { value = Repository.chatDao.tryGetChatByEmailFlow(Repository.lastOpponentEmail).first() }
     val isOnline = produceState(false) { value = Repository.isChatOpen(chat.value) }
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
@@ -194,9 +192,9 @@ private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: 
 
                 Spacer(Modifier.height(12.dp))
 
-                val chat = Repository.lastContact.value!!
-                val displayName = chat.nickname?:profile?.displayName?:
-                    if (email == Repository.myEmail) email else chat.nickname?:chat.partnerEmail
+                val chat = Repository.lastContact.value
+                val displayName = chat?.nickname?:profile?.displayName ?:
+                    if (email==Repository.myEmail) email else chat?.nickname ?: Repository.lastOpponentEmail
 
                 Text(
                     text = displayName,
@@ -334,7 +332,7 @@ private fun FilesList(snackbarHostState: SnackbarHostState, scope: CoroutineScop
                     .padding(8.dp)
                     .clickable {
                         scope.launch {
-                            FileSaver().saveFile(path)
+                            FileSaver.save(path)
                             snackbarHostState.showSnackbar("Файл сохранён")
                         }
                     },
@@ -480,7 +478,6 @@ private fun ChatSwitcherButton(modifier: Modifier, text: String) {
 private fun InfoRow(label: String, value: String, snackbarHostState: SnackbarHostState? = null, valueColor: Color = MaterialTheme.colorScheme.onBackground, canBeCopied: Boolean = false) {
     if(value.isBlank()) return
     var showSnackbar by remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
     val baseMod = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth()
 
     if (showSnackbar) {
@@ -491,7 +488,7 @@ private fun InfoRow(label: String, value: String, snackbarHostState: SnackbarHos
     }
 
     Column(if(!canBeCopied) baseMod else baseMod.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-        clipboardManager.setText(AnnotatedString(value))
+        Clipboard().copyText(value)
         showSnackbar = true
     }) {
         Text(text = value, color = valueColor, fontSize = 16.sp)

@@ -1,15 +1,24 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToLong
 import kotlin.random.Random
@@ -147,6 +156,129 @@ class Util {
             val hours = localDateTime.hour.toString().padStart(2, '0')
             val minutes = localDateTime.minute.toString().padStart(2, '0')
             return "$hours:$minutes"
+        }
+
+        val countryFlags = mapOf(
+            "Russia" to "🇷🇺",
+            "Ukraine" to "🇺🇦",
+            "Belarus" to "🇧🇾",
+            "Kazakhstan" to "🇰🇿",
+            "USA" to "🇺🇸",
+            "Canada" to "🇨🇦",
+            "Mexico" to "🇲🇽",
+            "Brazil" to "🇧🇷",
+            "Argentina" to "🇦🇷",
+            "UK" to "🇬🇧",
+            "Germany" to "🇩🇪",
+            "France" to "🇫🇷",
+            "Italy" to "🇮🇹",
+            "Spain" to "🇪🇸",
+            "Portugal" to "🇵🇹",
+            "Netherlands" to "🇳🇱",
+            "Belgium" to "🇧🇪",
+            "Switzerland" to "🇨🇭",
+            "Austria" to "🇦🇹",
+            "Poland" to "🇵🇱",
+            "Czech Republic" to "🇨🇿",
+            "Slovakia" to "🇸🇰",
+            "Hungary" to "🇭🇺",
+            "Romania" to "🇷🇴",
+            "Bulgaria" to "🇧🇬",
+            "Serbia" to "🇷🇸",
+            "Croatia" to "🇭🇷",
+            "Greece" to "🇬🇷",
+            "Turkey" to "🇹🇷",
+            "China" to "🇨🇳",
+            "Japan" to "🇯🇵",
+            "South Korea" to "🇰🇷",
+            "India" to "🇮🇳",
+            "Israel" to "🇮🇱",
+            "Saudi Arabia" to "🇸🇦",
+            "UAE" to "🇦🇪",
+            "Australia" to "🇦🇺",
+            "New Zealand" to "🇳🇿",
+            "South Africa" to "🇿🇦",
+            "Nigeria" to "🇳🇬",
+            "Egypt" to "🇪🇬"
+        )
+    }
+}
+
+@Composable
+fun Modifier.altClickable(onPrimary: ()->Unit, onSecondary: ()->Unit): Modifier {
+    return this.pointerInput(Unit) {
+        awaitEachGesture {
+            val downEvent = awaitPointerEvent()
+            val change = downEvent.changes.firstOrNull() ?: return@awaitEachGesture
+
+            if (downEvent.buttons.isSecondaryPressed) {
+                onSecondary()
+                change.consume()
+                return@awaitEachGesture
+            }
+
+            if (downEvent.buttons.isPrimaryPressed || downEvent.type == PointerEventType.Press) {
+                var isLongPress = false
+                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                withTimeoutOrNull(longPressTimeout) {
+                    val upEvent = awaitPointerEvent()
+                    if (upEvent.type == PointerEventType.Release) {
+                        onPrimary()
+                        upEvent.changes.forEach { it.consume() }
+                        change.consume()
+                        return@withTimeoutOrNull
+                    }
+                } ?: run {
+                    isLongPress=true
+                }
+
+                if (isLongPress && handleTapGestures) {
+                    onSecondary()
+                    change.consume()
+                    return@awaitEachGesture
+                }
+            }
+        }
+    }
+}
+
+fun Color.toHsv(): FloatArray {
+    val r = this.red
+    val g = this.green
+    val b = this.blue
+
+    val max = max(r, max(g, b))
+    val min = min(r, min(g, b))
+    val delta = max - min
+
+    val v = max
+    val s = if (max == 0f) 0f else delta / max
+    var h = 0f
+    if (delta != 0f) {
+        h = when (max) {
+            r -> ((g - b) / delta) + (if (g < b) 6f else 0f)
+            g -> ((b - r) / delta) + 2f
+            else -> ((r - g) / delta) + 4f
+        }
+        h *= 60f
+    }
+
+    return floatArrayOf(h, s, v)
+}
+
+fun Color.isDark(): Boolean = this.toHsv()[0]<0.5f
+
+data class HSVColor(
+    val hue: Float = 0f,
+    val saturation: Float = 1f,
+    val value: Float = 1f
+) {
+    fun toColor(): Color = Color.hsv(hue, saturation, value)
+
+    companion object {
+        fun fromColor(color: Color): HSVColor {
+            val hsv = color.toHsv()
+            return HSVColor(hue = hsv[0], saturation = hsv[1], value = hsv[2])
         }
     }
 }

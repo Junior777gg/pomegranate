@@ -28,10 +28,10 @@ import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.components.LabeledTextField
-import org.unstabledev.pomegranate.NavigationWays
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Routes
-import org.unstabledev.pomegranate.applyScreenPadding
+import org.unstabledev.pomegranate.screen.nav.Routes
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.serialize
@@ -89,8 +89,7 @@ fun ContactsPanel(
                     null
                 }
 
-                val chat = ChatDC(email, null, profile?.serialize())
-
+                val chat = ChatDC(email, null, profile?.serialize(), null)
                 chatDao?.upsertChat(chat)
 
                 Repository.setLastContact(chat)

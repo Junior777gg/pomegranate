@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate.components
+package org.unstabledev.pomegranate.components.chat
 
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownTypography
@@ -25,10 +25,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,6 +40,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -52,11 +55,10 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -64,18 +66,27 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.Clipboard
 import org.unstabledev.pomegranate.FileSaver
 import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
-import org.unstabledev.pomegranate.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
+import org.unstabledev.pomegranate.altClickable
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
+import org.unstabledev.pomegranate.components.AnimatedGifImage
+import org.unstabledev.pomegranate.components.AudioPlayerWidget
+import org.unstabledev.pomegranate.components.ColorTheme
+import org.unstabledev.pomegranate.components.GifDecoder
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
+import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.kmpReadBytes
@@ -90,48 +101,71 @@ fun MessageBubble(
     snackbarHostState: SnackbarHostState,
     renderMarkdown: Boolean
 ) {
+    if (!message.isDisplayable()) return
+
+    val settings by AppSettings.state.collectAsState()
+
+    val profile = chat.profile?.deserialize()
+    val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+    val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
+
     val menuOpen = remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
+    val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
+    val needPadding = message.type != MessageDC.IMAGE
+    val noNeedForBubble = message.isCall()
+    @Composable
+    fun applyMessageBubble(apply: Boolean, base: Modifier): Modifier {
+        if(!apply) {
+            return base.widthIn(max = 280.dp)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (message.isMine) 16.dp else 4.dp,
+                        bottomEnd = if (message.isMine) 4.dp else 16.dp
+                    )
+                )
+                .background(msgColor)
+                .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
+        }
+        return base
+    }
+    @Composable
+    fun CantDecodeImagePlaceholder() {
+        Box(Modifier.clip(RoundedCornerShape(10.dp))) {
+            Row(
+                Modifier
+                    .background(Color.Gray.copy(alpha = 0.2f))
+                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Default.Image,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("Изображение", color = MaterialTheme.colorScheme.onBackground)
+                Spacer(Modifier.width(2.dp))
+            }
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
     ) {
-        val needPadding = message.type != MessageDC.IMAGE
-        val noNeedForBubble = message.type == MessageDC.BEGIN_CALL || message.type == MessageDC.ACCEPT_CALL
-        val profile = chat.profile?.deserialize()
-        val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-        val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
-        @Composable
-        fun applyMessageBubble(base: Modifier): Modifier {
-            if(!noNeedForBubble) {
-                return base.widthIn(max = 280.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = if (message.isMine) 16.dp else 4.dp,
-                            bottomEnd = if (message.isMine) 4.dp else 16.dp
-                        )
-                    )
-                    .background(if (message.isMine) ColorTheme.MyMessageBubble else MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = if (needPadding) 12.dp else 0.dp, vertical = if (needPadding) 8.dp else 0.dp)
-            }
-            return base
-        }
         Box(
-            modifier = applyMessageBubble(Modifier
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = {
-                            menuOpen.value = true
-                            sendHaptic(HAPTIC_EFFECT_CLICK)
-                        },
-                        onTap = { if (message.type == MessageDC.IMAGE) { setImagePreview(message) } }
-                    )
-                }
-                .pointerHoverIcon(if (message.type == MessageDC.IMAGE) PointerIcon.Hand else PointerIcon.Default))
+            modifier = applyMessageBubble(noNeedForBubble, Modifier
+                .altClickable({
+                    if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) setImagePreview(message)
+                }, {
+                    menuOpen.value = true
+                    sendHaptic(HAPTIC_EFFECT_CLICK)
+                })
+                .pointerHoverIcon(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) PointerIcon.Hand else PointerIcon.Default))
         ) {
             Row(
                 verticalAlignment = Alignment.Bottom,
@@ -232,138 +266,199 @@ fun MessageBubble(
                     }
 
                     MessageDC.IMAGE -> {
-                        var bitmap by remember(message.key) {
-                            mutableStateOf<ImageBitmap?>(null)
-                        }
-                        var ratio by remember(message.key) {
-                            mutableStateOf<Float?>(null)
-                        }
-
-                        LaunchedEffect(message.key) {
-                            val bmp = withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+                        if (AppSettings.isInPowerSaveMode()&&!settings.powerSaveSettings.decodeImages) {
+                            CantDecodeImagePlaceholder()
+                        } else {
+                            var bitmap by remember(message.key) {
+                                mutableStateOf<ImageBitmap?>(null)
                             }
-                            bitmap = bmp
-                            ratio = bmp.width.toFloat() / bmp.height.toFloat()
-                        }
+                            var ratio by remember(message.key) {
+                                mutableStateOf<Float?>(null)
+                            }
 
-                        val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
-
-                        Box(
-                            modifier = Modifier
-                                .widthIn(min = 120.dp, max = 260.dp)
-                                .aspectRatio(clampedRatio)
-                                .animateContentSize()
-                        ) {
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap!!,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Gray.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            LaunchedEffect(message.key) {
+                                val bmp = withContext(Dispatchers.Default) {
+                                    getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                                 }
+                                bitmap = bmp
+                                ratio = bmp.width.toFloat() / bmp.height.toFloat()
                             }
+
+                            val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
 
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .widthIn(min = 120.dp, max = 260.dp)
+                                    .aspectRatio(clampedRatio)
+                                    .animateContentSize()
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .background(Color.Black.copy(alpha = 0.4f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(message.time.toHHMMTime(), color = Color.White, fontSize = 11.sp)
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        modifier = Modifier.size(14.dp),
-                                        imageVector = if (message.isDelivered || !message.isMine)
-                                            Icons.Default.Check
-                                        else Icons.Default.ArrowOutward,
+                                if (bitmap != null) {
+                                    Image(
+                                        bitmap = bitmap!!,
                                         contentDescription = null,
-                                        tint = Color.White
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Gray.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            message.time.toHHMMTime(),
+                                            color = Color.White,
+                                            fontSize = 11.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(
+                                            modifier = Modifier.size(14.dp),
+                                            imageVector = if (message.isDelivered || !message.isMine)
+                                                Icons.Default.Check
+                                            else Icons.Default.ArrowOutward,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
                     MessageDC.ANIMATED_IMAGE -> {
-                        var bitmap by remember(message.key) {
-                            mutableStateOf<ImageBitmap?>(null)
-                        }
-                        var ratio by remember(message.key) {
-                            mutableStateOf<Float?>(null)
-                        }
-
-                        LaunchedEffect(message.key) {
-                            val bmp = withContext(Dispatchers.Default) {
-                                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+                        if (AppSettings.isInPowerSaveMode()&&!settings.powerSaveSettings.decodeImages) {
+                            CantDecodeImagePlaceholder()
+                        } else {
+                            var gifBytes by remember(message.key) {
+                                mutableStateOf<ByteArray?>(null)
                             }
-                            bitmap = bmp
-                            ratio = bmp.width.toFloat() / bmp.height.toFloat()
-                        }
+                            var ratio by remember(message.key) {
+                                mutableStateOf<Float?>(null)
+                            }
+                            var isLoading by remember(message.key) {
+                                mutableStateOf(true)
+                            }
 
-                        val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+                            LaunchedEffect(message.key) {
+                                isLoading = true
+                                try {
+                                    val bytes = withContext(Dispatchers.IO) {
+                                        KMPFile(message.data.decodeToString()).kmpReadBytes()
+                                    }
 
-                        Box(
-                            modifier = Modifier
-                                .widthIn(min = 120.dp, max = 260.dp)
-                                .aspectRatio(clampedRatio)
-                                .animateContentSize()
-                        ) {
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap!!,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Gray.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                    withContext(Dispatchers.Default) {
+                                        val frames = try {
+                                            GifDecoder.decode(bytes)
+                                        } catch (_: Exception) {
+                                            emptyList()
+                                        }
+
+                                        if (frames.isNotEmpty()) {
+                                            val firstFrame = frames[0].bitmap
+                                            ratio = firstFrame.width.toFloat() / firstFrame.height.toFloat()
+                                            gifBytes = bytes
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                } finally {
+                                    isLoading = false
                                 }
                             }
 
+                            val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp)
+                                    .widthIn(min = 120.dp, max = 260.dp)
+                                    .aspectRatio(clampedRatio)
                                     .clip(RoundedCornerShape(12.dp))
+                                    .clickable { setImagePreview(message) }
+                                    .animateContentSize()
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
+                                when {
+                                    isLoading -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color.Gray.copy(alpha = 0.2f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                        }
+                                    }
+                                    gifBytes != null -> {
+                                        AnimatedGifImage(
+                                            bytes = gifBytes!!,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop,
+                                            animate = !(AppSettings.isInPowerSaveMode()&&!settings.powerSaveSettings.animateGifs)
+                                        )
+                                    }
+                                    else -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color.Gray.copy(alpha = 0.2f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.BrokenImage,
+                                                contentDescription = "Failed to load GIF",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Box(
                                     modifier = Modifier
-                                        .background(Color.Black.copy(alpha = 0.4f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp)
+                                        .clip(RoundedCornerShape(12.dp))
                                 ) {
-                                    Text(message.time.toHHMMTime(), color = Color.White, fontSize = 11.sp)
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        modifier = Modifier.size(14.dp),
-                                        imageVector = if (message.isDelivered || !message.isMine)
-                                            Icons.Default.Check
-                                        else Icons.Default.ArrowOutward,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            message.time.toHHMMTime(),
+                                            color = Color.White,
+                                            fontSize = 11.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(
+                                            modifier = Modifier.size(14.dp),
+                                            imageVector = if (message.isDelivered || !message.isMine)
+                                                Icons.Default.Check
+                                            else Icons.Default.ArrowOutward,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -378,7 +473,7 @@ fun MessageBubble(
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
                                     scope.launch {
-                                        FileSaver().saveFile(message.data.decodeToString())
+                                        FileSaver.save(message.data.decodeToString())
                                         snackbarHostState.showSnackbar("Файл сохранён")
                                         savedAlready.value = true
                                     }
@@ -462,6 +557,10 @@ fun MessageBubble(
                             }
                         }
                     }
+
+                    else -> {
+                        Text("Неизвестный тип сообщения", color = ColorTheme.Warning, fontStyle = FontStyle.Italic)
+                    }
                 }
 
                 if (message.type == MessageDC.TEXT || message.type == MessageDC.FILE) {
@@ -483,72 +582,87 @@ fun MessageBubble(
                     }
                 }
             }
-        }
-
-        if (menuOpen.value) {
-            DropdownMenu(
-                expanded = menuOpen.value,
-                onDismissRequest = { menuOpen.value = false },
-                modifier = Modifier
-                    .width(230.dp)
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                if (message.type == MessageDC.TEXT) {
-                    DropdownMenuItem(
-                        text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        },
-                        onClick = {
-                            scope.launch {
-                                clipboardManager.setText(AnnotatedString(message.data.decodeToString()))
-                            }
-                            menuOpen.value = false
-                        }
-                    )
-                } else {
-                    DropdownMenuItem(
-                        text = { Text("Сохранить", color = MaterialTheme.colorScheme.onBackground) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.FileDownload,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        },
-                        onClick = {
-                            scope.launch {
-                                if (message.type == MessageDC.FILE) {
-                                    FileSaver().saveFile(message.data.decodeToString())
-                                } else {
-                                    FileSaver().saveFile(message.data.decodeToString())
+            if (menuOpen.value) {
+                DropdownMenu(
+                    expanded = menuOpen.value,
+                    onDismissRequest = { menuOpen.value = false },
+                    modifier = Modifier
+                        .width(230.dp)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    if (message.type == MessageDC.TEXT) {
+                        DropdownMenuItem(
+                            text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                scope.launch {
+                                    Clipboard().copyText(message.data.decodeToString())
                                 }
-                                snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE) "Изображение сохранено" else "Файл сохранён")
+                                menuOpen.value = false
+                            }
+                        )
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text("Сохранить", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.FileDownload,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                scope.launch {
+                                    FileSaver.save(message.data.decodeToString())
+                                    snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE)
+                                        "Изображение сохранено" else "Файл сохранён")
+                                }
+                                menuOpen.value = false
+                            }
+                        )
+                    }
+                    if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) {
+                        DropdownMenuItem(
+                            text = { Text("Скопировать", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                scope.launch {
+                                    Clipboard().copyImage(message.data.decodeToString())
+                                    snackbarHostState.showSnackbar("Изображение скопировано")
+                                }
+                                menuOpen.value = false
+                            }
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("Удалить", color = MaterialTheme.colorScheme.error) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        onClick = {
+                            scope.launch {
+                                Repository.messagesDao.deleteMessage(message)
                             }
                             menuOpen.value = false
                         }
                     )
                 }
-                DropdownMenuItem(
-                    text = { Text("Удалить", color = MaterialTheme.colorScheme.error) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    onClick = {
-                        scope.launch {
-                            Repository.messagesDao.deleteMessage(message)
-                        }
-                        menuOpen.value = false
-                    }
-                )
             }
         }
     }
