@@ -46,7 +46,9 @@ actual class Camera {
         LaunchedEffect(Unit) {
             withContext(Dispatchers.IO) {
                 while (isActive) {
-                    currentFrame.value = converter.convert(frame).toComposeImageBitmap()
+                    if (frame != null) {
+                        currentFrame.value = converter.convert(frame).toComposeImageBitmap()
+                    }
                     delay(33)
                 }
             }
