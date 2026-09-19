@@ -3,10 +3,10 @@ package org.unstabledev.pomegranate.P2PUtils
 import Log
 
 actual class LoggerImpl actual constructor(){
-    actual fun init() {
+    actual inline fun init() {
         Logger.logger = object: Log{
-            override fun log(message: String) {
-                println(message)
+            override fun log(lambda: () -> Unit) {
+                lambda()
             }
         }
     }

@@ -47,7 +47,7 @@ class Observer(
     init {
         receive()
         CoroutineScope(Dispatchers.IO).launch {
-            while (timeOutMillis + lastAction > now().toEpochMilliseconds()) {
+            while ((timeOutMillis + lastAction > now().toEpochMilliseconds()) || currentCall.value != null) {
                 delay(5000.milliseconds)
             }
             try {

@@ -18,9 +18,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.scale
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.fleeksoft.io.ByteBuffer
+import com.github.panpf.sketch.util.asComposeImageBitmap
 import com.github.panpf.sketch.util.rotate
+import kotlinx.coroutines.delay
+import org.checkerframework.checker.units.qual.h
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.Executors
@@ -91,7 +96,7 @@ actual class Camera {
                         try {
                             val bitmap = imageProxy.toBitmap().rotate(-90)
                             val stream = ByteArrayOutputStream()
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 10, stream)
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 15, stream)
                             latestJpeg = stream.toByteArray()
                             bitmap.recycle()
                         } catch (e: Exception) {
@@ -154,7 +159,7 @@ actual class Camera {
         // ждём пока появится хотя бы один кадр
         var waited = 0
         while (latestJpeg == null && waited < 5000) {
-            kotlinx.coroutines.delay(50)
+            delay(50)
             waited += 50
         }
         return latestJpeg ?: ByteArray(0)

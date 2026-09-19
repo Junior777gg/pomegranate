@@ -2,6 +2,7 @@ package org.unstabledev.pomegranate.screen.control
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,8 @@ class BetterCallSoulScreenController(
                 while (true) {
                     val data = videoManager.channel!!.receive()
                     val bitmap = try {
-                        getBitmapFromBytesAsync((data as Data.Bytes).bytes)
+                        val copy = (data as Data.Bytes).bytes.copyOf()
+                        copy.decodeToImageBitmap()
                     } catch (e: Exception) {
                         e.printStackTrace()
                         null
@@ -65,7 +67,7 @@ class BetterCallSoulScreenController(
                 while (cameraActive.value) {
                     val frame = camera.getFrame()
                     videoManager.channel!!.send(frame)
-                    delay(100)
+                    delay(33)
                 }
             }
 
