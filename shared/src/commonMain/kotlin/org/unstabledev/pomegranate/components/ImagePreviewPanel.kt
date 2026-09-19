@@ -40,13 +40,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.Clipboard
-import org.unstabledev.pomegranate.FileSaver
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.Clipboard
+import org.unstabledev.pomegranate.platform.FileSaver
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.getBitmapFromBytes
-import org.unstabledev.pomegranate.kmpReadBytes
+import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.kmpReadBytes
 
 @Composable
 fun ImagePreviewPanel(

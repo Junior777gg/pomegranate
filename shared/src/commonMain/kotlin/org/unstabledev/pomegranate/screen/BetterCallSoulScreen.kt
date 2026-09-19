@@ -39,7 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.CallState
-import org.unstabledev.pomegranate.Camera
+import org.unstabledev.pomegranate.platform.Camera
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding

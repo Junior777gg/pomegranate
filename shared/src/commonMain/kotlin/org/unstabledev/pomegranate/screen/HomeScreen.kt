@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
@@ -44,7 +44,7 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.kmpReadText
+import org.unstabledev.pomegranate.platform.kmpReadText
 
 @Composable
 fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {

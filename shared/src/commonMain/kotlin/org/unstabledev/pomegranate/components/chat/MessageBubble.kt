@@ -8,7 +8,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -70,10 +68,10 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.Clipboard
-import org.unstabledev.pomegranate.FileSaver
-import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.Clipboard
+import org.unstabledev.pomegranate.platform.FileSaver
+import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
 import org.unstabledev.pomegranate.altClickable
@@ -88,9 +86,9 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.getBitmapFromBytes
-import org.unstabledev.pomegranate.kmpReadBytes
-import org.unstabledev.pomegranate.sendHaptic
+import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.kmpReadBytes
+import org.unstabledev.pomegranate.platform.sendHaptic
 
 @Composable
 fun MessageBubble(

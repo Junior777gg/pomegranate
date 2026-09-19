@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import android.content.BroadcastReceiver
 import android.content.Context

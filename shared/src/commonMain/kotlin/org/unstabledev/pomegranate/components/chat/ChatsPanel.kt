@@ -2,7 +2,6 @@ package org.unstabledev.pomegranate.components.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,7 +42,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,7 +58,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
 import org.unstabledev.pomegranate.ChatBackgroundIds
-import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
+import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -72,10 +70,9 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.getBitmapFromBytes
-import org.unstabledev.pomegranate.handleTapGestures
-import org.unstabledev.pomegranate.kmpReadBytes
-import org.unstabledev.pomegranate.sendHaptic
+import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.kmpReadBytes
+import org.unstabledev.pomegranate.platform.sendHaptic
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.def01
 import pomegranate.shared.generated.resources.def02

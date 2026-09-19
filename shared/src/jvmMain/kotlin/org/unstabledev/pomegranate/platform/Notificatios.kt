@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 actual class Notifications actual constructor(){
     companion object{

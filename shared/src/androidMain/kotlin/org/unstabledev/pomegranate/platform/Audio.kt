@@ -1,21 +1,18 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
+import android.Manifest
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.util.Log
 import androidx.core.content.ContextCompat
-import com.fleeksoft.io.ByteBuffer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable.isActive
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -66,7 +63,7 @@ actual class AudioRecorder actual constructor() {
     private var recorder: MediaRecorder? = null
 
     actual fun start(outputFile: KMPFile) {
-        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             throw SecurityException("RECORD_AUDIO permission not granted")
         }
 
@@ -83,7 +80,7 @@ actual class AudioRecorder actual constructor() {
             }
             recorder = mr
         } catch (e: Exception) {
-            android.util.Log.e("AudioRecorder", "Failed to start recording", e)
+            Log.e("AudioRecorder", "Failed to start recording", e)
             stop()
             throw e
         }
@@ -123,7 +120,7 @@ actual class CallAudioRecorder actual constructor(){
     actual fun start() {
         val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
         val chunkSize = 640
-        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             throw SecurityException("RECORD_AUDIO permission not granted")
         }
         audioRecord = AudioRecord(

@@ -33,6 +33,15 @@ data class MessageDC(
         fun MessageDC.isDisplayable(): Boolean {
             return type!=SECURITY_CONFIG
         }
+
+        fun truncatedMessageDCType(type: String): String? {
+            return when (type) {
+                TEXT -> "dat"
+                IMAGE, ANIMATED_IMAGE -> "img"
+                FILE, AUDIO -> "file"
+                else -> null
+            }
+        }
     }
 }
 

@@ -11,16 +11,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.PlatformKeyEvents
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
-import org.unstabledev.pomegranate.isLandscape
-import org.unstabledev.pomegranate.isMobile
-import org.unstabledev.pomegranate.kmpReadText
+import org.unstabledev.pomegranate.platform.isLandscape
+import org.unstabledev.pomegranate.platform.isMobile
+import org.unstabledev.pomegranate.platform.kmpReadText
 import org.unstabledev.pomegranate.screen.BetterCallSoulScreen
 import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
@@ -29,9 +29,13 @@ import org.unstabledev.pomegranate.screen.FirebaseAddressSelectScreen
 import org.unstabledev.pomegranate.screen.LoginScreen
 import org.unstabledev.pomegranate.screen.HomeScreen
 import org.unstabledev.pomegranate.screen.ProfileScreen
-import org.unstabledev.pomegranate.screen.SettingsScreen
+import org.unstabledev.pomegranate.screen.settings.SettingsScreen
 import org.unstabledev.pomegranate.screen.WelcomeScreen
-import org.unstabledev.pomegranate.separator
+import org.unstabledev.pomegranate.screen.settings.NetworkSettingsScreen
+import org.unstabledev.pomegranate.screen.settings.PowerSaveSettingsScreen
+import org.unstabledev.pomegranate.screen.settings.StorageSettingsScreen
+import org.unstabledev.pomegranate.screen.settings.StyleSettingsScreen
+import org.unstabledev.pomegranate.platform.separator
 
 @Composable
 fun applyScreenPadding(base: Modifier = Modifier): Modifier {
@@ -113,6 +117,42 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                 )
             }
             SettingsScreen(navWayObj, chatDao)
+        }
+        composable(Routes.SETTINGS_STYLE_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            StyleSettingsScreen(navWayObj)
+        }
+        composable(Routes.SETTINGS_NETWORK_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            NetworkSettingsScreen(navWayObj)
+        }
+        composable(Routes.SETTINGS_POWER_SAVE_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            PowerSaveSettingsScreen(navWayObj)
+        }
+        composable(Routes.SETTINGS_STORAGE_SCREEN) {
+            val navWayObj = remember {
+                NavigationWays(
+                    goTo = { route: String -> navController.navigate(route) },
+                    back = { navController.popBackStack() }
+                )
+            }
+            StorageSettingsScreen(navWayObj, chatDao)
         }
         composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
             val navWayObj = remember {

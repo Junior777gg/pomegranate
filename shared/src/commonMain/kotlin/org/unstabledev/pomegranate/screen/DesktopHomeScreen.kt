@@ -50,10 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
-import org.unstabledev.pomegranate.PlatformKeyEvents
+import org.unstabledev.pomegranate.platform.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -61,7 +61,7 @@ import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.kmpReadText
+import org.unstabledev.pomegranate.platform.kmpReadText
 
 private enum class PanelSubScreen {
     CHATS,

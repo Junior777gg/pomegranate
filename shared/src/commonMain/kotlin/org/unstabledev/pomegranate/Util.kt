@@ -1,7 +1,6 @@
 package org.unstabledev.pomegranate
 
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
@@ -16,10 +15,12 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.unstabledev.pomegranate.platform.handleTapGestures
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.round
 import kotlin.math.roundToLong
 import kotlin.random.Random
 
@@ -240,6 +241,19 @@ fun Modifier.altClickable(onPrimary: ()->Unit, onSecondary: ()->Unit): Modifier 
             }
         }
     }
+}
+
+fun Double.roundTo(decimals: Int): String {
+    var multiplier = 1.0
+    repeat(decimals) { multiplier *= 10 }
+    val rounded = round(this * multiplier) / multiplier
+
+    val parts = rounded.toString().split(".")
+    val integerPart = parts[0]
+    val fractionalPart = parts.getOrNull(1) ?: ""
+    val paddedFraction = fractionalPart.padEnd(decimals, '0').take(decimals)
+
+    return "$integerPart.$paddedFraction"
 }
 
 fun Color.toHsv(): FloatArray {

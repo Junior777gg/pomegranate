@@ -16,6 +16,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
+import org.unstabledev.pomegranate.platform.MediaSelector
+import org.unstabledev.pomegranate.platform.Notifications
+import org.unstabledev.pomegranate.platform.PlatformKeyEvents
+import org.unstabledev.pomegranate.platform.shutdownJavaFx
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File

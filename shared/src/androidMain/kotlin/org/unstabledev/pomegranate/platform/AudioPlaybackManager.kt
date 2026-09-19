@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -11,6 +11,7 @@ import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.util.Log
 
 @SuppressLint("StaticFieldLeak")
 object AudioPlaybackManager {
@@ -147,7 +148,7 @@ object AudioPlaybackManager {
                 AudioPlaybackService.updateState(context, isPlaying = false)
             }
             mp.setOnErrorListener { _, what, extra ->
-                android.util.Log.e("AudioPlayback", "MediaPlayer error: what=$what, extra=$extra")
+                Log.e("AudioPlayback", "MediaPlayer error: what=$what, extra=$extra")
                 false
             }
             mp.prepare()
@@ -160,7 +161,7 @@ object AudioPlaybackManager {
             }, 100)
 
         } catch (e: Exception) {
-            android.util.Log.e("AudioPlayback", "Error preparing audio: ${e.message}", e)
+            Log.e("AudioPlayback", "Error preparing audio: ${e.message}", e)
             mp.release()
             mediaPlayer = null
             currentPath = null
@@ -174,7 +175,7 @@ object AudioPlaybackManager {
         }
 
         if (mediaPlayer == null) {
-            android.util.Log.e("AudioPlayback", "Cannot play: MediaPlayer is null")
+            Log.e("AudioPlayback", "Cannot play: MediaPlayer is null")
             return
         }
 
@@ -187,7 +188,7 @@ object AudioPlaybackManager {
             AudioPlaybackService.start(context)
             AudioPlaybackService.updateState(context, isPlaying = true)
         } catch (e: Exception) {
-            android.util.Log.e("AudioPlayback", "Error starting playback: ${e.message}", e)
+            Log.e("AudioPlayback", "Error starting playback: ${e.message}", e)
         }
     }
 
@@ -199,7 +200,7 @@ object AudioPlaybackManager {
             updatePlaybackState(PlaybackStateCompat.STATE_PAUSED, getCurrentPosition())
             AudioPlaybackService.updateState(context, isPlaying = false)
         } catch (e: Exception) {
-            android.util.Log.e("AudioPlayback", "Error pausing: ${e.message}", e)
+            Log.e("AudioPlayback", "Error pausing: ${e.message}", e)
         }
     }
 
@@ -208,7 +209,7 @@ object AudioPlaybackManager {
         try {
             mediaPlayer?.seekTo(ms.toInt())
         } catch (e: Exception) {
-            android.util.Log.e("AudioPlayback", "Error seeking: ${e.message}", e)
+            Log.e("AudioPlayback", "Error seeking: ${e.message}", e)
         }
     }
 
@@ -253,7 +254,7 @@ object AudioPlaybackManager {
         try {
             mediaPlayer?.release()
         } catch (e: Exception) {
-            android.util.Log.e("AudioPlayback", "Error releasing player: ${e.message}", e)
+            Log.e("AudioPlayback", "Error releasing player: ${e.message}", e)
         }
         mediaPlayer = null
         currentPath = null

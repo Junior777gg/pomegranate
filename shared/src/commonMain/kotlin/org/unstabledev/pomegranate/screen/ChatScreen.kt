@@ -41,7 +41,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.Firebase
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -55,8 +55,8 @@ import org.unstabledev.pomegranate.components.chat.ChatHeader
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.fileDropArea
-import org.unstabledev.pomegranate.isMobile
+import org.unstabledev.pomegranate.platform.fileDropArea
+import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import kotlin.time.Duration.Companion.seconds
 

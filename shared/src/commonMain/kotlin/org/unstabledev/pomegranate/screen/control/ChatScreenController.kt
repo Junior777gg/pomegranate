@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.BaseP2P
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.availableChats

@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -36,6 +36,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
+import kotlin.io.inputStream
 import kotlin.io.outputStream
 import kotlin.time.Clock
 import java.io.File as FileAccess
@@ -205,13 +206,13 @@ actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): Cli
                     }
 
                     val fileName="pasted_${Clock.System.now().toEpochMilliseconds()}.$extension"
-                    val tempFile=KMPFile(tempDir, fileName)
+                    val tempFile= KMPFile(tempDir, fileName)
                     context?.contentResolver?.openInputStream(uri)?.use { input ->
                         tempFile.kmpWriteBytes(input.readBytes())
                     }
 
                     if (tempFile.exists() && tempFile.length() > 0) {
-                        val bitmap=getBitmapFromBytes(tempFile.kmpReadBytes())
+                        val bitmap= getBitmapFromBytes(tempFile.kmpReadBytes())
                         return ClipImage(
                             bitmap = bitmap,
                             file = tempFile,
@@ -228,4 +229,8 @@ actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): Cli
         e.printStackTrace()
         null
     }
+}
+
+actual fun formatString(format: String, vararg args: Any): String {
+    return String.format(format, args)
 }

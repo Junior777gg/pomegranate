@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.runtime.Composable
@@ -9,23 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asComposeImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.ClipEntry
-import com.github.panpf.sketch.decode.internal.ImageFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Image
-import org.jetbrains.skia.ImageInfo
-import org.jetbrains.skia.Pixmap
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
 import java.awt.image.BufferedImage
-import java.awt.image.Raster
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -155,7 +149,11 @@ actual fun Modifier.fileDropArea(
                             .map { URI.create(it.trim()) }
                             .map(::FileAccess)
                             .forEach {
-                                files += DroppedFile(it.name, "application/octet-stream", it.toURI().toString())
+                                files += DroppedFile(
+                                    it.name,
+                                    "application/octet-stream",
+                                    it.toURI().toString()
+                                )
                             }
                     }
                 } catch (e: Exception) {
@@ -176,8 +174,8 @@ actual fun Modifier.fileDropArea(
 private fun DragAndDropEvent.transferableOrNull(): Transferable? = runCatching {
     val f = this::class.java.getDeclaredField("nativeEvent").apply { isAccessible = true }
     when (val e = f.get(this)) {
-        is java.awt.dnd.DropTargetDropEvent -> e.transferable
-        is java.awt.dnd.DropTargetDragEvent -> e.transferable
+        is DropTargetDropEvent -> e.transferable
+        is DropTargetDragEvent -> e.transferable
         else -> null
     }
 }.getOrNull()
@@ -250,4 +248,8 @@ actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): Cli
         e.printStackTrace()
         null
     }
+}
+
+actual fun formatString(format: String, vararg args: Any): String {
+    return String.format(format, args)
 }

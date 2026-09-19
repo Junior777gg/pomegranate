@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.MediaType
@@ -9,9 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.ClipEntry
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.unstabledev.pomegranate.Repository
 
 expect val rootDirectory: String
 expect val separator : String
@@ -187,3 +186,5 @@ private suspend fun processPastedClipImage(
         e.printStackTrace()
     }
 }
+
+expect fun formatString(format: String, vararg args: Any): String
