@@ -23,9 +23,16 @@ object ConnectionReceiver {
             } catch (_: Exception) {
                 null
             }
-            val exChat = Repository.chatDao.tryGetChatByEmailFlow(opponent.first)
-            val nickname = exChat.first()?.nickname
-            val chat = ChatDC(opponent.first, nickname, profile?.serialize(), null)
+            var chat = Repository.chatDao.tryGetChatByEmailFlow(opponent.first).first()
+            if (chat == null) {
+                val email = opponent.first
+                chat = ChatDC(
+                    partnerEmail = listOf(email),
+                    profile = mapOf(email to profile?.serialize())
+                )
+            }
+
+
             val observer = Observer(opponent.second, opponent.second.channel!!,chat, Repository.messagesDao)
             Repository.chatDao.upsertChat(chat)
             availableChats.getOrPut(chat, {MutableSharedFlow(1)}).emit(observer)

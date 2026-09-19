@@ -132,8 +132,13 @@ class Observer(
                                     sendCode(key)
                                     if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()) {
                                         Notifications().push(
-                                            (chatDC.profile?.deserialize()?.displayName
-                                                ?: chatDC.partnerEmail),
+                                            (
+                                                    if (chatDC.partnerEmail.size == 1){
+                                                        chatDC.nickname[chatDC.partnerEmail[0]] ?: chatDC.partnerEmail[0]
+                                                    }else{
+                                                        chatDC.name!!
+                                                    }
+                                                    ),
                                             when (messageDC.type) {
                                                 MessageDC.TEXT -> messageDC.data.decodeToString()
                                                     .stripMarkdown()
@@ -156,7 +161,7 @@ class Observer(
                                     }
                                     if (messageDC.type == MessageDC.SECURITY_CONFIG) {
                                         val cfg=SecurityConfig().fromByteArray(messageDC.data)
-                                        chatDC.securityConfig=cfg.toString()
+                                        chatDC.securityConfig = cfg.toString()
                                         Repository.chatDao.upsertChat(chatDC)
                                     }
                                     messageDC.isMine = false
