@@ -45,9 +45,11 @@ class BetterCallSoulScreenController(
                 }
             }
             launch {
-                while (microphoneActive.value) {
-                    val frame = recorder.getFrame()
-                    audioManager.channel!!.send(frame)
+                while (true) {
+                    if (microphoneActive.value) {
+                        val frame = recorder.getFrame()
+                        audioManager.channel!!.send(frame)
+                    }
                 }
             }
             launch {
@@ -64,9 +66,11 @@ class BetterCallSoulScreenController(
                 }
             }
             launch {
-                while (cameraActive.value) {
-                    val frame = camera.getFrame()
-                    videoManager.channel!!.send(frame)
+                while (true) {
+                    if (cameraActive.value) {
+                        val frame = camera.getFrame()
+                        videoManager.channel!!.send(frame)
+                    }
                     delay(33)
                 }
             }
