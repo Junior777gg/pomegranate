@@ -60,7 +60,6 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.chat.addChatBackground
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.kmpReadText
 
 private enum class PanelSubScreen {
@@ -70,11 +69,10 @@ private enum class PanelSubScreen {
 }
 
 @Composable
-fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
+fun DesktopHomeScreen(navWayObj: NavigationWays) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
-    val lastContact by Repository.lastContact.collectAsState()
     val settings by AppSettings.state.collectAsState()
-    val viewModel = viewModel { HomeScreenController(chatDao) }
+    val viewModel = viewModel { HomeScreenController() }
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
@@ -87,7 +85,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
-            Repository.setLastContact(null)
+           viewModel.setLastChat(null)
         }
     }
 
@@ -99,7 +97,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     if(panelSubScreen != PanelSubScreen.CHATS) {
                         panelSubScreen = PanelSubScreen.CHATS
                     } else {
-                        Repository.setLastContact(null)
+                        viewModel.setLastChat(null)
                     }
                     true
                 } else {
@@ -114,7 +112,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         SearchableChatsPanel(
                             viewModel,
                             onChatClick = {
-                                Repository.setLastContact(it)
+                                viewModel.setLastChat(it)
                             },
                             onChatAddClick = {
                                 panelSubScreen = PanelSubScreen.CONTACTS
@@ -123,22 +121,20 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                 panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
                             },
                             onOpenProfileClick = {
-                                Repository.lastOpponentEmail = it.partnerEmail
                                 navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
-                            }, chatDao)
+                            })
                     }
                     PanelSubScreen.CONTACTS -> {
                         ContactsPanel({
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             panelSubScreen = PanelSubScreen.CHATS
-                        }, chatDao)
+                        })
                     }
                     PanelSubScreen.PROFILE_SETTINGS -> {
                         ProfileSettings(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            Repository.lastOpponentEmail = KMPFile(fistFilePath).kmpReadText()
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }, {
                             navWayObj.goTo(Routes.SETTINGS_SCREEN)
@@ -170,11 +166,11 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     )
             )
             Column(Modifier.weight(1.5f)) {
-                if(lastContact?.partnerEmail?.isNotEmpty() == true) {
-                    key(lastContact?.partnerEmail) {
+                val chat = Repository.lastChat.value
+                if(chat != null) {
+                    key(chat) {
                         ChatScreen(
                             navWayObj = navWayObj,
-                            chatDao = chatDao,
                             canBack = false
                         )
                     }

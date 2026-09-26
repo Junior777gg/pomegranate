@@ -16,7 +16,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Man
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -24,7 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -106,19 +104,14 @@ fun ContactsPanel(
                         return@Button
                     }*/
                     scope.launch(Dispatchers.IO) {
-                        val profile = try {
-                            Gravatar.getProfile(email.sha256())
-                        } catch (e: Exception) {
-                            null
-                        }
-
                         val chat = ChatDC(
-                            partnerEmail = listOf(email),
-                            profile = mapOf(email to profile?.serialize())
+                            chatName = email,
+                            personsEmails = listOf(email),
+                            chatType = ChatDC.Companion.ChatTypes.CHAT,
+                            chatCreator = email
                         )
                         chatDao?.upsertChat(chat)
-
-                        Repository.setLastContact(chat)
+                        Repository.setLastChat(chat)
                         withContext(Dispatchers.Main) {
                             onAdd()
                         }

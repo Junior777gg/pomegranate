@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -72,7 +74,6 @@ import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.getBitmapFromBytes
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
@@ -101,29 +102,28 @@ sealed class ProfileState {
 @Composable
 fun ProfileScreen(navWayObj: NavigationWays) {
     val viewModel = viewModel { ProfileScreenController() }
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
     val messagePreview = remember { mutableStateOf<MessageDC?>(null) }
+    val email = Repository.lastEmail
     val onImagePreviewClick: (MessageDC) -> Unit = remember {
         { msg -> messagePreview.value = msg }
     }
 
     LaunchedEffect(Unit) {
-        val email = Repository.lastOpponentEmail
-        val hasProfile = viewModel.getProfile(email)
-
-        profileState = if(hasProfile) ProfileState.Success(viewModel.profile.value)
+        val profile = viewModel.getProfile(email)
+        profileState = if(profile != null) ProfileState.Success(viewModel.profile.value)
         else ProfileState.NotFound
     }
 
     Scaffold(
         modifier = applyScreenPadding(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         if (messagePreview.value != null) {
-            ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackbarHostState)
+            ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackBarHostState)
         } else {
             Column {
                 Row(
@@ -151,11 +151,11 @@ fun ProfileScreen(navWayObj: NavigationWays) {
                     }
 
                     is ProfileState.Success -> {
-                        ProfileContent(state.profile, Repository.lastOpponentEmail, snackbarHostState, scope, onImagePreviewClick)
+                        ProfileContent(state.profile, email, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.NotFound -> {
-                        ProfileContent(null, Repository.lastOpponentEmail, snackbarHostState, scope, onImagePreviewClick)
+                        ProfileContent(null, email, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.Error -> {
@@ -176,10 +176,8 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 }
 
 @Composable
-private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
+private fun ProfileContent(profile: Profile?, email: String, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(0) }
-    val chat = produceState<ChatDC?>(null) { value = Repository.chatDao.tryGetChatByEmailFlow(Repository.lastOpponentEmail).first() }
-    val isOnline = produceState(false) { value = Repository.isChatOpen(chat.value) }
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
             Column(
@@ -188,13 +186,12 @@ private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: 
                     .fillMaxWidth()
                     .padding(top = 24.dp, bottom = 24.dp)
             ) {
-                ProfileImage(profile, profile?.displayName?:email, 96.dp, isOnline = isOnline.value)
+                //ProfileImage(profile, profile?.displayName?:email, 96.dp)
 
                 Spacer(Modifier.height(12.dp))
+                val person = runBlocking {Repository.personsDao.getPersonByEmail(email)}
+                val displayName = person?.nickname?:profile?.displayName ?: email
 
-                val chat = Repository.lastContact.value
-                val displayName = chat?.nickname?:profile?.displayName ?:
-                    if (email==Repository.myEmail) email else chat?.nickname ?: Repository.lastOpponentEmail
 
                 Text(
                     text = displayName,
@@ -242,28 +239,26 @@ private fun ProfileContent(profile: Profile?, email: String, snackbarHostState: 
                                     value = profile.profileUrl,
                                     valueColor = MaterialTheme.colorScheme.primary,
                                     canBeCopied = true,
-                                    snackbarHostState = snackbarHostState
                                 )
                                 Divider()
                             }
                             InfoRow(
                                 label = "Email",
-                                value = Repository.lastOpponentEmail,
+                                value = email,
                                 canBeCopied = true,
                                 valueColor = MaterialTheme.colorScheme.primary,
-                                snackbarHostState = snackbarHostState
                             )
                         }
                     }
                 }
                 ProfilePage.MEDIA -> {
-                    MediaList(snackbarHostState, scope, setImagePreview)
+                    //MediaList(snackBarHostState, scope, setImagePreview)
                 }
                 ProfilePage.AUDIO -> {
-                    AudioList(snackbarHostState, scope)
+                    //AudioList(snackBarHostState, scope)
                 }
                 ProfilePage.FILES -> {
-                    FilesList(snackbarHostState, scope)
+                    //FilesList(snackBarHostState, scope)
                 }
             }
         }
@@ -279,7 +274,7 @@ private object ProfilePage {
 
 @Composable
 private fun ChatSwitcher(profilePage: MutableState<Int>) {
-    val email = Repository.lastOpponentEmail
+    val email = Repository.lastEmail
     val hasMedia = Repository.messagesDao.hasMessagesOfType(email, MessageDC.IMAGE).collectAsStateWithLifecycle(initialValue = false)
     val hasAudio = Repository.messagesDao.hasMessagesOfType(email, MessageDC.AUDIO).collectAsStateWithLifecycle(initialValue = false)
     val hasFiles = Repository.messagesDao.hasMessagesOfType(email, MessageDC.FILE).collectAsStateWithLifecycle(initialValue = false)
@@ -306,9 +301,9 @@ private fun ChatSwitcher(profilePage: MutableState<Int>) {
     }
 }
 
-@Composable
-private fun FilesList(snackbarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val email = Repository.lastOpponentEmail
+/*@Composable
+private fun FilesList(snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
+    val email = Repository.lastEmail
     val msgs = Repository.messagesDao.getAllOfTypeByEmail(email, MessageDC.FILE).collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(Modifier.padding(horizontal = 16.dp)) {
@@ -333,7 +328,7 @@ private fun FilesList(snackbarHostState: SnackbarHostState, scope: CoroutineScop
                     .clickable {
                         scope.launch {
                             FileSaver.save(path)
-                            snackbarHostState.showSnackbar("Файл сохранён")
+                            snackBarHostState.showSnackbar("Файл сохранён")
                         }
                     },
                 verticalAlignment = Alignment.CenterVertically
@@ -365,8 +360,8 @@ private fun FilesList(snackbarHostState: SnackbarHostState, scope: CoroutineScop
 }
 
 @Composable
-private fun MediaList(snackbarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
-    val email = Repository.lastOpponentEmail
+private fun MediaList(snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
+    val email = Repository.lastEmail
     val msgs = Repository.messagesDao.getAllOfTypeByEmail(email, MessageDC.IMAGE).collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(
@@ -404,7 +399,7 @@ private fun MediaGridItem(message: MessageDC, modifier: Modifier = Modifier, set
     LaunchedEffect(message.key) {
         bitmap = withContext(Dispatchers.Default) {
             try {
-                getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+                KMPFile(message.data.decodeToString()).kmpReadBytes().decodeToImageBitmap()
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
@@ -443,8 +438,8 @@ private fun MediaGridItem(message: MessageDC, modifier: Modifier = Modifier, set
 }
 
 @Composable
-private fun AudioList(snackbarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val email = Repository.lastOpponentEmail
+private fun AudioList(snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
+    val email = Repository.lastEmail
     val msgs = Repository.messagesDao.getAllOfTypeByEmail(email, MessageDC.AUDIO).collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(Modifier.padding(horizontal = 16.dp)) {
@@ -465,7 +460,7 @@ private fun AudioList(snackbarHostState: SnackbarHostState, scope: CoroutineScop
             Spacer(Modifier.height(8.dp))
         }
     }
-}
+}*/
 
 @Composable
 private fun ChatSwitcherButton(modifier: Modifier, text: String) {
@@ -475,21 +470,21 @@ private fun ChatSwitcherButton(modifier: Modifier, text: String) {
 }
 
 @Composable
-private fun InfoRow(label: String, value: String, snackbarHostState: SnackbarHostState? = null, valueColor: Color = MaterialTheme.colorScheme.onBackground, canBeCopied: Boolean = false) {
+private fun InfoRow(label: String, value: String, snackBarHostState: SnackbarHostState? = null, valueColor: Color = MaterialTheme.colorScheme.onBackground, canBeCopied: Boolean = false) {
     if(value.isBlank()) return
-    var showSnackbar by remember { mutableStateOf(false) }
+    var showSnackBar by remember { mutableStateOf(false) }
     val baseMod = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth()
 
-    if (showSnackbar) {
+    if (showSnackBar) {
         LaunchedEffect(Unit) {
-            snackbarHostState?.showSnackbar("Скопировано")
-            showSnackbar = false
+            snackBarHostState?.showSnackbar("Скопировано")
+            showSnackBar = false
         }
     }
 
     Column(if(!canBeCopied) baseMod else baseMod.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
         Clipboard().copyText(value)
-        showSnackbar = true
+        showSnackBar = true
     }) {
         Text(text = value, color = valueColor, fontSize = 16.sp)
         Text(text = label, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)

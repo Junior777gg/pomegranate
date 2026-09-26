@@ -18,6 +18,7 @@ import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.database.PersonDao
 import org.unstabledev.pomegranate.isLandscape
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpReadText
@@ -40,10 +41,11 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 }
 
 @Composable
-fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao) {
+fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao, personsDao: PersonDao) {
     PlatformKeyEvents.Instance = PlatformKeyEvents()
     Repository.messagesDao = messagesDao
     Repository.chatDao = chatDao
+    Repository.personsDao = personsDao
     if (currentCall.value != null) {
         navController.navigate(Routes.CALL_SCREEN)
     }
@@ -93,8 +95,8 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = {}
                 )
             }
-            if (isMobile) HomeScreen(navWayObj, chatDao)
-            else DesktopHomeScreen(navWayObj, chatDao)
+            if (isMobile) HomeScreen(navWayObj)
+            else DesktopHomeScreen(navWayObj)
         }
         composable(Routes.CONTACTS_SCREEN) {
             val navWayObj = remember {
@@ -134,7 +136,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.navigate(Routes.HOME_SCREEN) }
                 )
             }
-            ChatScreen(navWayObj, chatDao)
+            ChatScreen(navWayObj)
         }
         composable(Routes.PROFILE_SCREEN_ROUTE) {
             val navWayObj = remember {

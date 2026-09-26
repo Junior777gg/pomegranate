@@ -1,9 +1,6 @@
 package org.unstabledev.pomegranate
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
-import com.fleeksoft.charset.toByteArray
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,9 +10,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
@@ -23,8 +18,9 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.database.PersonDC
+import org.unstabledev.pomegranate.database.PersonDao
 import kotlin.getValue
-import kotlin.time.Clock
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -32,7 +28,7 @@ data class Call(
     val email: String,
     val videoManager: P2PManagerImpl,
     val audioManager: P2PManagerImpl,
-    val isMyCall : Boolean = true
+    val isMyCall: Boolean = true
 )
 
 sealed class CallState {
@@ -41,6 +37,7 @@ sealed class CallState {
     object AcceptedCall : CallState()
     object Cancelled : CallState()
 }
+
 object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     var currentCall = mutableStateOf<Call?>(null)
@@ -49,6 +46,7 @@ object Repository {
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy {
         while (KMPFile(fistFilePath).kmpReadText() == "") {
+
         }
         KMPFile(fistFilePath).kmpReadText()
     }
@@ -71,71 +69,77 @@ object Repository {
 
     lateinit var messagesDao: MessagesDao
     lateinit var chatDao: ChatDao
-    private val _lastContact = MutableStateFlow<ChatDC?>(null)
-    val lastContact: StateFlow<ChatDC?> = _lastContact
+    lateinit var personsDao: PersonDao
+    private val _lastChat = MutableStateFlow<ChatDC?>(null)
+    val lastChat: StateFlow<ChatDC?> = _lastChat
+    var lastEmail = ""
 
-    val availableChats = mutableMapOf<ChatDC, MutableSharedFlow<Observer?>>()
-    var lastOpponentEmail = ""
+    val availablePersons = mutableMapOf<String, MutableSharedFlow<Observer?>>()
 
-    val waitedConnection = mutableMapOf<ChatDC, MutableList<MessageDC>>()
+    val waitedConnection = mutableMapOf<String, MutableList<MessageDC>>()
 
     init {
         scope.launch {
             while (true) {
-                waitedConnection.forEach { (chatDC, messages) ->
+                waitedConnection.forEach { (email, messages) ->
                     try {
-                        val manager = BaseP2P().createConnection(chatDC.partnerEmail)
+                        val manager = BaseP2P().createConnection(email)
                         val observer = Observer(
                             manager,
                             manager.channel!!,
-                            chatDC,
+                            email,
                             messagesDao
                         )
-                        availableChats.getOrPut(chatDC, { MutableSharedFlow(1) }).emit(observer)
+                        availablePersons.getOrPut(email, { MutableSharedFlow(1) }).emit(observer)
                         messages.forEach { message ->
                             observer.sendMessage(message)
                         }
-                        waitedConnection.remove(chatDC)
-                    } catch (_: TimeoutCancellationException) { }
+                        waitedConnection.remove(email)
+                    } catch (_: TimeoutCancellationException) {
+                    }
                 }
                 delay(3000.milliseconds)
             }
         }
     }
 
-    suspend fun isChatOpen(email: String): Boolean {
-        return isChatOpen(chatDao.getChatByEmailFlow(email).first())
-    }
-    suspend fun isChatOpen(chat: ChatDC?): Boolean {
-        return if(chat!=null) availableChats[chat]?.first()!=null else false
+    fun setLastChat(chat: ChatDC?) {
+        _lastChat.value = chat
     }
 
-    fun setLastContact(contact: ChatDC?) {
-        _lastContact.value = contact
-    }
-
-    fun createMessage(chatDC: ChatDC, message: String? = null, file: KMPFile? = null, type: String): MessageDC {
+    fun createMessage(
+        chatDC: ChatDC,
+        message: String? = null,
+        file: KMPFile? = null,
+        type: String
+    ): MessageDC {
         var currentMessage: MessageDC? = null
         val time = now().toEpochMilliseconds()
         when (type) {
             MessageDC.TEXT -> {
                 val messageDC = MessageDC(
-                    email = chatDC.partnerEmail,
+                    messageCreator = myEmail,
                     data = message!!.encodeToByteArray(),
                     type = MessageDC.TEXT,
                     time = time,
                     isMine = true,
+                    chatName = chatDC.chatName,
+                    chatType = chatDC.chatType,
+                    chatCreator = chatDC.chatCreator,
                 )
                 currentMessage = messageDC
             }
 
             MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> {
                 val messageDC = MessageDC(
-                    email = chatDC.partnerEmail,
+                    messageCreator = myEmail,
                     data = ByteArray(0),
                     type = type,
                     time = time,
                     isMine = true,
+                    chatName = chatDC.chatName,
+                    chatType = chatDC.chatType,
+                    chatCreator = chatDC.chatCreator,
                 )
                 currentMessage = messageDC
             }
@@ -144,11 +148,14 @@ object Repository {
                 val cfg = AppSettings.state.value.securityConfigUnknown
                 println(cfg.toString())
                 val messageDC = MessageDC(
-                    email = chatDC.partnerEmail,
+                    messageCreator = myEmail,
                     data = cfg.toString().toByteArray(),
                     type = type,
                     time = time,
                     isMine = true,
+                    chatName = chatDC.chatName,
+                    chatType = chatDC.chatType,
+                    chatCreator = chatDC.chatCreator,
                 )
                 currentMessage = messageDC
             }
@@ -162,11 +169,14 @@ object Repository {
                         else -> MessageDC.FILE
                     }
                     val messageDC = MessageDC(
-                        email = chatDC.partnerEmail,
+                        messageCreator = myEmail,
                         data = file.getAbsolutePath().encodeToByteArray(),
                         type = type,
                         time = time,
                         isMine = true,
+                        chatName = chatDC.chatName,
+                        chatType = chatDC.chatType,
+                        chatCreator = chatDC.chatCreator,
                     )
                     currentMessage = messageDC
                 }

@@ -29,22 +29,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.components.ProfileImage
-import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 
 @Composable
 fun ChatHeader(
-    chat: ChatDC,
     viewModel: ChatScreenController,
     onBackClick: (() -> Unit)?,
     onAudioCallClick: (() -> Unit),
@@ -55,10 +50,7 @@ fun ChatHeader(
     onNicknameEditClick: () -> Unit,
     onDeleteChatClick: () -> Unit,
 ) {
-    val profile = chat.profile?.deserialize()
-    val validProfile = profile?.profileUrl?.isNotBlank() ?: false
     val menuExpanded = remember { mutableStateOf(false) }
-    val isOnline = produceState(false) {value = Repository.isChatOpen(chat)}
 
     Row(
         modifier = Modifier
@@ -79,16 +71,17 @@ fun ChatHeader(
                 )
             }
         }
+
         Row(
             Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ProfileImage(profile, chat, isOnline = isOnline.value)
+            ProfileImage(viewModel)
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
-                val displayName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
+                val displayName = viewModel.getName()
                 Text(
                     text = displayName,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -96,7 +89,6 @@ fun ChatHeader(
                 )
             }
         }
-
         Row {
             IconButton(onClick = { onAudioCallClick() }) {
                 Icon(

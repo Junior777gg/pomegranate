@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
+import org.unstabledev.pomegranate.database.getPersonsDatabase
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -164,9 +165,12 @@ class MainActivity : ComponentActivity() {
         val messagesBuilder = getMessagesDatabaseBuilder(applicationContext)
         val messagesDatabase = getMessagesDatabase(messagesBuilder)
         val messagesDao = messagesDatabase.messagesDao()
+        val personsBuilder = getPersonsDatabaseBuilder(applicationContext)
+        val personsDatabase = getPersonsDatabase(personsBuilder)
+        val personsDao = personsDatabase.personDao()
         baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent {
-            App(chatDao, messagesDao)
+            App(chatDao, messagesDao, personsDao)
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import org.unstabledev.pomegranate.database.ChatDatabase
 import org.unstabledev.pomegranate.database.MessagesDatabase
+import org.unstabledev.pomegranate.database.PersonDatabase
 
 fun getChatDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatDatabase> {
     val appContext = context.applicationContext
@@ -18,6 +19,15 @@ fun getMessagesDatabaseBuilder(context: Context): RoomDatabase.Builder<MessagesD
     val appContext = context.applicationContext
     val dbFile = appContext.getDatabasePath("messages.db")
     return Room.databaseBuilder<MessagesDatabase>(
+        context = appContext,
+        name = dbFile.absolutePath
+    )
+}
+
+fun getPersonsDatabaseBuilder(context: Context): RoomDatabase.Builder<PersonDatabase> {
+    val appContext = context.applicationContext
+    val dbFile = appContext.getDatabasePath("persons.db")
+    return Room.databaseBuilder<PersonDatabase>(
         context = appContext,
         name = dbFile.absolutePath
     )

@@ -10,7 +10,7 @@ import kotlinx.coroutines.IO
 
 @Database(
     entities = [ChatDC::class],
-    version = 12,
+    version = 15,
 )
 @ConstructedBy(ChatDatabaseConstructor::class)
 abstract class ChatDatabase: RoomDatabase() {
@@ -31,7 +31,7 @@ fun getChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
 
 @Database(
     entities = [MessageDC::class],
-    version = 18,
+    version = 20,
 )
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {
@@ -43,6 +43,27 @@ expect object MessagesDatabaseConstructor : RoomDatabaseConstructor<MessagesData
     override fun initialize(): MessagesDatabase
 }
 fun getMessagesDatabase(builder: RoomDatabase.Builder<MessagesDatabase>): MessagesDatabase{
+    return builder
+        .setDriver(BundledSQLiteDriver())
+        .setQueryCoroutineContext(Dispatchers.IO)
+        .fallbackToDestructiveMigration(true)
+        .build()
+}
+
+@Database(
+    entities = [PersonDC::class],
+    version = 1,
+)
+@ConstructedBy(PersonDatabaseConstructor::class)
+abstract class PersonDatabase: RoomDatabase() {
+    abstract fun personDao(): PersonDao
+}
+
+@Suppress("KotlinNoActualForExpect")
+expect object PersonDatabaseConstructor : RoomDatabaseConstructor<PersonDatabase> {
+    override fun initialize(): PersonDatabase
+}
+fun getPersonsDatabase(builder: RoomDatabase.Builder<PersonDatabase>): PersonDatabase {
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)

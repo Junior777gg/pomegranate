@@ -18,11 +18,17 @@ interface ChatDao {
     @Query("SELECT * FROM chat")
     fun getAllChatsFlow(): Flow<List<ChatDC>>
 
-    @Query("SELECT * FROM chat WHERE partnerEmail = :email LIMIT 1")
-    fun getChatByEmailFlow(email: String): Flow<ChatDC>
+    @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
+    fun getChatByNameFlow(chatName: String): Flow<ChatDC>
 
-    @Query("SELECT * FROM chat WHERE partnerEmail = :email LIMIT 1")
-    fun tryGetChatByEmailFlow(email: String): Flow<ChatDC?>
+    @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
+    fun tryGetChatByNameFlow(chatName: String): Flow<ChatDC?>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM chat WHERE chatName = :chatName AND chatCreator = :chatCreator AND chatType = :chatType LIMIT 1)")
+    suspend fun isThisChatExists(chatName: String, chatCreator: String, chatType: String): Boolean
+
+    @Query("SELECT chatName FROM chat WHERE chatCreator = :chatCreator AND chatType = :chatType LIMIT 1")
+    suspend fun getChatName(chatCreator: String, chatType: String): String
 
     @Query("DELETE FROM chat")
     suspend fun deleteAllChats()

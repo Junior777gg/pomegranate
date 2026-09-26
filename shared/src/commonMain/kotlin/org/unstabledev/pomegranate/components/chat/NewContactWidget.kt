@@ -26,14 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.screen.control.ChatScreenController
 
 @Composable
-fun NewContactWidget(chat: ChatDC) {
-    val profile = chat.profile?.deserialize()
-    val displayName = if (profile?.displayName?.isNotBlank() == true) profile.displayName
-    else chat.partnerEmail
-
+fun NewContactWidget(viewModel: ChatScreenController) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -49,77 +45,76 @@ fun NewContactWidget(chat: ChatDC) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-
             Text(
-                text = displayName,
+                text = viewModel.getName(),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
-
-            Text(
-                text = "Новый контакт",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Страна",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (validProfile) {
-                        if (profile.location.isNotEmpty()) "${Util.countryFlags[profile.location] ?: "🌍"} ${profile.location}"
-                        else "🏴‍☠️ Аноним"
-                    } else "🏴‍☠️ Аноним",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            /*Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Первое сообщение",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "${firstMessage.time}",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }*/
-
-            if (!Util.isValidEmail(chat.partnerEmail)) {
-                Spacer(modifier = Modifier.width(4.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+            val chat = viewModel.getChat()
+            when (chat.chatType) {
+                ChatDC.Companion.ChatTypes.CHAT -> {
+                    val profile = viewModel.getProfile(chat.personsEmails[0])
                     Text(
-                        text = "Неподтверждённый аккаунт",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Normal
+                        text = "Новый контакт",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Страна",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text =
+                                if (profile?.location.isNullOrEmpty()) "${Util.countryFlags[profile?.location] ?: "🌍"} ${profile?.location}" else "🏴‍☠️ Аноним",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
+                    /*Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Первое сообщение",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${firstMessage.time}",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }*/
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Неподтверждённый аккаунт",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
                 }
             }
         }

@@ -13,28 +13,30 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.BaseP2P
 import org.unstabledev.pomegranate.KMPFile
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.screen.Profile
 
-class ChatScreenController(
-    val messagesDao: MessagesDao,
-    val chatDao: ChatDao,
-    val initialChat: ChatDC,
-) : ViewModel() {
-    private val PAGE_SIZE_STEP = 40
-    private val _pageSize = MutableStateFlow(PAGE_SIZE_STEP)
+
+class ChatScreenController : ViewModel() {
+    private val pageSizeStep = 40
+    private val _pageSize = MutableStateFlow(pageSizeStep)
+    private val chatDC = Repository.lastChat.value!!
+    private val messagesDao = Repository.messagesDao
+    private val chatDao = Repository.chatDao
+    private val personDao = Repository.personsDao
+    private val isOnline = MutableStateFlow(false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val messages: StateFlow<List<MessageDC>> = _pageSize
         .flatMapLatest { limit ->
-            messagesDao.getPagedByEmail(initialChat.partnerEmail, limit)
+            messagesDao.getPaged(chatDC.chatName, chatDC.chatCreator, chatDC.chatType, limit)
         }
         .stateIn(
             scope = viewModelScope,
@@ -42,39 +44,36 @@ class ChatScreenController(
             initialValue = emptyList()
         )
 
-    private var observer: Observer? = null
-
-    val chatDC: StateFlow<ChatDC> = chatDao.getChatByEmailFlow(initialChat.partnerEmail)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Lazily,
-            initialValue = initialChat
-        )
+    private var observers: MutableMap<String, Observer?> = mutableMapOf()
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
             launch {
-                availableChats.getOrPut(initialChat, { MutableSharedFlow(1) }).collect {
-                    observer = it
+                while (true) {
+                    chatDC.personsEmails.forEach { email ->
+                        Repository.availablePersons.getOrPut(email) { MutableSharedFlow(1) }.collect {
+                            observers[email] = it
+                        }
+                    }
                 }
             }
         }
     }
 
     fun loadMore() {
-        _pageSize.value += PAGE_SIZE_STEP
+        _pageSize.value += pageSizeStep
     }
 
     fun startMessaging(message: String? = null, files: List<KMPFile>? = null, type: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val currentChat = chatDC.value
+            val currentChat = chatDC
             val messagesList = mutableListOf<MessageDC>()
             if (message != null && type == MessageDC.TEXT) {
                 val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
             }
-            if (message == null && type == MessageDC.BEGIN_CALL){
+            if (message == null && type == MessageDC.BEGIN_CALL) {
                 val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
                 messagesDao.insertMessage(messageDC)
                 messagesList.add(messageDC)
@@ -86,53 +85,121 @@ class ChatScreenController(
                     messagesList.add(messageDC)
                 }
             }
-            try {
-                val manager = BaseP2P().createConnection(currentChat.partnerEmail)
-                observer = Observer(
-                    manager,
-                    manager.channel!!,
-                    currentChat,
-                    messagesDao
-                )
-                availableChats.getOrPut(currentChat, { MutableSharedFlow(1) }).emit(observer)
-                messagesList.forEach {
-                    observer?.sendMessage(it)
+            when (chatDC.chatType) {
+                ChatDC.Companion.ChatTypes.CHAT -> {
+                    val email = chatDC.personsEmails[0]
+                    val manager = BaseP2P().createConnection(email)
+                    try {
+                        observers[email] = Observer(
+                            manager,
+                            manager.channel!!,
+                            email,
+                            messagesDao
+                        )
+                        Repository.availablePersons.getOrPut(email) { MutableSharedFlow(1) }.emit(observers[email])
+                        messagesList.forEach {
+                            observers[email]?.sendMessage(it)
+                        }
+                    } catch (_: TimeoutCancellationException) {
+                        if (Repository.waitedConnection[email] == null) {
+                            Repository.waitedConnection[email] = messagesList
+                        } else {
+                            Repository.waitedConnection[email]!!.addAll(messagesList)
+                        }
+                    }
                 }
 
-            } catch (_: TimeoutCancellationException) {
-                if (Repository.waitedConnection[chatDC.value] == null) {
-                    Repository.waitedConnection[chatDC.value] = messagesList
-                } else {
-                    Repository.waitedConnection[chatDC.value]!!.addAll(messagesList)
+                ChatDC.Companion.ChatTypes.GROUP -> {
+
                 }
             }
         }
     }
 
+
     fun send(message: String? = null, files: List<KMPFile>? = null, type: String) {
-        if (observer == null) {
-            startMessaging(message, files, type)
-        } else {
-            viewModelScope.launch(Dispatchers.IO) {
-                val currentChat = chatDC.value
-                if (message != null && type == MessageDC.TEXT) {
-                    val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
-                    messagesDao.insertMessage(messageDC)
-                    observer!!.sendMessage(messageDC)
-                }
-                if (message == null && type == MessageDC.BEGIN_CALL){
-                    val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
-                    messagesDao.insertMessage(messageDC)
-                    observer!!.sendMessage(messageDC)
-                }
-                if (files != null) {
-                    files.forEach { file ->
-                        val messageDC = Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
-                        messagesDao.insertMessage(messageDC)
-                        observer!!.sendMessage(messageDC)
+        when (chatDC.chatType) {
+            ChatDC.Companion.ChatTypes.CHAT -> {
+                val observer = observers[chatDC.personsEmails[0]]
+                if (observer == null) {
+                    startMessaging(message, files, type)
+                } else {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val currentChat = chatDC
+                        if (message != null && type == MessageDC.TEXT) {
+                            val messageDC =
+                                Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
+                            messagesDao.insertMessage(messageDC)
+                            observer.sendMessage(messageDC)
+                        }
+                        if (message == null && type == MessageDC.BEGIN_CALL) {
+                            val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
+                            messagesDao.insertMessage(messageDC)
+                            observer.sendMessage(messageDC)
+                        }
+                        if (files != null) {
+                            files.forEach { file ->
+                                val messageDC =
+                                    Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
+                                messagesDao.insertMessage(messageDC)
+                                observer.sendMessage(messageDC)
+                            }
+                        }
                     }
                 }
             }
+
+            ChatDC.Companion.ChatTypes.GROUP -> {}
         }
     }
+
+    fun deleteChat() {
+        viewModelScope.launch(Dispatchers.Default) {
+            chatDao.deleteChat(chatDC)
+            messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
+        }
+    }
+
+    fun deleteMessages() {
+        viewModelScope.launch(Dispatchers.Default) {
+            messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
+        }
+    }
+
+    fun clearLastChat() {
+        Repository.setLastChat(null)
+    }
+
+    fun getName(): String {
+        return chatDC.chatName
+    }
+
+    fun renameChat(name: String?) {
+        viewModelScope.launch(Dispatchers.Default) {
+            if (name.isNullOrBlank()) return@launch
+            val newChat = chatDC.copy(chatName = name)
+            if (chatDao.isThisChatExists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
+            if (chatDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                val newPerson = personDao.getPersonByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
+                if (newPerson != null) {
+                    personDao.upsertPerson(newPerson)
+                }
+            }
+            chatDao.upsertChat(newChat)
+            Repository.setLastChat(newChat)
+        }
+    }
+
+    fun getChat(): ChatDC {
+        return chatDC
+    }
+
+    fun getProfile(email: String): Profile? {
+        return runBlocking(Dispatchers.Default) { personDao.getPersonByEmail(email)?.profile?.deserialize() }
+    }
+
+    fun isOnline(): MutableStateFlow<Boolean> {
+        return isOnline
+    }
+
 }

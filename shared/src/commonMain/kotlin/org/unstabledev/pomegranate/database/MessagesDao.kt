@@ -15,29 +15,26 @@ interface MessagesDao {
     @Upsert
     suspend fun upsertMessage(message: MessageDC)
 
-    @Query("SELECT * FROM messages WHERE email = :email ORDER BY `time`")
-    fun getAllByEmail(email: String): Flow<List<MessageDC>>
+    @Query("SELECT * FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT 1")
+    fun getLastMessage(name: String, creator: String, chatType: String): Flow<MessageDC>
 
-    @Query("SELECT * FROM messages WHERE email = :email AND type = :type ORDER BY `time`")
-    fun getAllOfTypeByEmail(email: String, type: String): Flow<List<MessageDC>>
+    @Query("DELETE FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType")
+    suspend fun deleteAll(name: String, creator: String, chatType: String)
 
-    @Query("SELECT EXISTS(SELECT 1 FROM messages WHERE email = :email AND type = :type ORDER BY `time` LIMIT 1)")
-    fun hasMessagesOfType(email: String, type: String): Flow<Boolean>
+    @Query("SELECT * FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT :limit")
+    fun getPaged(name: String, creator: String, chatType: String, limit: Int): Flow<List<MessageDC>>
 
-    @Query("SELECT * FROM messages WHERE email = :email ORDER BY `time` DESC LIMIT :limit")
-    fun getPagedByEmail(email: String, limit: Int): Flow<List<MessageDC>>
-
-    @Query("DELETE FROM messages WHERE email = :email")
-    suspend fun deleteAllByEmail(email: String)
+    @Query("SELECT EXISTS(SELECT 1 FROM messages WHERE chatName = :name AND type = :type ORDER BY `time` LIMIT 1)")
+    fun hasMessagesOfType(name: String, type: String): Flow<Boolean>
 
     @Query("SELECT * FROM messages WHERE data = :data")
     suspend fun getByData(data: ByteArray) : MessageDC?
 
-    @Query("SELECT * FROM messages WHERE email = :email ORDER BY `time` DESC LIMIT 1")
-    suspend fun getLastByEmail(email: String): MessageDC?
+    @Query("SELECT * FROM messages WHERE chatName = :name ORDER BY `time` DESC LIMIT 1")
+    suspend fun getLastByName(name: String): MessageDC?
 
-    @Query("SELECT * FROM messages WHERE email = :email ORDER BY `time` DESC LIMIT 1")
-    fun getLastMessageFlowByEmail(email: String): Flow<MessageDC?>
+    @Query("SELECT * FROM messages WHERE chatName = :name ORDER BY `time` DESC LIMIT 1")
+    fun getLastMessageFlowByName(name: String): Flow<MessageDC?>
 
     @Delete
     suspend fun deleteMessage(message: MessageDC)

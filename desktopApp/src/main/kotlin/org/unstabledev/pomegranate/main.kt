@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
+import org.unstabledev.pomegranate.database.getPersonsDatabase
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
@@ -29,6 +30,9 @@ fun main(args: Array<String>) {
     val messagesBuilder = getMessagesDatabaseBuilder()
     val messagesDatabase = getMessagesDatabase(messagesBuilder)
     val messagesDao = messagesDatabase.messagesDao()
+    val personsBuilder = getPersonsDatabaseBuilder()
+    val personsDatabase = getPersonsDatabase(personsBuilder)
+    val personsDao = personsDatabase.personDao()
     val runBg = !args.contains("--no-bg-service")
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()
@@ -108,7 +112,7 @@ fun main(args: Array<String>) {
                 title = "pomegranate",
                 icon = painterResource("pomegranate.png")
             ) {
-                App(chatDao, messagesDao)
+                App(chatDao, messagesDao, personsDao)
             }
         }
     }

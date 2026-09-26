@@ -7,14 +7,18 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Entity(tableName = "messages")
 data class MessageDC(
-    @PrimaryKey(autoGenerate = true)
-    val key: Long = 0,
-    var email: String = "",
-    var isDelivered: Boolean = false,
+    var chatName: String,
+    var chatType: String,
+    var chatCreator: String = "",
+    val messageCreator: String = "",
     var data: ByteArray,
+    var isDelivered: Boolean = false,
     val type: String = "",
     val time: Long = 0,
     var isMine: Boolean = false,
+    var instructions: String = "",
+    @PrimaryKey(autoGenerate = true)
+    val key: Long = 0,
 ){
     companion object{
         const val TEXT = "text"

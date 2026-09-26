@@ -11,10 +11,11 @@ import androidx.navigation.compose.rememberNavController
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.database.PersonDao
 import org.unstabledev.pomegranate.screen.nav.Navigation
 
 @Composable
-fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
+fun App(chatDao: ChatDao, messagesDao: MessagesDao, personsDao: PersonDao) {
     val theme = ColorTheme()
     val settings by AppSettings.state.collectAsState()
 
@@ -28,7 +29,7 @@ fun App(chatDao: ChatDao, messagesDao: MessagesDao) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
         Scaffold(Modifier.fillMaxSize()) {
             val navController = rememberNavController()
-            Navigation(navController, chatDao, messagesDao)
+            Navigation(navController, chatDao, messagesDao, personsDao)
         }
     }
 }

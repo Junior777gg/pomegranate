@@ -8,7 +8,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -68,6 +66,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.Clipboard
@@ -83,7 +82,6 @@ import org.unstabledev.pomegranate.components.AnimatedGifImage
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.GifDecoder
-import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
@@ -95,19 +93,18 @@ import org.unstabledev.pomegranate.sendHaptic
 @Composable
 fun MessageBubble(
     message: MessageDC,
-    chat: ChatDC,
     setImagePreview: (MessageDC) -> Unit,
     scope: CoroutineScope,
-    snackbarHostState: SnackbarHostState,
+    snackBarHostState: SnackbarHostState,
     renderMarkdown: Boolean
 ) {
     if (!message.isDisplayable()) return
 
     val settings by AppSettings.state.collectAsState()
-
-    val profile = chat.profile?.deserialize()
+    val person = runBlocking { Repository.personsDao.getPersonByEmail(message.messageCreator) }
+    val profile = person?.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-    val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
+    val opponentName = person?.nickname?:(if (validProfile) profile.displayName else message.messageCreator)
 
     val menuOpen = remember { mutableStateOf(false) }
     val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
@@ -474,7 +471,7 @@ fun MessageBubble(
                                 .clickable {
                                     scope.launch {
                                         FileSaver.save(message.data.decodeToString())
-                                        snackbarHostState.showSnackbar("Файл сохранён")
+                                        snackBarHostState.showSnackbar("Файл сохранён")
                                         savedAlready.value = true
                                     }
                                 }
@@ -620,7 +617,7 @@ fun MessageBubble(
                             onClick = {
                                 scope.launch {
                                     FileSaver.save(message.data.decodeToString())
-                                    snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE)
+                                    snackBarHostState.showSnackbar(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE)
                                         "Изображение сохранено" else "Файл сохранён")
                                 }
                                 menuOpen.value = false
@@ -640,7 +637,7 @@ fun MessageBubble(
                             onClick = {
                                 scope.launch {
                                     Clipboard().copyImage(message.data.decodeToString())
-                                    snackbarHostState.showSnackbar("Изображение скопировано")
+                                    snackBarHostState.showSnackbar("Изображение скопировано")
                                 }
                                 menuOpen.value = false
                             }

@@ -69,7 +69,7 @@ fun LoginScreen(navWayObj: NavigationWays) {
                 val file = KMPFile(fistFilePath).apply {
                     createNewFile()
                 kmpWriteText(email)}
-                Repository.lastOpponentEmail = email
+                //Repository.lastOpponentEmail = email
                 navWayObj.goTo(Routes.HOME_SCREEN)
             }){
                 Text("Войти")
