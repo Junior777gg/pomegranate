@@ -76,7 +76,7 @@ fun ChatHeader(
             Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ProfileImage(viewModel)
+            ProfileImage(viewModel.getChat())
 
             Spacer(modifier = Modifier.width(12.dp))
 

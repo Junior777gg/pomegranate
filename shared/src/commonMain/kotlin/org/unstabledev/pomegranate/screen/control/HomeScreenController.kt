@@ -43,6 +43,16 @@ class HomeScreenController : ViewModel() {
         }
     }
 
+    fun closeEmptyChats() {
+        val chat = Repository.lastChat.value
+        if (chat != null) {
+            viewModelScope.launch(Dispatchers.Default) {
+                chatDao.deleteChat(chat)
+                messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
+            }
+        }
+    }
+
     fun setLastChat(chat: ChatDC?) {
         Repository.setLastChat(chat)
     }

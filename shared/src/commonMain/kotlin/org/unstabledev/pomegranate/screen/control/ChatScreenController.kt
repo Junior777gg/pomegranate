@@ -24,10 +24,9 @@ import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.screen.Profile
 
 
-class ChatScreenController : ViewModel() {
+class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
     private val pageSizeStep = 40
     private val _pageSize = MutableStateFlow(pageSizeStep)
-    private val chatDC = Repository.lastChat.value!!
     private val messagesDao = Repository.messagesDao
     private val chatDao = Repository.chatDao
     private val personDao = Repository.personsDao

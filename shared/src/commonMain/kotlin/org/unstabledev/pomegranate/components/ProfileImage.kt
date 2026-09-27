@@ -18,18 +18,20 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.runBlocking
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 
 @Composable
-fun ProfileImage(viewModel: ChatScreenController, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
-    val chat = viewModel.getChat()
-    val isOnline = viewModel.isOnline().collectAsState().value
+fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
+    val isOnline = false
     when (chat.chatType) {
         ChatDC.Companion.ChatTypes.CHAT -> {
             val partnerEmail = chat.personsEmails[0]
-            val profile = viewModel.getProfile(partnerEmail)
+            val profile = runBlocking {Repository.personsDao.getPersonByEmail(partnerEmail)?.profile?.deserialize()}
             Box(Modifier.size(size)) {
                 if (profile?.profileUrl?.isNotBlank() ?: false) {
                     AsyncImage(

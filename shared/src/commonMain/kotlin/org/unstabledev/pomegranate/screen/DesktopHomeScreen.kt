@@ -85,25 +85,13 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
-           viewModel.setLastChat(null)
+            viewModel.setLastChat(null)
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onKeyEvent { keyEvent ->
-                if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyUp) {
-                    if(panelSubScreen != PanelSubScreen.CHATS) {
-                        panelSubScreen = PanelSubScreen.CHATS
-                    } else {
-                        viewModel.setLastChat(null)
-                    }
-                    true
-                } else {
-                    false
-                }
-            }
     ) {
         Row {
             Column(Modifier.weight(splitPosition)) {
@@ -166,7 +154,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
                     )
             )
             Column(Modifier.weight(1.5f)) {
-                val chat = Repository.lastChat.value
+                val chat = Repository.lastChat.collectAsState().value
                 if(chat != null) {
                     key(chat) {
                         ChatScreen(

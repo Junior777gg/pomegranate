@@ -74,6 +74,7 @@ import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.isMobile
 import org.unstabledev.pomegranate.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
@@ -151,11 +152,11 @@ fun ProfileScreen(navWayObj: NavigationWays) {
                     }
 
                     is ProfileState.Success -> {
-                        ProfileContent(state.profile, email, snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(Repository.lastChat.value!!, email, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.NotFound -> {
-                        ProfileContent(null, email, snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(Repository.lastChat.value!!, email, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.Error -> {
@@ -176,8 +177,10 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 }
 
 @Composable
-private fun ProfileContent(profile: Profile?, email: String, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
+private fun ProfileContent(chatDC: ChatDC, email: String, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(0) }
+    val person = runBlocking {Repository.personsDao.getPersonByEmail(email)}
+    val profile = person?.profile?.deserialize()
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
             Column(
@@ -186,15 +189,12 @@ private fun ProfileContent(profile: Profile?, email: String, snackBarHostState: 
                     .fillMaxWidth()
                     .padding(top = 24.dp, bottom = 24.dp)
             ) {
-                //ProfileImage(profile, profile?.displayName?:email, 96.dp)
+                ProfileImage(chatDC, 96.dp)
 
                 Spacer(Modifier.height(12.dp))
-                val person = runBlocking {Repository.personsDao.getPersonByEmail(email)}
-                val displayName = person?.nickname?:profile?.displayName ?: email
-
 
                 Text(
-                    text = displayName,
+                    text = chatDC.chatName,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
