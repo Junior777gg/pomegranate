@@ -1,7 +1,7 @@
 package org.unstabledev.pomegranate.P2PUtils
 
-import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.KMPInputStream
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.KMPInputStream
 
 sealed class Data {
     class Bytes(val bytes: ByteArray, val code: Byte) : Data()

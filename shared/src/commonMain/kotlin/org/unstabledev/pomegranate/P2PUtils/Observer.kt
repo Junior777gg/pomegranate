@@ -13,8 +13,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Call
 import org.unstabledev.pomegranate.CallState
-import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.Notifications
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.Notifications
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
@@ -25,7 +25,7 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessagesDao
-import org.unstabledev.pomegranate.kmpCopyTo
+import org.unstabledev.pomegranate.platform.kmpCopyTo
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds

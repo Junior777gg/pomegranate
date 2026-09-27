@@ -10,6 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.unstabledev.pomegranate.platform.Battery
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.kmpReadText
+import org.unstabledev.pomegranate.platform.kmpWriteText
 import kotlin.time.Clock
 
 @Serializable

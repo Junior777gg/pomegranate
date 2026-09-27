@@ -1,6 +1,5 @@
 package org.unstabledev.pomegranate.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,18 +8,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,9 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -46,37 +42,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.decodeToImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.unstabledev.pomegranate.Clipboard
-import org.unstabledev.pomegranate.FileSaver
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.isMobile
-import org.unstabledev.pomegranate.kmpReadBytes
+import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
 
 @Serializable
@@ -152,11 +136,11 @@ fun ProfileScreen(navWayObj: NavigationWays) {
                     }
 
                     is ProfileState.Success -> {
-                        ProfileContent(Repository.lastChat.value!!, email, snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(Repository.lastChat.collectAsState().value!!, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.NotFound -> {
-                        ProfileContent(Repository.lastChat.value!!, email, snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(Repository.lastChat.collectAsState().value!!, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.Error -> {
@@ -177,9 +161,9 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 }
 
 @Composable
-private fun ProfileContent(chatDC: ChatDC, email: String, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
-    val profilePage = remember { mutableStateOf(0) }
-    val person = runBlocking {Repository.personsDao.getPersonByEmail(email)}
+private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
+    val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
+    val person = runBlocking {Repository.personsDao.getPersonByEmail(chatDC.chatName)}
     val profile = person?.profile?.deserialize()
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
@@ -210,9 +194,9 @@ private fun ProfileContent(chatDC: ChatDC, email: String, snackBarHostState: Sna
             }
         }
 
-        item {
+        /*item {
             ChatSwitcher(profilePage)
-        }
+        }*/
 
         item {
             when(profilePage.value) {
@@ -238,15 +222,17 @@ private fun ProfileContent(chatDC: ChatDC, email: String, snackBarHostState: Sna
                                     label = "Ссылка",
                                     value = profile.profileUrl,
                                     valueColor = MaterialTheme.colorScheme.primary,
+                                    snackBarHostState = snackBarHostState,
                                     canBeCopied = true,
                                 )
                                 Divider()
                             }
                             InfoRow(
                                 label = "Email",
-                                value = email,
+                                value = chatDC.chatName,
                                 canBeCopied = true,
-                                valueColor = MaterialTheme.colorScheme.primary,
+                                snackBarHostState = snackBarHostState,
+                                valueColor = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

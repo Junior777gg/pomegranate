@@ -74,7 +74,9 @@ fun NewContactWidget(viewModel: ChatScreenController) {
                         )
                         Text(
                             text =
-                                if (profile?.location.isNullOrEmpty()) "${Util.countryFlags[profile?.location] ?: "🌍"} ${profile?.location}" else "🏴‍☠️ Аноним",
+                                if (profile?.location != null)
+                                    "${Util.countryFlags[profile.location] ?: "🌍"} ${profile.location}"
+                                else "🏴‍☠️ Аноним",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
@@ -96,24 +98,26 @@ fun NewContactWidget(viewModel: ChatScreenController) {
                         )
                     }*/
 
-                    Spacer(modifier = Modifier.width(4.dp))
+                    if (!Util.isValidEmail(chat.personsEmails[0])) {
+                        Spacer(modifier = Modifier.width(4.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Неподтверждённый аккаунт",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Normal
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Неподтверждённый аккаунт",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }

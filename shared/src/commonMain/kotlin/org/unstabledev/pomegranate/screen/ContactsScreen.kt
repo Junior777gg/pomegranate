@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,22 +35,23 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.components.ColorTheme
-import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
-sealed class ContactsScreenStates {
-    class NewChat : ContactsScreenStates()
-    class NewGroup : ContactsScreenStates()
-    class Base : ContactsScreenStates()
-    class Error(val errorText: String) : ContactsScreenStates()
+sealed class ContactsScreenState {
+    class NewChat : ContactsScreenState()
+    class NewGroup : ContactsScreenState()
+    class Base : ContactsScreenState()
+    class Error(val errorText: String) : ContactsScreenState()
 }
 
 @Composable
@@ -68,13 +68,13 @@ fun ContactsPanel(
     chatDao: ChatDao? = null,
     modifier: Modifier = Modifier
 ) {
-    val state = remember { mutableStateOf<ContactsScreenStates>(ContactsScreenStates.Base()) }
+    val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.Base()) }
     val scope = rememberCoroutineScope()
     IconButton(
         onClick = {
             when (state.value) {
-                is ContactsScreenStates.Base -> onBack()
-                else -> state.value = ContactsScreenStates.Base()
+                is ContactsScreenState.Base -> onBack()
+                else -> state.value = ContactsScreenState.Base()
             }
         }) {
         Icon(
@@ -84,7 +84,7 @@ fun ContactsPanel(
         )
     }
     when (state.value) {
-        is ContactsScreenStates.NewChat -> {
+        is ContactsScreenState.NewChat -> {
             Column(
                 modifier = modifier.fillMaxSize().padding(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -95,7 +95,7 @@ fun ContactsPanel(
                 Button(onClick = {
                     val email = textState.text.toString().trimIndent()
                     if (email.isEmpty()) {
-                        state.value = ContactsScreenStates.Error("Email обязателен!")
+                        state.value = ContactsScreenState.Error("Email обязателен!")
                         return@Button
                     }
                     /*if(!Util.isValidEmail(email)) {
@@ -104,13 +104,23 @@ fun ContactsPanel(
                         return@Button
                     }*/
                     scope.launch(Dispatchers.IO) {
+                        val profile = try {
+                            Gravatar.getProfile(email.sha256())
+                        } catch(e: Exception) {
+                            null
+                        }
                         val chat = ChatDC(
                             chatName = email,
                             personsEmails = listOf(email),
                             chatType = ChatDC.Companion.ChatTypes.CHAT,
                             chatCreator = email
                         )
-                        chatDao?.upsertChat(chat)
+                        val person = PersonDC(
+                            personEmail = email,
+                            profile = profile?.serialize()
+                        )
+                        Repository.personsDao.upsertPerson(person)
+                        Repository.chatDao.upsertChat(chat)
                         Repository.setLastChat(chat)
                         withContext(Dispatchers.Main) {
                             onAdd()
@@ -122,11 +132,11 @@ fun ContactsPanel(
             }
         }
 
-        is ContactsScreenStates.Error -> {
-            Text((state.value as ContactsScreenStates.Error).errorText, color = ColorTheme.Warning)
+        is ContactsScreenState.Error -> {
+            Text((state.value as ContactsScreenState.Error).errorText, color = ColorTheme.Warning)
         }
 
-        is ContactsScreenStates.NewGroup -> {
+        is ContactsScreenState.NewGroup -> {
             Column(
                 modifier = modifier.fillMaxSize().padding(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -137,7 +147,7 @@ fun ContactsPanel(
                 Button(onClick = {
                     val email = textState.text.toString().trimIndent()
                     if (email.isEmpty()) {
-                        state.value = ContactsScreenStates.Error("Название обязательно!")
+                        state.value = ContactsScreenState.Error("Название обязательно!")
                         return@Button
                     }
                     /*if(!Util.isValidEmail(email)) {
@@ -145,17 +155,15 @@ fun ContactsPanel(
                         errorText = "Некорректный Email"
                         return@Button
                     }*/
-
-
                 }) {
                     Text("Продолжить")
                 }
             }
         }
 
-        is ContactsScreenStates.Base -> {
+        is ContactsScreenState.Base -> {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Row(modifier = Modifier.clickable { state.value = ContactsScreenStates.NewChat() }) {
+                Row(modifier = Modifier.clickable { state.value = ContactsScreenState.NewChat() }) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
@@ -166,7 +174,7 @@ fun ContactsPanel(
                     Text("Написать")
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.clickable { state.value = ContactsScreenStates.NewGroup() }) {
+                Row(modifier = Modifier.clickable { state.value = ContactsScreenState.NewGroup() }) {
                     Icon(
                         imageVector = Icons.Default.Group,
                         contentDescription = null,

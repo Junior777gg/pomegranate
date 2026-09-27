@@ -1,10 +1,9 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import android.Manifest
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -12,11 +11,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.BatteryManager
 import android.os.Build
-import android.os.Environment
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.Composable

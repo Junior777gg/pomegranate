@@ -10,12 +10,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.BaseP2P
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
@@ -170,7 +171,9 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
     }
 
     fun getName(): String {
-        return chatDC.chatName
+        return getProfile(getChat().personsEmails[0])?.displayName?:
+        //personDao.tryGetPersonByEmailFlow(chatDC.personsEmails[0]).first()?.personEmail?:
+            chatDC.chatName
     }
 
     fun renameChat(name: String?) {

@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

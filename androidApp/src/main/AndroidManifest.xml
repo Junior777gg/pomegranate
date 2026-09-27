@@ -33,7 +33,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
         <receiver
-            android:name=".AudioMediaButtonReceiver"
+            android:name=".platform.AudioMediaButtonReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
@@ -45,7 +45,7 @@
                 android:exported="false">
         </service>
         <service
-            android:name=".AudioPlaybackService"
+            android:name=".platform.AudioPlaybackService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false">
             <intent-filter>

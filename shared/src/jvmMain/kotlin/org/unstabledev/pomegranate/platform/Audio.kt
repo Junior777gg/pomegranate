@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import javafx.application.Platform
 import javafx.scene.media.Media
@@ -6,14 +6,12 @@ import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
@@ -97,7 +95,7 @@ actual class AudioPlayer actual constructor() {
         }
 
         try {
-            if (!latch.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
+            if (!latch.await(5, TimeUnit.SECONDS)) {
                 initError = RuntimeException("Timeout waiting for JavaFX MediaPlayer to prepare")
             }
         } catch (e: InterruptedException) {

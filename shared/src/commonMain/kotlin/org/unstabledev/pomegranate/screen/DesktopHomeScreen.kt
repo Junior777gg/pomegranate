@@ -33,15 +33,11 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -49,18 +45,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
-import org.unstabledev.pomegranate.PlatformKeyEvents
+import org.unstabledev.pomegranate.platform.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.chat.addChatBackground
-import org.unstabledev.pomegranate.kmpReadText
+import org.unstabledev.pomegranate.platform.kmpReadText
 
 private enum class PanelSubScreen {
     CHATS,
@@ -73,6 +74,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
     val settings by AppSettings.state.collectAsState()
     val viewModel = viewModel { HomeScreenController() }
+    val scope = rememberCoroutineScope()
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
@@ -85,7 +87,14 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
-            viewModel.setLastChat(null)
+            scope.launch {
+                val chat=Repository.lastChat.first()
+                if (chat!=null) {
+                    val last=Repository.messagesDao.tryGetLastMessage(chat.chatName, chat.chatCreator, chat.chatType).first()
+                    if (last==null) Repository.chatDao.deleteChat(chat)
+                }
+                viewModel.setLastChat(null)
+            }
         }
     }
 

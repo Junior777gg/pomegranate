@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import android.Manifest
 import android.content.Context
@@ -18,14 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.scale
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.fleeksoft.io.ByteBuffer
-import com.github.panpf.sketch.util.asComposeImageBitmap
 import com.github.panpf.sketch.util.rotate
 import kotlinx.coroutines.delay
-import org.checkerframework.checker.units.qual.h
+import org.unstabledev.pomegranate.Repository
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.Executors

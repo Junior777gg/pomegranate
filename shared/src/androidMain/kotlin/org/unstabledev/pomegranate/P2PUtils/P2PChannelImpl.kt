@@ -1,9 +1,8 @@
 package org.unstabledev.pomegranate.P2PUtils
 
 import P2PChannel
-import kotlinx.coroutines.flow.Flow
-import org.unstabledev.pomegranate.KMPFile
-import org.unstabledev.pomegranate.KMPInputStream
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.KMPInputStream
 
 actual class P2PChannelImpl actual constructor(
     actChannel: Any

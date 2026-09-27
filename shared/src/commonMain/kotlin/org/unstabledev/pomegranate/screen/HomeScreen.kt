@@ -34,7 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
@@ -42,7 +43,7 @@ import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.kmpReadText
+import org.unstabledev.pomegranate.platform.kmpReadText
 
 @Composable
 fun HomeScreen(navWayObj: NavigationWays) {
@@ -68,7 +69,7 @@ fun HomeScreen(navWayObj: NavigationWays) {
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
                         .clickable(indication = null, interactionSource = null) {
-                            //Repository.lastOpponentEmail = KMPFile(fistFilePath).kmpReadText()
+                            Repository.lastEmail = Repository.myEmail
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }
                 ) {

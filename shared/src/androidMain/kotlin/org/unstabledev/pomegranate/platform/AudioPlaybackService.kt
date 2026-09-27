@@ -1,5 +1,6 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
+import android.R
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -105,16 +106,16 @@ class AudioPlaybackService : Service() {
             .setContentText(
                 if (isPlaying) "Аудио воспроизводится" else "Аудио приостановлено"
             )
-            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setSmallIcon(R.drawable.ic_media_play)
             .setContentIntent(contentPending)
             .addAction(
-                if (isPlaying) android.R.drawable.ic_media_pause
-                else android.R.drawable.ic_media_play,
+                if (isPlaying) R.drawable.ic_media_pause
+                else R.drawable.ic_media_play,
                 if (isPlaying) "Пауза" else "Воспроизвести",
                 pendingServiceIntent(ACTION_PLAY_PAUSE, 1)
             )
             .addAction(
-                android.R.drawable.ic_menu_close_clear_cancel,
+                R.drawable.ic_menu_close_clear_cancel,
                 "Стоп",
                 pendingServiceIntent(ACTION_STOP, 2)
             )

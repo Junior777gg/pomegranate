@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
 import org.unstabledev.pomegranate.database.sha256
+import org.unstabledev.pomegranate.platform.KMPFile
 
 
 class BaseP2P {

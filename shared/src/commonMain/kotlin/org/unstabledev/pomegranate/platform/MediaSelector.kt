@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 object MediaSelector {
     fun File(onResult: (KMPFile) -> Unit) = fileChoose(onResult)

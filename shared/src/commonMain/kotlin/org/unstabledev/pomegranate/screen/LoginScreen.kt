@@ -23,14 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.unstabledev.pomegranate.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.kmpWriteText
+import org.unstabledev.pomegranate.platform.kmpWriteText
 
 @Composable
 fun LoginScreen(navWayObj: NavigationWays) {

@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -58,7 +59,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
 import org.unstabledev.pomegranate.ChatBackgroundIds
-import org.unstabledev.pomegranate.HAPTIC_EFFECT_CLICK
+import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
@@ -69,9 +70,9 @@ import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.getBitmapFromBytes
-import org.unstabledev.pomegranate.kmpReadBytes
-import org.unstabledev.pomegranate.sendHaptic
+import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.kmpReadBytes
+import org.unstabledev.pomegranate.platform.sendHaptic
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.def01
 import pomegranate.shared.generated.resources.def02
@@ -166,25 +167,25 @@ fun SearchableChatsPanel(
 }
 
 fun getLastMessageTextFlow(chat: ChatDC): Flow<String> {
-    return Repository.messagesDao.getLastMessage(chat.chatName, chat.chatCreator, chat.chatType)
+    return Repository.messagesDao.tryGetLastMessage(chat.chatName, chat.chatCreator, chat.chatType)
         .map { msg ->
-            if (msg != null) {
-                val decodedText = try {
-                    when (msg.type) {
-                        MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
-                        MessageDC.IMAGE -> "Изображение"
-                        MessageDC.ANIMATED_IMAGE -> "Изображение"
-                        MessageDC.AUDIO -> "Аудио"
-                        MessageDC.FILE -> "Файл"
-                        MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "Звонок"
-                        else -> "Неизвестно"
-                    }
-                } catch (_: Exception) {
-                    ""
-                }
+            if (msg == null) return@map ""
 
-                (if (msg.isMine) "Вы: " else "") + decodedText
-            } else ""
+            val decodedText = try {
+                when (msg.type) {
+                    MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
+                    MessageDC.IMAGE, MessageDC.ANIMATED_IMAGE -> "Изображение"
+                    MessageDC.AUDIO -> "Аудио"
+                    MessageDC.FILE -> "Файл"
+                    MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "Звонок"
+                    else -> "Неизвестно"
+                }
+            } catch (_: Exception) {
+                ""
+            }
+
+            val prefix = if (msg.isMine) "Вы: " else ""
+            prefix + decodedText
         }
         .flowOn(Dispatchers.IO)
 }
@@ -294,7 +295,7 @@ fun ChatsList(
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                //ProfileImage()
+                                ProfileImage(chat)
                             }
                             Column(
                                 modifier = Modifier.fillMaxSize().padding(5.dp),

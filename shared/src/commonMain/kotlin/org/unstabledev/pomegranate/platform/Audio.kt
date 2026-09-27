@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 expect class AudioPlayer() {
     fun setDataSource(path: String)

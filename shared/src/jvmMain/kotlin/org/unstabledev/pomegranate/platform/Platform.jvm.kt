@@ -1,8 +1,6 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.platform
 
 import androidx.compose.runtime.Composable
-import com.fleeksoft.io.ByteArrayInputStream
-import java.awt.Image
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -32,7 +30,7 @@ actual fun sendHaptic(amplitude: Int) { }
 actual fun sendHaptic(milliseconds: Long, amplitude: Int) { }
 
 actual class Clipboard {
-    private val clipboard: java.awt.datatransfer.Clipboard =
+    private val clipboard: SystemClipboard =
         Toolkit.getDefaultToolkit().systemClipboard
 
     actual fun copyText(str: String) {

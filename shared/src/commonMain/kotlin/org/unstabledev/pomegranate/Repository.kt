@@ -18,8 +18,11 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessagesDao
-import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.database.PersonDao
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.kmpReadText
+import org.unstabledev.pomegranate.platform.rootDirectory
+import org.unstabledev.pomegranate.platform.separator
 import kotlin.getValue
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
@@ -42,7 +45,7 @@ object Repository {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     var currentCall = mutableStateOf<Call?>(null)
     val currentCallState = MutableStateFlow<CallState>(CallState.NoCall)
-    val pomegranatePath by lazy { "$rootDirectory${separator}pomegranate$separator" }
+    val pomegranatePath by lazy { "${rootDirectory}${separator}pomegranate${separator}" }
     val fistFilePath by lazy { "${pomegranatePath}auth.txt" }
     val myEmail by lazy {
         while (KMPFile(fistFilePath).kmpReadText() == "") {

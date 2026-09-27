@@ -15,6 +15,12 @@ import androidx.compose.runtime.mutableStateOf
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import org.unstabledev.pomegranate.database.getPersonsDatabase
+import org.unstabledev.pomegranate.platform.AudioPlaybackManager
+import org.unstabledev.pomegranate.platform.Camera
+import org.unstabledev.pomegranate.platform.FileSaver
+import org.unstabledev.pomegranate.platform.MediaSelector
+import org.unstabledev.pomegranate.platform.Notifications
+import org.unstabledev.pomegranate.platform.context
 import java.io.File
 
 class MainActivity : ComponentActivity() {
