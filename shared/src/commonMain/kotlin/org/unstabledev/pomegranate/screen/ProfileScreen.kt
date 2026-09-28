@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,15 +9,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,25 +46,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.decodeToImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.platform.FileSaver
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.isMobile
+import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
 
 @Serializable
@@ -194,9 +209,9 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
             }
         }
 
-        /*item {
-            ChatSwitcher(profilePage)
-        }*/
+        item {
+            ContentSwitcher(profilePage)
+        }
 
         item {
             when(profilePage.value) {
@@ -238,13 +253,13 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                     }
                 }
                 ProfilePage.MEDIA -> {
-                    //MediaList(snackBarHostState, scope, setImagePreview)
+                    MediaList(snackBarHostState, scope, setImagePreview)
                 }
                 ProfilePage.AUDIO -> {
-                    //AudioList(snackBarHostState, scope)
+                    AudioList(snackBarHostState, scope)
                 }
                 ProfilePage.FILES -> {
-                    //FilesList(snackBarHostState, scope)
+                    FilesList(snackBarHostState, scope)
                 }
             }
         }
@@ -259,11 +274,14 @@ private object ProfilePage {
 }
 
 @Composable
-private fun ChatSwitcher(profilePage: MutableState<Int>) {
-    val email = Repository.lastEmail
-    val hasMedia = Repository.messagesDao.hasOfType(email, MessageDC.IMAGE).collectAsStateWithLifecycle(initialValue = false)
-    val hasAudio = Repository.messagesDao.hasOfType(email, MessageDC.AUDIO).collectAsStateWithLifecycle(initialValue = false)
-    val hasFiles = Repository.messagesDao.hasOfType(email, MessageDC.FILE).collectAsStateWithLifecycle(initialValue = false)
+private fun ContentSwitcher(profilePage: MutableState<Int>) {
+    val chat = Repository.lastChat.collectAsState().value ?: return
+    val hasMedia = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
+        .collectAsStateWithLifecycle(initialValue = false)
+    val hasAudio = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.AUDIO)
+        .collectAsStateWithLifecycle(initialValue = false)
+    val hasFiles = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE)
+        .collectAsStateWithLifecycle(initialValue = false)
     if (!hasMedia.value && !hasAudio.value && !hasFiles.value) return
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -287,10 +305,11 @@ private fun ChatSwitcher(profilePage: MutableState<Int>) {
     }
 }
 
-/*@Composable
+@Composable
 private fun FilesList(snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val email = Repository.lastEmail
-    val msgs = Repository.messagesDao.getAllOfTypeByEmail(email, MessageDC.FILE).collectAsStateWithLifecycle(initialValue = emptyList())
+    val chat = Repository.lastChat.collectAsState().value ?: return
+    val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE)
+        .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(Modifier.padding(horizontal = 16.dp)) {
         for (message in msgs.value) {
@@ -347,8 +366,9 @@ private fun FilesList(snackBarHostState: SnackbarHostState, scope: CoroutineScop
 
 @Composable
 private fun MediaList(snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
-    val email = Repository.lastEmail
-    val msgs = Repository.messagesDao.getAllOfTypeByEmail(email, MessageDC.IMAGE).collectAsStateWithLifecycle(initialValue = emptyList())
+    val chat = Repository.lastChat.collectAsState().value ?: return
+    val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
+        .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -425,8 +445,9 @@ private fun MediaGridItem(message: MessageDC, modifier: Modifier = Modifier, set
 
 @Composable
 private fun AudioList(snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val email = Repository.lastEmail
-    val msgs = Repository.messagesDao.getAllOfTypeByEmail(email, MessageDC.AUDIO).collectAsStateWithLifecycle(initialValue = emptyList())
+    val chat = Repository.lastChat.collectAsState().value ?: return
+    val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.AUDIO)
+        .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(Modifier.padding(horizontal = 16.dp)) {
         for (message in msgs.value) {
@@ -446,7 +467,7 @@ private fun AudioList(snackBarHostState: SnackbarHostState, scope: CoroutineScop
             Spacer(Modifier.height(8.dp))
         }
     }
-}*/
+}
 
 @Composable
 private fun ChatSwitcherButton(modifier: Modifier, text: String) {

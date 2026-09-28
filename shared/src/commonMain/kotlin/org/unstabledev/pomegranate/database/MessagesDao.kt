@@ -27,8 +27,11 @@ interface MessagesDao {
     @Query("SELECT * FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT :limit")
     fun getPaged(name: String, creator: String, chatType: String, limit: Int): Flow<List<MessageDC>>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM messages WHERE chatName = :name AND type = :type ORDER BY `time` LIMIT 1)")
-    fun hasOfType(name: String, type: String): Flow<Boolean>
+    @Query("SELECT EXISTS(SELECT 1 FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType AND type = :messageType ORDER BY `time` LIMIT 1)")
+    fun hasOfType(name: String, creator: String, chatType: String, messageType: String): Flow<Boolean>
+
+    @Query("SELECT * FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType AND type = :messageType ORDER BY `time` LIMIT 1")
+    fun getByType(name: String, creator: String, chatType: String, messageType: String): Flow<List<MessageDC>>
 
     @Query("SELECT * FROM messages WHERE data = :data")
     suspend fun getByData(data: ByteArray) : MessageDC?
