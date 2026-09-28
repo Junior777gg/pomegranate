@@ -109,7 +109,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.popBackStack() }
                 )
             }
-            ContactsScreen(navWayObj, chatDao)
+            ContactsScreen(navWayObj)
         }
         composable(Routes.SETTINGS_SCREEN) {
             val navWayObj = remember {
@@ -118,7 +118,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.popBackStack() }
                 )
             }
-            SettingsScreen(navWayObj, chatDao)
+            SettingsScreen(navWayObj)
         }
         composable(Routes.SETTINGS_STYLE_SCREEN) {
             val navWayObj = remember {
@@ -154,7 +154,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.popBackStack() }
                 )
             }
-            StorageSettingsScreen(navWayObj, chatDao)
+            StorageSettingsScreen(navWayObj)
         }
         composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
             val navWayObj = remember {

@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +22,6 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.screen.control.ChatScreenController
 
 @Composable
 fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
@@ -31,7 +29,7 @@ fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
     when (chat.chatType) {
         ChatDC.Companion.ChatTypes.CHAT -> {
             val partnerEmail = chat.personsEmails[0]
-            val profile = runBlocking {Repository.personsDao.getPersonByEmail(partnerEmail)?.profile?.deserialize()}
+            val profile = runBlocking {Repository.personsDao.getByEmail(partnerEmail)?.profile?.deserialize()}
             Box(Modifier.size(size)) {
                 if (profile?.profileUrl?.isNotBlank() ?: false) {
                     AsyncImage(

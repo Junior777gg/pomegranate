@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -70,18 +69,18 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
             val messagesList = mutableListOf<MessageDC>()
             if (message != null && type == MessageDC.TEXT) {
                 val messageDC = Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
-                messagesDao.insertMessage(messageDC)
+                messagesDao.insert(messageDC)
                 messagesList.add(messageDC)
             }
             if (message == null && type == MessageDC.BEGIN_CALL) {
                 val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
-                messagesDao.insertMessage(messageDC)
+                messagesDao.insert(messageDC)
                 messagesList.add(messageDC)
             }
             if (files != null) {
                 files.forEach { file ->
                     val messageDC = Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
-                    messagesDao.insertMessage(messageDC)
+                    messagesDao.insert(messageDC)
                     messagesList.add(messageDC)
                 }
             }
@@ -129,19 +128,19 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
                         if (message != null && type == MessageDC.TEXT) {
                             val messageDC =
                                 Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
-                            messagesDao.insertMessage(messageDC)
+                            messagesDao.insert(messageDC)
                             observer.sendMessage(messageDC)
                         }
                         if (message == null && type == MessageDC.BEGIN_CALL) {
                             val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
-                            messagesDao.insertMessage(messageDC)
+                            messagesDao.insert(messageDC)
                             observer.sendMessage(messageDC)
                         }
                         if (files != null) {
                             files.forEach { file ->
                                 val messageDC =
                                     Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
-                                messagesDao.insertMessage(messageDC)
+                                messagesDao.insert(messageDC)
                                 observer.sendMessage(messageDC)
                             }
                         }
@@ -155,7 +154,7 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
 
     fun deleteChat() {
         viewModelScope.launch(Dispatchers.Default) {
-            chatDao.deleteChat(chatDC)
+            chatDao.delete(chatDC)
             messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
         }
     }
@@ -180,14 +179,14 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             if (name.isNullOrBlank()) return@launch
             val newChat = chatDC.copy(chatName = name)
-            if (chatDao.isThisChatExists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
+            if (chatDao.exists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
             if (chatDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                val newPerson = personDao.getPersonByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
+                val newPerson = personDao.getByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
                 if (newPerson != null) {
-                    personDao.upsertPerson(newPerson)
+                    personDao.upsert(newPerson)
                 }
             }
-            chatDao.upsertChat(newChat)
+            chatDao.upsert(newChat)
             Repository.setLastChat(newChat)
         }
     }
@@ -197,7 +196,7 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
     }
 
     fun getProfile(email: String): Profile? {
-        return runBlocking(Dispatchers.Default) { personDao.getPersonByEmail(email)?.profile?.deserialize() }
+        return runBlocking(Dispatchers.Default) { personDao.getByEmail(email)?.profile?.deserialize() }
     }
 
     fun isOnline(): MutableStateFlow<Boolean> {

@@ -10,16 +10,16 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MessagesDao {
     @Insert
-    suspend fun insertMessage(message: MessageDC)
+    suspend fun insert(message: MessageDC)
 
     @Upsert
-    suspend fun upsertMessage(message: MessageDC)
+    suspend fun upsert(message: MessageDC)
 
     @Query("SELECT * FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT 1")
-    fun getLastMessage(name: String, creator: String, chatType: String): Flow<MessageDC>
+    fun getLast(name: String, creator: String, chatType: String): Flow<MessageDC>
 
     @Query("SELECT * FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT 1")
-    fun tryGetLastMessage(name: String, creator: String, chatType: String): Flow<MessageDC?>
+    fun tryGetLast(name: String, creator: String, chatType: String): Flow<MessageDC?>
 
     @Query("DELETE FROM messages WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType")
     suspend fun deleteAll(name: String, creator: String, chatType: String)
@@ -28,7 +28,7 @@ interface MessagesDao {
     fun getPaged(name: String, creator: String, chatType: String, limit: Int): Flow<List<MessageDC>>
 
     @Query("SELECT EXISTS(SELECT 1 FROM messages WHERE chatName = :name AND type = :type ORDER BY `time` LIMIT 1)")
-    fun hasMessagesOfType(name: String, type: String): Flow<Boolean>
+    fun hasOfType(name: String, type: String): Flow<Boolean>
 
     @Query("SELECT * FROM messages WHERE data = :data")
     suspend fun getByData(data: ByteArray) : MessageDC?
@@ -37,8 +37,8 @@ interface MessagesDao {
     suspend fun getLastByName(name: String): MessageDC?
 
     @Query("SELECT * FROM messages WHERE chatName = :name ORDER BY `time` DESC LIMIT 1")
-    fun getLastMessageFlowByName(name: String): Flow<MessageDC?>
+    fun getLastByNameFlow(name: String): Flow<MessageDC?>
 
     @Delete
-    suspend fun deleteMessage(message: MessageDC)
+    suspend fun delete(message: MessageDC)
 }

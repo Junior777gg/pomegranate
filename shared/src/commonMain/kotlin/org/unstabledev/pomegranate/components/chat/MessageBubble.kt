@@ -101,7 +101,7 @@ fun MessageBubble(
     if (!message.isDisplayable()) return
 
     val settings by AppSettings.state.collectAsState()
-    val person = runBlocking { Repository.personsDao.getPersonByEmail(message.messageCreator) }
+    val person = runBlocking { Repository.personsDao.getByEmail(message.messageCreator) }
     val profile = person?.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
     val opponentName = person?.nickname?:(if (validProfile) profile.displayName else message.messageCreator)
@@ -654,7 +654,7 @@ fun MessageBubble(
                         },
                         onClick = {
                             scope.launch {
-                                Repository.messagesDao.deleteMessage(message)
+                                Repository.messagesDao.delete(message)
                             }
                             menuOpen.value = false
                         }

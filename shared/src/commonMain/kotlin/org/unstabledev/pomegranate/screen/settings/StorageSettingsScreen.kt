@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util
@@ -47,8 +48,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 @Composable
-fun StorageSettingsScreen(navigationWays: NavigationWays, chatDao: ChatDao) {
+fun StorageSettingsScreen(navigationWays: NavigationWays) {
     val scope=rememberCoroutineScope()
+    val chatDao = Repository.chatDao
     SettingsPage(navigationWays, "Кэш и хранилище") {
         val deviceTotalVolume = produceState(1L) {
             value = KMPFile(pomegranatePath).getUsableSpace()
@@ -135,7 +137,7 @@ fun StorageSettingsScreen(navigationWays: NavigationWays, chatDao: ChatDao) {
         Spacer(modifier = Modifier.padding(vertical = 5.dp))
         Text("Чаты", fontWeight = FontWeight.SemiBold)
         val chatCount = produceState(0) {
-            chatDao.getAllChatsFlow().collect { value = it.size }
+            chatDao.getAll().collect { value = it.size }
         }
         Text("Чатов: ${chatCount.value}")
         Spacer(modifier = Modifier.padding(vertical = 5.dp))
@@ -169,7 +171,7 @@ fun StorageSettingsScreen(navigationWays: NavigationWays, chatDao: ChatDao) {
                 },
                 confirmButton = {
                     Text("Подтвердить", Modifier.clickable {
-                        scope.launch { chatDao.deleteAllChats() }
+                        scope.launch { chatDao.deleteAll() }
                         showDeleteChatsPopup = false
                     })
                 },

@@ -45,11 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
@@ -90,8 +87,8 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
             scope.launch {
                 val chat=Repository.lastChat.first()
                 if (chat!=null) {
-                    val last=Repository.messagesDao.tryGetLastMessage(chat.chatName, chat.chatCreator, chat.chatType).first()
-                    if (last==null) Repository.chatDao.deleteChat(chat)
+                    val last=Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
+                    if (last==null) Repository.chatDao.delete(chat)
                 }
                 viewModel.setLastChat(null)
             }

@@ -10,29 +10,29 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ChatDao {
     @Insert
-    suspend fun insertChat(chat: ChatDC)
+    suspend fun insert(chat: ChatDC)
 
     @Upsert
-    suspend fun upsertChat(chat: ChatDC)
+    suspend fun upsert(chat: ChatDC)
 
     @Query("SELECT * FROM chat")
-    fun getAllChatsFlow(): Flow<List<ChatDC>>
+    fun getAll(): Flow<List<ChatDC>>
 
     @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
-    fun getChatByNameFlow(chatName: String): Flow<ChatDC>
+    fun getByName(chatName: String): Flow<ChatDC>
 
     @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
-    fun tryGetChatByNameFlow(chatName: String): Flow<ChatDC?>
+    fun tryGetByName(chatName: String): Flow<ChatDC?>
 
     @Query("SELECT EXISTS(SELECT 1 FROM chat WHERE chatName = :chatName AND chatCreator = :chatCreator AND chatType = :chatType LIMIT 1)")
-    suspend fun isThisChatExists(chatName: String, chatCreator: String, chatType: String): Boolean
+    suspend fun exists(chatName: String, chatCreator: String, chatType: String): Boolean
 
     @Query("SELECT chatName FROM chat WHERE chatCreator = :chatCreator AND chatType = :chatType LIMIT 1")
-    suspend fun getChatName(chatCreator: String, chatType: String): String
+    suspend fun getName(chatCreator: String, chatType: String): String
 
     @Query("DELETE FROM chat")
-    suspend fun deleteAllChats()
+    suspend fun deleteAll()
 
     @Delete
-    suspend fun deleteChat(chat: ChatDC)
+    suspend fun delete(chat: ChatDC)
 }

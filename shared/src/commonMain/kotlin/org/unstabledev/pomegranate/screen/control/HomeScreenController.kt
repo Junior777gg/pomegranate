@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.ChatDao
 
 class HomeScreenController : ViewModel() {
     val chatDao = Repository.chatDao
@@ -21,10 +20,10 @@ class HomeScreenController : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            chatDao.getAllChatsFlow().collect { _chats.value = it }
+            chatDao.getAll().collect { _chats.value = it }
             launch {
                 while (true) {
-                    chatDao.getAllChatsFlow().collect { _chats.value = it }
+                    chatDao.getAll().collect { _chats.value = it }
                     delay(1000)
                 }
             }
@@ -33,9 +32,9 @@ class HomeScreenController : ViewModel() {
                     if (last != null) {
                         val currentChats = _chats.value
                         if (!currentChats.contains(last)) {
-                            chatDao.upsertChat(last)
+                            chatDao.upsert(last)
                         }
-                        chatDao.getAllChatsFlow().collect { _chats.value = it }
+                        chatDao.getAll().collect { _chats.value = it }
                     }
                     delay(1000)
                 }
@@ -47,7 +46,7 @@ class HomeScreenController : ViewModel() {
         val chat = Repository.lastChat.value
         if (chat != null) {
             viewModelScope.launch(Dispatchers.Default) {
-                chatDao.deleteChat(chat)
+                chatDao.delete(chat)
                 messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
             }
         }
@@ -62,7 +61,7 @@ class HomeScreenController : ViewModel() {
             val chat = Repository.lastChat.value
             if (chat != null) {
                 messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
-                chatDao.deleteChat(chat)
+                chatDao.delete(chat)
             }
         }
     }
@@ -72,14 +71,14 @@ class HomeScreenController : ViewModel() {
             if (name.isNullOrBlank()) return@launch
             val chatDC = Repository.lastChat.value ?: return@launch
             val newChat = chatDC.copy(chatName = name)
-            if (chatDao.isThisChatExists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
+            if (chatDao.exists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
             if (chatDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                val newPerson = personDao.getPersonByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
+                val newPerson = personDao.getByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
                 if (newPerson != null) {
-                    personDao.upsertPerson(newPerson)
+                    personDao.upsert(newPerson)
                 }
             }
-            chatDao.upsertChat(newChat)
+            chatDao.upsert(newChat)
             Repository.setLastChat(newChat)
         }
     }

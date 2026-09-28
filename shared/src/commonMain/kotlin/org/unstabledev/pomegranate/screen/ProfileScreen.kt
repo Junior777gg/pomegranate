@@ -163,7 +163,7 @@ fun ProfileScreen(navWayObj: NavigationWays) {
 @Composable
 private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
-    val person = runBlocking {Repository.personsDao.getPersonByEmail(chatDC.chatName)}
+    val person = runBlocking {Repository.personsDao.getByEmail(chatDC.chatName)}
     val profile = person?.profile?.deserialize()
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
@@ -261,9 +261,9 @@ private object ProfilePage {
 @Composable
 private fun ChatSwitcher(profilePage: MutableState<Int>) {
     val email = Repository.lastEmail
-    val hasMedia = Repository.messagesDao.hasMessagesOfType(email, MessageDC.IMAGE).collectAsStateWithLifecycle(initialValue = false)
-    val hasAudio = Repository.messagesDao.hasMessagesOfType(email, MessageDC.AUDIO).collectAsStateWithLifecycle(initialValue = false)
-    val hasFiles = Repository.messagesDao.hasMessagesOfType(email, MessageDC.FILE).collectAsStateWithLifecycle(initialValue = false)
+    val hasMedia = Repository.messagesDao.hasOfType(email, MessageDC.IMAGE).collectAsStateWithLifecycle(initialValue = false)
+    val hasAudio = Repository.messagesDao.hasOfType(email, MessageDC.AUDIO).collectAsStateWithLifecycle(initialValue = false)
+    val hasFiles = Repository.messagesDao.hasOfType(email, MessageDC.FILE).collectAsStateWithLifecycle(initialValue = false)
     if (!hasMedia.value && !hasAudio.value && !hasFiles.value) return
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,

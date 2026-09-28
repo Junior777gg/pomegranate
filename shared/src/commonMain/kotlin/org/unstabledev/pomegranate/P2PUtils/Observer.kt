@@ -76,7 +76,7 @@ class Observer(
                                 val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
                                 if (message != null) {
                                     message.isDelivered = true
-                                    messagesDao.upsertMessage(message)
+                                    messagesDao.upsert(message)
                                 }
                                 deliverMap.remove(buffer[0])
                             } else {
@@ -127,7 +127,7 @@ class Observer(
                                         json
                                     }
                                     sendCode(key)
-                                    val personDC = Repository.personsDao.getPersonByEmail(email)
+                                    val personDC = Repository.personsDao.getByEmail(email)
                                     if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()) {
                                         Notifications().push(
                                             (personDC?.nickname ?: personDC?.personEmail ?:""),
@@ -146,7 +146,7 @@ class Observer(
                                     }
                                     if(messageDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
                                         messageDC.chatCreator == personDC?.personEmail
-                                        messageDC.chatName = Repository.chatDao.getChatName(messageDC.chatCreator, messageDC.chatType)
+                                        messageDC.chatName = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
                                     }
                                     val isCall = messageDC.isCall()
                                     if (isCall) {
@@ -162,7 +162,7 @@ class Observer(
                                     }*/
                                     messageDC.isMine = false
                                     messageDC.isDelivered = true
-                                    messagesDao.insertMessage(messageDC)
+                                    messagesDao.insert(messageDC)
                                     map.remove(key)
                                 }
                             }

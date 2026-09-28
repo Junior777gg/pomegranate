@@ -10,23 +10,23 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PersonDao {
     @Insert
-    suspend fun insertPerson(person: PersonDC)
+    suspend fun insert(person: PersonDC)
 
     @Upsert
-    suspend fun upsertPerson(person: PersonDC)
+    suspend fun upsert(person: PersonDC)
 
     @Query("SELECT * FROM persons")
-    fun getAllPersonsFlow(): Flow<List<PersonDC>>
+    fun getAll(): Flow<List<PersonDC>>
 
     @Query("SELECT * FROM persons WHERE personEmail = :email LIMIT 1")
-    suspend fun getPersonByEmail(email: String): PersonDC?
+    suspend fun getByEmail(email: String): PersonDC?
 
     @Query("SELECT * FROM persons WHERE personEmail = :email LIMIT 1")
-    fun tryGetPersonByEmailFlow(email: String): Flow<PersonDC?>
+    fun tryGetByEmail(email: String): Flow<PersonDC?>
 
     @Query("DELETE FROM persons")
-    suspend fun deleteAllPersons()
+    suspend fun deleteAll()
 
     @Delete
-    suspend fun deleteChat(person: PersonDC)
+    suspend fun delete(person: PersonDC)
 }

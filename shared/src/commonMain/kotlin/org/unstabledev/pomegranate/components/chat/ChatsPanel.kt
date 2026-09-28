@@ -50,7 +50,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -167,7 +166,7 @@ fun SearchableChatsPanel(
 }
 
 fun getLastMessageTextFlow(chat: ChatDC): Flow<String> {
-    return Repository.messagesDao.tryGetLastMessage(chat.chatName, chat.chatCreator, chat.chatType)
+    return Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType)
         .map { msg ->
             if (msg == null) return@map ""
 
@@ -286,7 +285,7 @@ fun ChatsList(
             ) {
                 when (chat.chatType) {
                     ChatDC.Companion.ChatTypes.CHAT -> {
-                        val personDC = runBlocking { Repository.personsDao.getPersonByEmail(chat.personsEmails[0]) }
+                        val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
                         val profile = personDC?.profile?.deserialize()
                         val validProfile = profile?.profileUrl?.isNotBlank() ?: false
                         Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {

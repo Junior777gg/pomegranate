@@ -34,7 +34,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
@@ -51,13 +50,12 @@ sealed class ContactsScreenState {
     class NewChat : ContactsScreenState()
     class NewGroup : ContactsScreenState()
     class Base : ContactsScreenState()
-    class Error(val errorText: String) : ContactsScreenState()
 }
 
 @Composable
-fun ContactsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
+fun ContactsScreen(navWayObj: NavigationWays) {
     Column(applyScreenPadding()) {
-        ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, chatDao)
+        ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, Repository.chatDao)
     }
 }
 
@@ -70,6 +68,7 @@ fun ContactsPanel(
 ) {
     val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.Base()) }
     val scope = rememberCoroutineScope()
+    val error = remember { mutableStateOf("") }
     IconButton(
         onClick = {
             when (state.value) {
@@ -92,10 +91,13 @@ fun ContactsPanel(
             ) {
                 val textState = rememberTextFieldState()
                 LabeledTextField(textState, "", "Email")
+                if (!error.value.isBlank()) {
+                    Text(error.value, color = MaterialTheme.colorScheme.error)
+                }
                 Button(onClick = {
                     val email = textState.text.toString().trimIndent()
                     if (email.isEmpty()) {
-                        state.value = ContactsScreenState.Error("Email обязателен!")
+                        error.value = "Email обязателен!"
                         return@Button
                     }
                     /*if(!Util.isValidEmail(email)) {
@@ -119,8 +121,8 @@ fun ContactsPanel(
                             personEmail = email,
                             profile = profile?.serialize()
                         )
-                        Repository.personsDao.upsertPerson(person)
-                        Repository.chatDao.upsertChat(chat)
+                        Repository.personsDao.upsert(person)
+                        Repository.chatDao.upsert(chat)
                         Repository.setLastChat(chat)
                         withContext(Dispatchers.Main) {
                             onAdd()
@@ -132,10 +134,6 @@ fun ContactsPanel(
             }
         }
 
-        is ContactsScreenState.Error -> {
-            Text((state.value as ContactsScreenState.Error).errorText, color = ColorTheme.Warning)
-        }
-
         is ContactsScreenState.NewGroup -> {
             Column(
                 modifier = modifier.fillMaxSize().padding(10.dp),
@@ -144,10 +142,13 @@ fun ContactsPanel(
             ) {
                 val textState = rememberTextFieldState()
                 LabeledTextField(textState, "", "Название")
+                if (!error.value.isBlank()) {
+                    Text(error.value, color = MaterialTheme.colorScheme.error)
+                }
                 Button(onClick = {
                     val email = textState.text.toString().trimIndent()
                     if (email.isEmpty()) {
-                        state.value = ContactsScreenState.Error("Название обязательно!")
+                        error.value = "Название обязательно!"
                         return@Button
                     }
                     /*if(!Util.isValidEmail(email)) {
