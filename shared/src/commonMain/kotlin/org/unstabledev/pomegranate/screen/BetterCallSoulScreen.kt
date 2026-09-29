@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,7 +54,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     val playbackDevice = remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val viewModel = viewModel { BetterCallSoulScreenController(camera, navWayObj) }
-    val state = currentCallState.value
+    val state = currentCallState.collectAsState().value
     val owner = LocalLifecycleOwner.current
     val microphoneActive = viewModel.microphoneActive
     val cameraActive = viewModel.cameraActive
@@ -83,11 +84,9 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
     }
     when (state) {
         CallState.Calling -> {
-            Column(verticalArrangement = Arrangement.Bottom) {
+            Column(modifier = applyScreenPadding(Modifier.fillMaxSize()).padding(all = 10.dp), verticalArrangement = Arrangement.Center) {
                 Row(
-                    applyScreenPadding(Modifier.fillMaxWidth()).padding(
-                        bottom = 10.dp
-                    ),
+                    Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Box(Modifier.clip(CircleShape)) {
@@ -110,7 +109,7 @@ fun BetterCallSoulScreen(navWayObj: NavigationWays) {
                     }
                     Box(Modifier.clip(CircleShape)) {
                         Column(
-                            Modifier.background(ColorTheme.Warning).size(50.dp).clickable {
+                            Modifier.background(Color(0xFF44EE44)).size(50.dp).clickable {
                                 scope.launch {
                                     currentCallState.value = CallState.AcceptedCall
                                 }

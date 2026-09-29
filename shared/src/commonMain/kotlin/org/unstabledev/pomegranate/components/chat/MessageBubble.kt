@@ -83,7 +83,9 @@ import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.GifDecoder
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
+import org.unstabledev.pomegranate.database.MessageDC.Companion.ACCEPT_CALL
+import org.unstabledev.pomegranate.database.MessageDC.Companion.BEGIN_CALL
+import org.unstabledev.pomegranate.database.MessageDC.Companion.END_CALL
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
@@ -109,7 +111,7 @@ fun MessageBubble(
     val menuOpen = remember { mutableStateOf(false) }
     val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
     val needPadding = message.type != MessageDC.IMAGE
-    val noNeedForBubble = message.isCall()
+    val noNeedForBubble = message.type==BEGIN_CALL || message.type==ACCEPT_CALL || message.type==END_CALL
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier): Modifier {
         if(!apply) {
@@ -556,7 +558,7 @@ fun MessageBubble(
                     }
 
                     else -> {
-                        Text("Неизвестный тип сообщения", color = ColorTheme.Warning, fontStyle = FontStyle.Italic)
+                        Text("Неизвестный тип сообщения: ${message.type}", color = ColorTheme.Warning, fontStyle = FontStyle.Italic)
                     }
                 }
 

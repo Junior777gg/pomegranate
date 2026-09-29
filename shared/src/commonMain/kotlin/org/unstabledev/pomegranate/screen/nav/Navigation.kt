@@ -156,7 +156,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             }
             StorageSettingsScreen(navWayObj)
         }
-        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
+        composable(Routes.SETTINGS_CONFIG_FIREBASE_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },
@@ -165,7 +165,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             }
             FirebaseAddressSelectScreen(navWayObj)
         }
-        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
+        composable(Routes.SETTINGS_CONFIG_FIREBASE_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },

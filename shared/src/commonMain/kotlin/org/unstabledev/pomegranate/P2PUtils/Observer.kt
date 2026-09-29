@@ -22,7 +22,6 @@ import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.platform.kmpCopyTo
@@ -148,7 +147,7 @@ class Observer(
                                         messageDC.chatCreator == personDC?.personEmail
                                         messageDC.chatName = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
                                     }
-                                    val isCall = messageDC.isCall()
+                                    val isCall = messageDC.type==MessageDC.BEGIN_CALL
                                     if (isCall) {
                                         val videoManager = manager.fork()
                                         val audioManager = manager.fork()
@@ -182,7 +181,7 @@ class Observer(
             var data = message.data
             val msg = message.copy()
             val code = Random.nextInt(1, 255).toByte()
-            val isCall = message.isCall()
+            val isCall = message.type==MessageDC.BEGIN_CALL
             if (isCall && data.isEmpty()) {
                 launch {
                     val videoManager = manager.fork()

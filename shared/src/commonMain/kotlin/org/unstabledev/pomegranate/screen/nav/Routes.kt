@@ -12,6 +12,6 @@ object Routes {
     const val SETTINGS_NETWORK_SCREEN = "cfg:network"
     const val SETTINGS_POWER_SAVE_SCREEN = "cfg:power_save"
     const val SETTINGS_STORAGE_SCREEN = "cfg:storage"
-    const val SETTINGS_SELECT_FIREBASE_SCREEN = "select_firebase"
+    const val SETTINGS_CONFIG_FIREBASE_SCREEN = "cfg:firebase"
     const val CALL_SCREEN = "call"
 }

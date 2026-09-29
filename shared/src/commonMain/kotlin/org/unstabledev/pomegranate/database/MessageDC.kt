@@ -27,13 +27,10 @@ data class MessageDC(
         const val FILE = "file"
         const val AUDIO = "audio"
         const val SECURITY_CONFIG = "security:config"
-        const val BEGIN_CALL = "call:begin_video"
+        const val BEGIN_CALL = "call:begin"
         const val ACCEPT_CALL = "call:accept"
+        const val END_CALL = "call:end"
 
-        fun MessageDC.isCall(): Boolean {
-            return type==BEGIN_CALL ||
-                    type==ACCEPT_CALL
-        }
         fun MessageDC.isDisplayable(): Boolean {
             return type!=SECURITY_CONFIG
         }
