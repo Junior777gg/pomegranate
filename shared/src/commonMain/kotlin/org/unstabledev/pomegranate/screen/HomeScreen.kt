@@ -33,21 +33,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 @Composable
-fun HomeScreen(navWayObj: NavigationWays) {
+fun HomeScreen(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val viewModel = viewModel { HomeScreenController() }
 
@@ -71,7 +70,7 @@ fun HomeScreen(navWayObj: NavigationWays) {
                         .padding(16.dp)
                         .clickable(indication = null, interactionSource = null) {
                             Repository.lastEmail = Repository.myEmail
-                            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                            navController.navigate(Routes.ProfileScreen)
                         }
                 ) {
                     Box(
@@ -108,7 +107,7 @@ fun HomeScreen(navWayObj: NavigationWays) {
                     label = { Text("Профиль", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                        navController.navigate(Routes.ProfileScreen)
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -118,7 +117,7 @@ fun HomeScreen(navWayObj: NavigationWays) {
                     label = { Text("Настройки", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        navWayObj.goTo(Routes.SETTINGS_SCREEN)
+                        navController.navigate(Routes.SettingsScreen())
                     },
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -129,7 +128,7 @@ fun HomeScreen(navWayObj: NavigationWays) {
                     selected = false,
                     onClick = {
                         KMPFile(fistFilePath).delete()
-                        navWayObj.goTo(Routes.LOGIN_SCREEN)
+                        navController.navigate(Routes.LoginScreen())
                     },
                     icon = {
                         Icon(
@@ -145,18 +144,16 @@ fun HomeScreen(navWayObj: NavigationWays) {
     ) {
         SearchableChatsPanel(viewModel,
         onChatClick = {
-            viewModel.setLastChat(it)
-            navWayObj.goTo(Routes.CHAT_SCREEN)
+            navController.navigate(Routes.ChatScreen(it))
         },
         onChatAddClick = {
-            navWayObj.goTo(Routes.CONTACTS_SCREEN)
+            navController.navigate(Routes.ContactsScreen())
         },
         onSidemenuClick = {
             scope.launch { drawerState.open() }
         },
         onOpenProfileClick = {
-           viewModel.setLastChat(it)
-            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+            navController.navigate(Routes.ProfileScreen(it))
         })
     }
 }

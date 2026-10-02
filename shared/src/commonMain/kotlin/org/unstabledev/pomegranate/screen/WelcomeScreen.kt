@@ -17,15 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.platform.isMobile
 import org.jetbrains.compose.resources.painterResource
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.welcome_mobile
 
 @Composable
-fun WelcomeScreen(navWayObj: NavigationWays) {
+fun WelcomeScreen(navController: NavHostController) {
     if(isMobile) {
         Image(
             painter = painterResource(Res.drawable.welcome_mobile),
@@ -39,7 +39,7 @@ fun WelcomeScreen(navWayObj: NavigationWays) {
             verticalArrangement = Arrangement.Bottom
         ) {
             Button(onClick = {
-                navWayObj.goTo(Routes.LOGIN_SCREEN)
+                navController.navigate(Routes.LoginScreen())
             }, modifier = Modifier.width(500.dp).height(50.dp)) {
                 Text("Начать", fontWeight = FontWeight.Bold)
             }
@@ -52,7 +52,7 @@ fun WelcomeScreen(navWayObj: NavigationWays) {
         ) {
             Text(modifier = Modifier.width(400.dp), text = "Добро пожаловать в Гранат", fontSize = 30.sp, textAlign = TextAlign.Left)
             Button(onClick = {
-                navWayObj.goTo(Routes.LOGIN_SCREEN)
+                navController.navigate(Routes.LoginScreen())
             }){
                 Text("Начать")
             }

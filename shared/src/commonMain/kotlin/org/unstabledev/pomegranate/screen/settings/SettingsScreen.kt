@@ -35,7 +35,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,19 +42,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.ThemeMode
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.sendHaptic
 
 @Composable
-fun SettingsScreen(navWayObj: NavigationWays) {
+fun SettingsScreen(navController: NavHostController) {
     val settings by AppSettings.state.collectAsState()
 
     Column(applyScreenPadding()) {

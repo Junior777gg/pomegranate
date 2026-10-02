@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
@@ -51,14 +52,14 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
     Repository.chatDao = chatDao
     Repository.personsDao = personsDao
     if (currentCall.value != null) {
-        navController.navigate(Routes.CALL_SCREEN)
+        navController.navigate(Routes.CallScreen())
     }
-    var startDestination: String
+    var startDestination: Routes
     val fistFilePath = remember { Repository.fistFilePath }
     if (KMPFile(fistFilePath).exists()) {
         KMPFile("$pomegranatePath${separator}temp").createNewFile()
-        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") Routes.HOME_SCREEN
-        else Routes.WELCOME_SCREEN
+        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") Routes.HomeScreen()
+        else Routes.WelcomeScreen()
     } else {
         if (KMPFile(pomegranatePath).exists()) {
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
@@ -68,133 +69,53 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
             KMPFile(fistFilePath).createNewFile()
         }
-        startDestination = Routes.WELCOME_SCREEN
+        startDestination = Routes.WelcomeScreen()
     }
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(Routes.WELCOME_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = {  }
-                )
-            }
-            WelcomeScreen(navWayObj)
+        composable<Routes.WelcomeScreen>{
+            WelcomeScreen(navController)
         }
-        composable(Routes.LOGIN_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.navigate(Routes.WELCOME_SCREEN) }
-                )
-            }
-            LoginScreen(navWayObj)
+        composable<Routes.LoginScreen> {
+            LoginScreen(navController)
         }
-        composable(Routes.HOME_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String ->
-                        navController.navigate(route)
-                        PlatformKeyEvents.Instance?.onBackCallback = {}
-                    },
-                    back = {}
-                )
-            }
-            if (isMobile) HomeScreen(navWayObj)
-            else DesktopHomeScreen(navWayObj)
+        composable<Routes.HomeScreen> {
+            if (isMobile) HomeScreen(navController)
+            else DesktopHomeScreen(navController)
         }
-        composable(Routes.CONTACTS_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            ContactsScreen(navWayObj)
+        composable<Routes.ContactsScreen>{
+            ContactsScreen(navController)
         }
-        composable(Routes.SETTINGS_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            SettingsScreen(navWayObj)
+        composable<Routes.SettingsScreen>{
+            SettingsScreen(navController)
         }
-        composable(Routes.SETTINGS_STYLE_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            StyleSettingsScreen(navWayObj)
+        composable<Routes.SettingsStyleScreen>{
+            StyleSettingsScreen(navController)
         }
-        composable(Routes.SETTINGS_NETWORK_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            NetworkSettingsScreen(navWayObj)
+        composable<Routes.SettingsNetworkScreen>{
+            NetworkSettingsScreen(navController)
         }
-        composable(Routes.SETTINGS_POWER_SAVE_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            PowerSaveSettingsScreen(navWayObj)
+        composable<Routes.SettingsPowerSaveScreen>{
+            PowerSaveSettingsScreen(navController)
         }
-        composable(Routes.SETTINGS_STORAGE_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            StorageSettingsScreen(navWayObj, chatDao)
+        composable<Routes.SettingsStorageScreen>{
+            StorageSettingsScreen(navController)
         }
-        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            FirebaseAddressSelectScreen(navWayObj)
+        composable<Routes.SettingsSelectFirebaseScreen>{
+            FirebaseAddressSelectScreen(navController)
         }
-        composable(
-            Routes.CHAT_SCREEN,
+        composable<Routes.ChatScreen>(
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(400)) },
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
         ) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.navigate(Routes.HOME_SCREEN) }
-                )
-            }
-            ChatScreen(navWayObj)
+            val route = it.toRoute<Routes.ChatScreen>()
+            ChatScreen(navController, route.chat)
         }
-        composable(Routes.PROFILE_SCREEN_ROUTE) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            ProfileScreen(navWayObj)
+        composable<Routes.ProfileScreen>{
+            val route = it.toRoute<Routes.ProfileScreen>()
+            ProfileScreen(navController, route.chat)
         }
-        composable(Routes.CALL_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            BetterCallSoulScreen(navWayObj)
+        composable<Routes.CallScreen>{
+            BetterCallSoulScreen(navController)
         }
     }
 }

@@ -45,12 +45,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.platform.PlatformKeyEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
@@ -58,7 +58,7 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.chat.addChatBackground
-import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 private enum class PanelSubScreen {
@@ -68,11 +68,12 @@ private enum class PanelSubScreen {
 }
 
 @Composable
-fun DesktopHomeScreen(navWayObj: NavigationWays) {
+fun DesktopHomeScreen(navController: NavHostController) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
     val settings by AppSettings.state.collectAsState()
     val viewModel = viewModel { HomeScreenController() }
     val scope = rememberCoroutineScope()
+    val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
@@ -86,12 +87,12 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
             scope.launch {
-                val chat=Repository.lastChat.first()
+                val chat = selectedChat.value
                 if (chat!=null) {
                     val last=Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
                     if (last==null) Repository.chatDao.delete(chat)
                 }
-                viewModel.setLastChat(null)
+                selectedChat.value =null
             }
         }
     }
@@ -107,7 +108,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
                         SearchableChatsPanel(
                             viewModel,
                             onChatClick = {
-                                viewModel.setLastChat(it)
+                                selectedChat.value = it
                             },
                             onChatAddClick = {
                                 panelSubScreen = PanelSubScreen.CONTACTS
@@ -116,7 +117,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
                                 panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
                             },
                             onOpenProfileClick = {
-                                navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                                navController.navigate(route = Routes.ProfileScreen(it))
                             })
                     }
                     PanelSubScreen.CONTACTS -> {
@@ -130,12 +131,12 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
                         ProfileSettings(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                            navController.navigate(route = Routes.ProfileScreen(selectedChat.value!!))
                         }, {
-                            navWayObj.goTo(Routes.SETTINGS_SCREEN)
+                            navController.navigate(route = Routes.SettingsScreen())
                         }, {
                             KMPFile(fistFilePath).delete()
-                            navWayObj.goTo(Routes.LOGIN_SCREEN)
+                            navController.navigate(route = Routes.LoginScreen())
                         })
                     }
                 }
@@ -161,11 +162,12 @@ fun DesktopHomeScreen(navWayObj: NavigationWays) {
                     )
             )
             Column(Modifier.weight(1.5f)) {
-                val chat = Repository.lastChat.collectAsState().value
+                val chat = selectedChat.value
                 if(chat != null) {
                     key(chat) {
                         ChatScreen(
-                            navWayObj = navWayObj,
+                            navController,
+                            chat,
                             canBack = false
                         )
                     }

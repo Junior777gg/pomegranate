@@ -35,15 +35,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.components.SettingsPage
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.platform.sendHaptic
 import kotlin.math.floor
 
 @Composable
-fun PowerSaveSettingsScreen(navigationWays: NavigationWays) {
+fun PowerSaveSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     SettingsPage(navigationWays, "Энергосбережение") {
         Row {

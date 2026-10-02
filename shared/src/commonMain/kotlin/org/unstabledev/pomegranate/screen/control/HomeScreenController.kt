@@ -42,10 +42,6 @@ class HomeScreenController : ViewModel() {
         }
     }
 
-    fun setLastChat(chat: ChatDC?) {
-        Repository.setLastChat(chat)
-    }
-
     fun deleteChat() {
         viewModelScope.launch(Dispatchers.Default) {
             val chat = Repository.lastChat.value

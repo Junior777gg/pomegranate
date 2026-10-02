@@ -30,12 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.components.LabeledTextField
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -53,17 +53,19 @@ sealed class ContactsScreenState {
 }
 
 @Composable
-fun ContactsScreen(navWayObj: NavigationWays) {
+fun ContactsScreen(navController: NavHostController) {
     Column(applyScreenPadding()) {
-        ContactsPanel({ navWayObj.back() }, { navWayObj.goTo(Routes.CHAT_SCREEN) }, Repository.chatDao)
+        ContactsPanel(
+            { navController.popBackStack() },
+            { navController.navigate(route = it) },
+        )
     }
 }
 
 @Composable
 fun ContactsPanel(
     onBack: () -> Unit,
-    onAdd: () -> Unit,
-    chatDao: ChatDao? = null,
+    onAdd: (route: Routes.ChatScreen) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.Base()) }
@@ -108,7 +110,7 @@ fun ContactsPanel(
                     scope.launch(Dispatchers.IO) {
                         val profile = try {
                             Gravatar.getProfile(email.sha256())
-                        } catch(e: Exception) {
+                        } catch (e: Exception) {
                             null
                         }
                         val chat = ChatDC(
@@ -123,9 +125,8 @@ fun ContactsPanel(
                         )
                         Repository.personsDao.upsert(person)
                         Repository.chatDao.upsert(chat)
-                        Repository.setLastChat(chat)
                         withContext(Dispatchers.Main) {
-                            onAdd()
+                            onAdd(Routes.ChatScreen(chat))
                         }
                     }
                 }) {

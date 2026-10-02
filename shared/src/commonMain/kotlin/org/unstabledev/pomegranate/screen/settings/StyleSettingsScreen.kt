@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
@@ -44,10 +45,9 @@ import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.kmpCopyTo
 import org.unstabledev.pomegranate.platform.kmpReadBytes
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 
 @Composable
-fun StyleSettingsScreen(navigationWays: NavigationWays) {
+fun StyleSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     val scope=rememberCoroutineScope()
     SettingsPage(navigationWays, "Внешний вид") {

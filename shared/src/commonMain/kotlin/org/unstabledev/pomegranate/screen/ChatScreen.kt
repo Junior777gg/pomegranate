@@ -36,15 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
-import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.chat.MessageBubble
@@ -54,6 +52,7 @@ import org.unstabledev.pomegranate.components.ScrollToBottomButton
 import org.unstabledev.pomegranate.components.chat.ChatHeader
 import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.chat.addChatBackground
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
@@ -64,12 +63,12 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    navWayObj: NavigationWays,
+    navController: NavHostController,
+    chat: ChatDC,
     canBack: Boolean = true,
 ) {
-    val chat by Repository.lastChat.collectAsState()
     val viewModel = viewModel(key = chat.toString()){
-        ChatScreenController(chat!!)
+        ChatScreenController(chat)
     }
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -143,7 +142,7 @@ fun ChatScreen(
                             viewModel.deleteChat()
                             viewModel.deleteMessages()
                         }
-                        navWayObj.goTo(Routes.HOME_SCREEN)
+                        navController.navigate(route = Routes.HomeScreen())
                     }
                     ChatHeader(
                         viewModel,
@@ -155,7 +154,7 @@ fun ChatScreen(
                             viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                         },
                         {
-                            navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
+                            navController.navigate(route = Routes.ProfileScreen(chat))
                         },
                         {
                             scope.launch {
@@ -271,7 +270,7 @@ fun ChatScreen(
                                 viewModel.deleteChat()
                             }
                             viewModel.clearLastChat()
-                            if (isMobile) navWayObj.goTo(Routes.HOME_SCREEN)
+                            if (isMobile) navController.navigate(route = Routes.HomeScreen())
                             showDeleteChatPopup = false
                         })
                     },

@@ -35,23 +35,19 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.SettingsPage
-import org.unstabledev.pomegranate.database.ChatDao
-import org.unstabledev.pomegranate.platform.formatString
 import org.unstabledev.pomegranate.roundTo
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import kotlin.math.max
 import kotlin.math.min
 
 @Composable
-fun StorageSettingsScreen(navigationWays: NavigationWays) {
+fun StorageSettingsScreen(navController: NavHostController) {
     val scope=rememberCoroutineScope()
     val chatDao = Repository.chatDao
     SettingsPage(navigationWays, "Кэш и хранилище") {

@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,7 +65,6 @@ import kotlinx.serialization.Serializable
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
@@ -74,9 +74,6 @@ import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
-import org.unstabledev.pomegranate.platform.FileSaver
-import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
@@ -103,8 +100,8 @@ sealed class ProfileState {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navWayObj: NavigationWays) {
-    val viewModel = viewModel { ProfileScreenController() }
+fun ProfileScreen(navController: NavHostController, chat: ChatDC) {
+    val viewModel = viewModel { ProfileScreenController(chat) }
     val snackBarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
@@ -135,7 +132,7 @@ fun ProfileScreen(navWayObj: NavigationWays) {
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
                     IconButton(
-                        onClick = { navWayObj.back() },
+                        onClick = { navController.popBackStack() },
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Icon(

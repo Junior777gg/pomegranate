@@ -37,11 +37,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.CallState
 import org.unstabledev.pomegranate.platform.Camera
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.ColorTheme
@@ -49,11 +49,11 @@ import org.unstabledev.pomegranate.screen.control.BetterCallSoulScreenController
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun BetterCallSoulScreen(navWayObj: NavigationWays) {
+fun BetterCallSoulScreen(navController: NavHostController) {
     val camera = remember { Camera() }
     val playbackDevice = remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    val viewModel = viewModel { BetterCallSoulScreenController(camera, navWayObj) }
+    val viewModel = viewModel { BetterCallSoulScreenController(camera, navController) }
     val state = currentCallState.collectAsState().value
     val owner = LocalLifecycleOwner.current
     val microphoneActive = viewModel.microphoneActive

@@ -23,22 +23,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.LabeledTextField
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.kmpWriteText
 
 @Composable
-fun LoginScreen(navWayObj: NavigationWays) {
+fun LoginScreen(navController: NavHostController) {
     val fistFilePath = Repository.fistFilePath
     var isErrorVisible by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
     Column(applyScreenPadding()) {
-        IconButton(onClick = {navWayObj.goTo(Routes.WELCOME_SCREEN)}) {
+        IconButton(onClick = {navController.navigate(Routes.WelcomeScreen())}) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Назад",
@@ -70,7 +70,7 @@ fun LoginScreen(navWayObj: NavigationWays) {
                     createNewFile()
                 kmpWriteText(email)}
                 //Repository.lastOpponentEmail = email
-                navWayObj.goTo(Routes.HOME_SCREEN)
+                navController.navigate(Routes.HomeScreen())
             }){
                 Text("Войти")
             }

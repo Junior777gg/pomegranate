@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -13,14 +14,13 @@ import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.platform.CallAudioPlayer
 import org.unstabledev.pomegranate.platform.CallAudioRecorder
 import org.unstabledev.pomegranate.platform.Camera
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.P2PUtils.Data
 import org.unstabledev.pomegranate.Repository
 
 class BetterCallSoulScreenController(
     val camera: Camera,
-    val navWayObj: NavigationWays,
-) : ViewModel() {
+    val navController: NavHostController,
+    ) : ViewModel() {
     val call = Repository.currentCall.value!!
     val image = mutableStateOf<ImageBitmap?>(null)
     val recorder = CallAudioRecorder()
@@ -82,7 +82,7 @@ class BetterCallSoulScreenController(
             player.stop()
             recorder.stop()
             withContext(Dispatchers.Main) {
-                navWayObj.back()
+                navController.popBackStack()
             }
         }
     }

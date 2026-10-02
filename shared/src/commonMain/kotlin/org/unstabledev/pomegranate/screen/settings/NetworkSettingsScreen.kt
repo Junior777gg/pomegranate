@@ -21,13 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.components.SettingsPage
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes
 
 @Composable
-fun NetworkSettingsScreen(navigationWays: NavigationWays) {
+fun NetworkSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     SettingsPage(navigationWays, "Сеть") {
         Row(verticalAlignment = Alignment.CenterVertically) {
