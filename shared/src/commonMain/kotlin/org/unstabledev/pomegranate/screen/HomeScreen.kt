@@ -43,6 +43,7 @@ import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
+import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 @Composable

@@ -38,10 +38,13 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.pomegranatePath
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.SettingsPage
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.platform.formatString
 import org.unstabledev.pomegranate.roundTo
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import kotlin.math.max

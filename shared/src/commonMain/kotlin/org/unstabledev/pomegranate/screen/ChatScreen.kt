@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes

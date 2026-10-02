@@ -62,6 +62,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.unstabledev.pomegranate.platform.Clipboard
+import org.unstabledev.pomegranate.platform.FileSaver
+import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Util
@@ -74,6 +76,7 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController

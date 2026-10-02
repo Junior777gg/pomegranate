@@ -30,13 +30,13 @@ import org.unstabledev.pomegranate.screen.FirebaseAddressSelectScreen
 import org.unstabledev.pomegranate.screen.LoginScreen
 import org.unstabledev.pomegranate.screen.HomeScreen
 import org.unstabledev.pomegranate.screen.ProfileScreen
+import org.unstabledev.pomegranate.screen.settings.SettingsScreen
 import org.unstabledev.pomegranate.screen.WelcomeScreen
-import org.unstabledev.pomegranate.platform.separator
 import org.unstabledev.pomegranate.screen.settings.NetworkSettingsScreen
 import org.unstabledev.pomegranate.screen.settings.PowerSaveSettingsScreen
-import org.unstabledev.pomegranate.screen.settings.SettingsScreen
 import org.unstabledev.pomegranate.screen.settings.StorageSettingsScreen
 import org.unstabledev.pomegranate.screen.settings.StyleSettingsScreen
+import org.unstabledev.pomegranate.platform.separator
 
 @Composable
 fun applyScreenPadding(base: Modifier = Modifier): Modifier {
@@ -154,18 +154,9 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
                     back = { navController.popBackStack() }
                 )
             }
-            StorageSettingsScreen(navWayObj)
+            StorageSettingsScreen(navWayObj, chatDao)
         }
-        composable(Routes.SETTINGS_CONFIG_FIREBASE_SCREEN) {
-            val navWayObj = remember {
-                NavigationWays(
-                    goTo = { route: String -> navController.navigate(route) },
-                    back = { navController.popBackStack() }
-                )
-            }
-            FirebaseAddressSelectScreen(navWayObj)
-        }
-        composable(Routes.SETTINGS_CONFIG_FIREBASE_SCREEN) {
+        composable(Routes.SETTINGS_SELECT_FIREBASE_SCREEN) {
             val navWayObj = remember {
                 NavigationWays(
                     goTo = { route: String -> navController.navigate(route) },

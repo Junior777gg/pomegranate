@@ -23,7 +23,9 @@ import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
+import org.unstabledev.pomegranate.database.MessageDC.Companion.truncatedMessageDCType
 import org.unstabledev.pomegranate.database.MessagesDao
+import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.kmpCopyTo
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
@@ -99,7 +101,12 @@ class Observer(
                                             val json =
                                                 Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
                                             val file = (list[1] as Data.Files).file
-                                            val nameFile = KMPFile("${pomegranatePath}temp", json.data.decodeToString())
+
+                                            val subDir = truncatedMessageDCType(json.type)
+                                            val targetDir = "${pomegranatePath}temp${if (subDir==null) "" else "/$subDir"}"
+                                            val nameFile = KMPFile(targetDir, json.data.decodeToString())
+                                            nameFile.getParentFile()?.mkdirs()
+
                                             file.kmpCopyTo(nameFile)
                                             file.delete()
                                             json.data = nameFile.getAbsolutePath().encodeToByteArray()
@@ -108,7 +115,12 @@ class Observer(
                                             val json =
                                                 Json.decodeFromString<MessageDC>((list[1] as Data.Bytes).bytes.decodeToString())
                                             val file = (list[0] as Data.Files).file
-                                            val nameFile = KMPFile("${pomegranatePath}temp", json.data.decodeToString())
+
+                                            val subDir = truncatedMessageDCType(json.type)
+                                            val targetDir = "${pomegranatePath}temp${if (subDir==null) "" else "/$subDir"}"
+                                            val nameFile = KMPFile(targetDir, json.data.decodeToString())
+                                            nameFile.getParentFile()?.mkdirs()
+
                                             file.kmpCopyTo(nameFile)
                                             file.delete()
                                             json.data = nameFile.getAbsolutePath().encodeToByteArray()

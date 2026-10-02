@@ -58,6 +58,7 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.Util
 import org.unstabledev.pomegranate.components.chat.addChatBackground
+import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 private enum class PanelSubScreen {
