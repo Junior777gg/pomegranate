@@ -33,15 +33,11 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -49,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
@@ -70,11 +68,11 @@ private enum class PanelSubScreen {
 }
 
 @Composable
-fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
+fun DesktopHomeScreen(navWayObj: NavigationWays) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
-    val lastContact by Repository.lastContact.collectAsState()
     val settings by AppSettings.state.collectAsState()
-    val viewModel = viewModel { HomeScreenController(chatDao) }
+    val viewModel = viewModel { HomeScreenController() }
+    val scope = rememberCoroutineScope()
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
@@ -87,25 +85,20 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
-            Repository.setLastContact(null)
+            scope.launch {
+                val chat=Repository.lastChat.first()
+                if (chat!=null) {
+                    val last=Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
+                    if (last==null) Repository.chatDao.delete(chat)
+                }
+                viewModel.setLastChat(null)
+            }
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onKeyEvent { keyEvent ->
-                if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyUp) {
-                    if(panelSubScreen != PanelSubScreen.CHATS) {
-                        panelSubScreen = PanelSubScreen.CHATS
-                    } else {
-                        Repository.setLastContact(null)
-                    }
-                    true
-                } else {
-                    false
-                }
-            }
     ) {
         Row {
             Column(Modifier.weight(splitPosition)) {
@@ -114,7 +107,7 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         SearchableChatsPanel(
                             viewModel,
                             onChatClick = {
-                                Repository.setLastContact(it)
+                                viewModel.setLastChat(it)
                             },
                             onChatAddClick = {
                                 panelSubScreen = PanelSubScreen.CONTACTS
@@ -123,22 +116,20 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                                 panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
                             },
                             onOpenProfileClick = {
-                                Repository.lastOpponentEmail = it.partnerEmail
                                 navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
-                            }, chatDao)
+                            })
                     }
                     PanelSubScreen.CONTACTS -> {
                         ContactsPanel({
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             panelSubScreen = PanelSubScreen.CHATS
-                        }, chatDao)
+                        })
                     }
                     PanelSubScreen.PROFILE_SETTINGS -> {
                         ProfileSettings(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            Repository.lastOpponentEmail = KMPFile(fistFilePath).kmpReadText()
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }, {
                             navWayObj.goTo(Routes.SETTINGS_SCREEN)
@@ -170,11 +161,11 @@ fun DesktopHomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     )
             )
             Column(Modifier.weight(1.5f)) {
-                if(lastContact?.partnerEmail?.isNotEmpty() == true) {
-                    key(lastContact?.partnerEmail) {
+                val chat = Repository.lastChat.collectAsState().value
+                if(chat != null) {
+                    key(chat) {
                         ChatScreen(
                             navWayObj = navWayObj,
-                            chatDao = chatDao,
                             canBack = false
                         )
                     }

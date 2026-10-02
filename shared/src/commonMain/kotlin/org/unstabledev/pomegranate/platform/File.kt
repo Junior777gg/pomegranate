@@ -186,5 +186,3 @@ private suspend fun processPastedClipImage(
         e.printStackTrace()
     }
 }
-
-expect fun formatString(format: String, vararg args: Any): String

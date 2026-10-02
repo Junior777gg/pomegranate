@@ -34,11 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
-import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.Util
@@ -47,9 +47,9 @@ import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 @Composable
-fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
+fun HomeScreen(navWayObj: NavigationWays) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val viewModel = viewModel { HomeScreenController(chatDao) }
+    val viewModel = viewModel { HomeScreenController() }
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
@@ -70,7 +70,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
                         .clickable(indication = null, interactionSource = null) {
-                            Repository.lastOpponentEmail = KMPFile(fistFilePath).kmpReadText()
+                            Repository.lastEmail = Repository.myEmail
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         }
                 ) {
@@ -108,7 +108,6 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
                     label = { Text("Профиль", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        Repository.lastOpponentEmail = Repository.myEmail
                         navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
@@ -146,7 +145,7 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
     ) {
         SearchableChatsPanel(viewModel,
         onChatClick = {
-            Repository.setLastContact(it)
+            viewModel.setLastChat(it)
             navWayObj.goTo(Routes.CHAT_SCREEN)
         },
         onChatAddClick = {
@@ -156,8 +155,8 @@ fun HomeScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
             scope.launch { drawerState.open() }
         },
         onOpenProfileClick = {
-            Repository.lastOpponentEmail = it.partnerEmail
+           viewModel.setLastChat(it)
             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
-        }, chatDao)
+        })
     }
 }

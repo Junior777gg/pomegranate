@@ -44,16 +44,16 @@ import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.chat.MessageBubble
 import org.unstabledev.pomegranate.components.chat.MessageInput
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
-import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.ScrollToBottomButton
 import org.unstabledev.pomegranate.components.chat.ChatHeader
+import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.chat.addChatBackground
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
@@ -65,21 +65,18 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun ChatScreen(
     navWayObj: NavigationWays,
-    chatDao: ChatDao,
     canBack: Boolean = true,
 ) {
-    val lastContact by Repository.lastContact.collectAsState()
-    val messagesDao = Repository.messagesDao
-    val viewModel = viewModel(key = lastContact?.partnerEmail) {
-        ChatScreenController(messagesDao, chatDao, lastContact!!)
+    val chat by Repository.lastChat.collectAsState()
+    val viewModel = viewModel(key = chat.toString()){
+        ChatScreenController(chat!!)
     }
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     val inputState = rememberTextFieldState()
     val listState = rememberLazyListState()
     val messages = viewModel.messages.collectAsState()
-    val chat by viewModel.chatDC.collectAsState()
     val settings by AppSettings.state.collectAsState()
 
     val isOnline by produceState(initialValue = true) {
@@ -119,11 +116,11 @@ fun ChatScreen(
         }
     }
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         if (messagePreview.value != null) {
-            ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackbarHostState)
+            ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackBarHostState)
         } else {
             var m = Modifier.fillMaxSize().fileDropArea({ dropped ->
                 println("got drag-and-drop event")
@@ -138,18 +135,17 @@ fun ChatScreen(
                     }
                 }
             }, { areFilesBeingDraggedOver.value = true }, { areFilesBeingDraggedOver.value = false })
-            if (!isMobile) m = addChatBackground(m);
+            if (!isMobile) m = addChatBackground(m)
             Box(modifier = m) {
                 Column {
                     val back = {
                         if (messages.value.isEmpty()) scope.launch {
-                            chatDao.deleteChat(chat)
-                            messagesDao.deleteAllByEmail(chat.partnerEmail)
+                            viewModel.deleteChat()
+                            viewModel.deleteMessages()
                         }
                         navWayObj.goTo(Routes.HOME_SCREEN)
                     }
                     ChatHeader(
-                        chat,
                         viewModel,
                         if (canBack) back else null,
                         {
@@ -159,7 +155,6 @@ fun ChatScreen(
                             viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                         },
                         {
-                            Repository.lastOpponentEmail = chat.partnerEmail
                             navWayObj.goTo(Routes.PROFILE_SCREEN_ROUTE)
                         },
                         {
@@ -191,12 +186,12 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(messages.value, key = { message -> message.key }) { message ->
-                            MessageBubble(message, chat, onImagePreviewClick,
-                                scope, snackbarHostState, settings.parseMarkdown)
+                            MessageBubble(message, onImagePreviewClick,
+                                scope, snackBarHostState, settings.parseMarkdown)
                         }
                         if (displayNewContactWidget.value) {
                             item {
-                                NewContactWidget(chat = chat)
+                                NewContactWidget(viewModel)
                             }
                         }
                     }
@@ -245,7 +240,7 @@ fun ChatScreen(
                     confirmButton = {
                         Text("Подтвердить", Modifier.clickable {
                             scope.launch {
-                                Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
+                                viewModel.deleteMessages()
                             }
                             showClearChatPopup = false
                         })
@@ -272,11 +267,10 @@ fun ChatScreen(
                     confirmButton = {
                         Text("Подтвердить", Modifier.clickable {
                             scope.launch {
-                                Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
-                                chatDao.deleteChat(chat)
+                                viewModel.deleteMessages()
+                                viewModel.deleteChat()
                             }
-                            Repository.lastOpponentEmail = ""
-                            Repository.setLastContact(null)
+                            viewModel.clearLastChat()
                             if (isMobile) navWayObj.goTo(Routes.HOME_SCREEN)
                             showDeleteChatPopup = false
                         })
@@ -289,7 +283,7 @@ fun ChatScreen(
                 )
             }
             if (showNicknameEditPopup) {
-                val newNicknameState = rememberTextFieldState()
+                val newNameState = rememberTextFieldState()
                 AlertDialog(
                     onDismissRequest = { showNicknameEditPopup = false },
                     title = {
@@ -299,13 +293,12 @@ fun ChatScreen(
                         )
                     },
                     text = {
-                        TextField(newNicknameState)
+                        TextField(newNameState)
                     },
                     confirmButton = {
                         Text("Подтвердить", Modifier.clickable {
                             scope.launch {
-                                val updatedChat = chat.copy(nickname = newNicknameState.text.toString().takeIf { it.isNotBlank() })
-                                chatDao.upsertChat(updatedChat)
+                                viewModel.renameChat(newNameState.text.toString().takeIf { it.isNotBlank() })
                             }
                             showNicknameEditPopup = false
                         })

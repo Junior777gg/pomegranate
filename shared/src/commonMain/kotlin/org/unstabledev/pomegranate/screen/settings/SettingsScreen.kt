@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -54,9 +55,8 @@ import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.sendHaptic
 
 @Composable
-fun SettingsScreen(navWayObj: NavigationWays, chatDao: ChatDao) {
+fun SettingsScreen(navWayObj: NavigationWays) {
     val settings by AppSettings.state.collectAsState()
-    val scope = rememberCoroutineScope()
 
     Column(applyScreenPadding()) {
         Row(

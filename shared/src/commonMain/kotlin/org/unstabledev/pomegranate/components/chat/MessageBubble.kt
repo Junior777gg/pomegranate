@@ -66,6 +66,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.platform.Clipboard
@@ -81,9 +82,10 @@ import org.unstabledev.pomegranate.components.AnimatedGifImage
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.GifDecoder
-import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
+import org.unstabledev.pomegranate.database.MessageDC.Companion.ACCEPT_CALL
+import org.unstabledev.pomegranate.database.MessageDC.Companion.BEGIN_CALL
+import org.unstabledev.pomegranate.database.MessageDC.Companion.END_CALL
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
@@ -93,24 +95,23 @@ import org.unstabledev.pomegranate.platform.sendHaptic
 @Composable
 fun MessageBubble(
     message: MessageDC,
-    chat: ChatDC,
     setImagePreview: (MessageDC) -> Unit,
     scope: CoroutineScope,
-    snackbarHostState: SnackbarHostState,
+    snackBarHostState: SnackbarHostState,
     renderMarkdown: Boolean
 ) {
     if (!message.isDisplayable()) return
 
     val settings by AppSettings.state.collectAsState()
-
-    val profile = chat.profile?.deserialize()
+    val person = runBlocking { Repository.personsDao.getByEmail(message.messageCreator) }
+    val profile = person?.profile?.deserialize()
     val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-    val opponentName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
+    val opponentName = person?.nickname?:(if (validProfile) profile.displayName else message.messageCreator)
 
     val menuOpen = remember { mutableStateOf(false) }
     val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
     val needPadding = message.type != MessageDC.IMAGE
-    val noNeedForBubble = message.isCall()
+    val noNeedForBubble = message.type==BEGIN_CALL || message.type==ACCEPT_CALL || message.type==END_CALL
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier): Modifier {
         if(!apply) {
@@ -472,7 +473,7 @@ fun MessageBubble(
                                 .clickable {
                                     scope.launch {
                                         FileSaver.save(message.data.decodeToString())
-                                        snackbarHostState.showSnackbar("Файл сохранён")
+                                        snackBarHostState.showSnackbar("Файл сохранён")
                                         savedAlready.value = true
                                     }
                                 }
@@ -557,7 +558,7 @@ fun MessageBubble(
                     }
 
                     else -> {
-                        Text("Неизвестный тип сообщения", color = ColorTheme.Warning, fontStyle = FontStyle.Italic)
+                        Text("Неизвестный тип сообщения: ${message.type}", color = ColorTheme.Warning, fontStyle = FontStyle.Italic)
                     }
                 }
 
@@ -618,7 +619,7 @@ fun MessageBubble(
                             onClick = {
                                 scope.launch {
                                     FileSaver.save(message.data.decodeToString())
-                                    snackbarHostState.showSnackbar(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE)
+                                    snackBarHostState.showSnackbar(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE)
                                         "Изображение сохранено" else "Файл сохранён")
                                 }
                                 menuOpen.value = false
@@ -638,7 +639,7 @@ fun MessageBubble(
                             onClick = {
                                 scope.launch {
                                     Clipboard().copyImage(message.data.decodeToString())
-                                    snackbarHostState.showSnackbar("Изображение скопировано")
+                                    snackBarHostState.showSnackbar("Изображение скопировано")
                                 }
                                 menuOpen.value = false
                             }
@@ -655,7 +656,7 @@ fun MessageBubble(
                         },
                         onClick = {
                             scope.launch {
-                                Repository.messagesDao.deleteMessage(message)
+                                Repository.messagesDao.delete(message)
                             }
                             menuOpen.value = false
                         }

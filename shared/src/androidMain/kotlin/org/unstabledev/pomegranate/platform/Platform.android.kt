@@ -55,7 +55,7 @@ actual fun setStatusBarIcons(lightIcons: Boolean) {
 @RequiresApi(Build.VERSION_CODES.Q)
 @RequiresPermission(Manifest.permission.VIBRATE)
 actual fun sendHaptic(amplitude: Int) {
-    sendHaptic(0, amplitude)
+    sendHaptic(0,amplitude)
 }
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -84,7 +84,7 @@ actual class Clipboard {
 
     actual fun copyImage(data: String) {
         try {
-            val file= KMPFile(data)
+            val file=KMPFile(data)
             if (!file.exists()) {
                 println("File does not exist: ${file.absolutePath}")
                 return

@@ -16,15 +16,12 @@ import org.unstabledev.pomegranate.CallState
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.Notifications
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Repository.availableChats
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
-import org.unstabledev.pomegranate.SecurityConfig
 import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessageDC.Companion.isCall
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessageDC.Companion.truncatedMessageDCType
 import org.unstabledev.pomegranate.database.MessagesDao
@@ -37,7 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class Observer(
     private val manager: P2PManagerImpl,
     private val channel: P2PChannelImpl,
-    val chatDC: ChatDC,
+    val email: String,
     val messagesDao: MessagesDao
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -55,7 +52,7 @@ class Observer(
                 scope.cancel()
                 manager.breakConnection()
             } finally {
-                availableChats.getOrPut(chatDC) { MutableSharedFlow(1) }.emit(null)
+                Repository.availablePersons.getOrPut(email) { MutableSharedFlow(1) }.emit(null)
             }
         }
     }
@@ -80,7 +77,7 @@ class Observer(
                                 val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
                                 if (message != null) {
                                     message.isDelivered = true
-                                    messagesDao.upsertMessage(message)
+                                    messagesDao.upsert(message)
                                 }
                                 deliverMap.remove(buffer[0])
                             } else {
@@ -141,10 +138,10 @@ class Observer(
                                         json
                                     }
                                     sendCode(key)
+                                    val personDC = Repository.personsDao.getByEmail(email)
                                     if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()) {
                                         Notifications().push(
-                                            (chatDC.profile?.deserialize()?.displayName
-                                                ?: chatDC.partnerEmail),
+                                            (personDC?.nickname ?: personDC?.personEmail ?:""),
                                             when (messageDC.type) {
                                                 MessageDC.TEXT -> messageDC.data.decodeToString()
                                                     .stripMarkdown()
@@ -158,22 +155,25 @@ class Observer(
                                             }
                                         )
                                     }
-                                    val isCall = messageDC.isCall()
+                                    if(messageDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                                        messageDC.chatCreator == personDC?.personEmail
+                                        messageDC.chatName = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
+                                    }
+                                    val isCall = messageDC.type==MessageDC.BEGIN_CALL
                                     if (isCall) {
                                         val videoManager = manager.fork()
                                         val audioManager = manager.fork()
                                         currentCallState.value = CallState.Calling
-                                        currentCall.value = Call(chatDC.partnerEmail, videoManager,audioManager, false)
+                                        currentCall.value = Call(personDC?.personEmail!!, videoManager,audioManager, false)
                                     }
-                                    if (messageDC.type == MessageDC.SECURITY_CONFIG) {
+                                    /*if (messageDC.type == MessageDC.SECURITY_CONFIG) {
                                         val cfg=SecurityConfig().fromByteArray(messageDC.data)
-                                        chatDC.securityConfig=cfg.toString()
+                                        personDC.securityConfig = cfg.toString()
                                         Repository.chatDao.upsertChat(chatDC)
-                                    }
+                                    }*/
                                     messageDC.isMine = false
-                                    messageDC.email = chatDC.partnerEmail
                                     messageDC.isDelivered = true
-                                    messagesDao.insertMessage(messageDC)
+                                    messagesDao.insert(messageDC)
                                     map.remove(key)
                                 }
                             }
@@ -193,13 +193,13 @@ class Observer(
             var data = message.data
             val msg = message.copy()
             val code = Random.nextInt(1, 255).toByte()
-            val isCall = message.isCall()
+            val isCall = message.type==MessageDC.BEGIN_CALL
             if (isCall && data.isEmpty()) {
                 launch {
                     val videoManager = manager.fork()
                     val audioManager = manager.fork()
                     currentCallState.value = CallState.AcceptedCall
-                    currentCall.value = Call(message.email, videoManager,audioManager)
+                    currentCall.value = Call(email, videoManager,audioManager)
                 }
                 data = "call".encodeToByteArray()
             }

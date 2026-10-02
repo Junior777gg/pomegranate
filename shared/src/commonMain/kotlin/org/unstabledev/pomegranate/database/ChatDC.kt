@@ -2,32 +2,45 @@ package org.unstabledev.pomegranate.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.kotlincrypto.hash.sha2.SHA256
-import org.unstabledev.pomegranate.screen.Profile
+
+class ChatConverters {
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
+
+    @TypeConverter
+    fun fromStringList(value: List<String>): String {
+        return json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toStringList(value: String): List<String> {
+        return if (value.isEmpty()) emptyList() else json.decodeFromString(value)
+    }
+}
 
 @Serializable
+@TypeConverters(ChatConverters::class)
 @Entity(tableName = "chat")
 data class ChatDC(
-    @PrimaryKey val partnerEmail: String,
-    val nickname: String?=null,
-    var profile: String?=null,
-    var securityConfig: String?=null,
-    val knownContact: Boolean=false,
-){
-}
-fun Profile.serialize(): String {
-    return Json.encodeToString(this)
-}
-fun String.deserialize(): Profile{
-    return Json.decodeFromString(Profile.serializer(), this)
-}
-fun String.sha256(): String {
-    val hash = SHA256().digest(this.encodeToByteArray())
-    return hash.toHexString()
-}
-fun String.decodeFromSha256(): String{
-    return this.hexToByteArray().decodeToString()
+    val chatName: String,
+    val chatType: String,
+    val chatCreator: String,
+    val personsEmails: List<String>,
+    @PrimaryKey(autoGenerate = true)
+    val key: Long = 0,
+) {
+    companion object {
+        object ChatTypes {
+            const val SELFCHAT = "SELFCHAT"
+            const val CHAT = "chat"
+            const val GROUP = "group"
+        }
+    }
 }

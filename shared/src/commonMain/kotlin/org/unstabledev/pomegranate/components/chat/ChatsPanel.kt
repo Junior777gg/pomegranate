@@ -31,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -54,6 +53,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.AppSettings
 import org.unstabledev.pomegranate.BackgroundStorage
@@ -67,7 +67,6 @@ import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
@@ -91,7 +90,6 @@ fun SearchableChatsPanel(
     onChatAddClick: () -> Unit,
     onSidemenuClick: () -> Unit,
     onOpenProfileClick: (chat: ChatDC) -> Unit,
-    chatDao: ChatDao,
     modifier: Modifier = Modifier
 ) {
     val chats by viewModel.chats.collectAsState()
@@ -104,7 +102,7 @@ fun SearchableChatsPanel(
         chats
     } else {
         chats.filter { chat ->
-            chat.partnerEmail.contains(searchText, ignoreCase = true)
+            chat.personsEmails.contains(searchText)
         }
     }
 
@@ -148,7 +146,7 @@ fun SearchableChatsPanel(
         }
         NetworkWarningHeader()
         if (filteredChats.isNotEmpty()) {
-            ChatsList(filteredChats, onChatClick, onOpenProfileClick, chatDao)
+            ChatsList(viewModel, filteredChats, onChatClick, onOpenProfileClick)
         } else {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -167,26 +165,26 @@ fun SearchableChatsPanel(
     }
 }
 
-fun getLastMessageTextFlow(email: String): Flow<String> {
-    return Repository.messagesDao.getLastMessageFlowByEmail(email)
+fun getLastMessageTextFlow(chat: ChatDC): Flow<String> {
+    return Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType)
         .map { msg ->
-            if (msg != null) {
-                val decodedText = try {
-                    when (msg.type) {
-                        MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
-                        MessageDC.IMAGE -> "Изображение"
-                        MessageDC.ANIMATED_IMAGE -> "Изображение"
-                        MessageDC.AUDIO -> "Аудио"
-                        MessageDC.FILE -> "Файл"
-                        MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "Звонок"
-                        else -> "Неизвестно"
-                    }
-                } catch (_: Exception) {
-                    ""
-                }
+            if (msg == null) return@map ""
 
-                (if (msg.isMine) "Вы: " else "") + decodedText
-            } else ""
+            val decodedText = try {
+                when (msg.type) {
+                    MessageDC.TEXT -> msg.data.decodeToString().stripMarkdown()
+                    MessageDC.IMAGE, MessageDC.ANIMATED_IMAGE -> "Изображение"
+                    MessageDC.AUDIO -> "Аудио"
+                    MessageDC.FILE -> "Файл"
+                    MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "Звонок"
+                    else -> "Неизвестно"
+                }
+            } catch (_: Exception) {
+                ""
+            }
+
+            val prefix = if (msg.isMine) "Вы: " else ""
+            prefix + decodedText
         }
         .flowOn(Dispatchers.IO)
 }
@@ -235,20 +233,21 @@ fun addChatBackground_defPrimary(base: Modifier = Modifier): Modifier {
         )
     )
 }
+
 @Composable
 fun addChatBackground_defImage(id: Int, base: Modifier = Modifier): Modifier {
     return base.paint(
         painter = painterResource(
             when (id) {
-                1->Res.drawable.def01
-                2->Res.drawable.def02
-                3->Res.drawable.def03
-                4->Res.drawable.def04
-                5->Res.drawable.def05
-                6->Res.drawable.def06
-                7->Res.drawable.def07
-                8->Res.drawable.def08
-                else->Res.drawable.def01
+                1 -> Res.drawable.def01
+                2 -> Res.drawable.def02
+                3 -> Res.drawable.def03
+                4 -> Res.drawable.def04
+                5 -> Res.drawable.def05
+                6 -> Res.drawable.def06
+                7 -> Res.drawable.def07
+                8 -> Res.drawable.def08
+                else -> Res.drawable.def01
             }
         ),
         contentScale = ContentScale.Crop
@@ -256,147 +255,162 @@ fun addChatBackground_defImage(id: Int, base: Modifier = Modifier): Modifier {
 }
 
 @Composable
-fun ChatsList(chats: List<ChatDC>, onChatClick: (chat: ChatDC) -> Unit, onOpenProfileClick: (chat: ChatDC) -> Unit, chatDao: ChatDao) {
+fun ChatsList(
+    viewModel: HomeScreenController,
+    chats: List<ChatDC>,
+    onChatClick: (chat: ChatDC) -> Unit,
+    onOpenProfileClick: (chat: ChatDC) -> Unit,
+) {
     val scope = rememberCoroutineScope()
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
-    val showNicknameEditPopup = remember { mutableStateOf(false) }
+    val showNameEditPopup = remember { mutableStateOf(false) }
     val settings by AppSettings.state.collectAsState()
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
-        items(items = chats, key = { it.partnerEmail }) { chat ->
+        items(items = chats, key = { it }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
-            val message by getLastMessageTextFlow(chat.partnerEmail)
+            val message by getLastMessageTextFlow(chat)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
-            val isOnline = produceState(false) { value = Repository.isChatOpen(chat) }
-            //if (!hasLast) return@items
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
                     .altClickable({
                         onChatClick(chat)
-                    },{
+                    }, {
                         menuExpanded.value = true
                         sendHaptic(HAPTIC_EFFECT_CLICK)
                     })
             ) {
-                val profile = chat.profile?.deserialize()
-                val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-                Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
-                    Column(
-                        modifier = Modifier.width(64.dp).fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ProfileImage(profile, chat, isOnline = isOnline.value)
-                    }
-                    Column(modifier = Modifier.fillMaxSize().padding(5.dp), verticalArrangement = Arrangement.Center) {
-                        val displayName = chat.nickname?:(if (validProfile) profile.displayName else chat.partnerEmail)
-                        Text(
-                            displayName,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        if (hasLast) {
-                            Text(
-                                text = message,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.sp,
-                                maxLines = if(settings.chatTripleColumn) 2 else 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-                DropdownMenu(
-                    expanded = menuExpanded.value,
-                    onDismissRequest = { menuExpanded.value = false },
-                    modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            onOpenProfileClick(chat)
-                            menuExpanded.value = false
-                        }
-                    )
-
-                    DropdownMenuItem(
-                        text = {
-                            Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.EditNote,
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            menuExpanded.value = false
-                            showNicknameEditPopup.value = true
-                            selectedChat.value = chat
-                        }
-                    )
-
-                    DropdownMenuItem(
-                        text = {
-                            Text("Удалить", color = MaterialTheme.colorScheme.error)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                tint = MaterialTheme.colorScheme.error,
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            scope.launch {
-                                Repository.messagesDao.deleteAllByEmail(chat.partnerEmail)
-                                chatDao.deleteChat(chat)
+                when (chat.chatType) {
+                    ChatDC.Companion.ChatTypes.CHAT -> {
+                        val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
+                        val profile = personDC?.profile?.deserialize()
+                        val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+                        Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+                            Column(
+                                modifier = Modifier.width(64.dp).fillMaxHeight(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                ProfileImage(chat)
                             }
-                            menuExpanded.value = false
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(5.dp),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                val displayName =
+                                    personDC?.nickname
+                                        ?: (if (validProfile) profile.displayName else personDC?.personEmail ?:"")
+                                Text(
+                                    displayName,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                if (hasLast) {
+                                    Text(
+                                        text = message,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 12.sp,
+                                        maxLines = if (settings.chatTripleColumn) 2 else 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
-                    )
+                        DropdownMenu(
+                            expanded = menuExpanded.value,
+                            onDismissRequest = { menuExpanded.value = false },
+                            modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    onOpenProfileClick(chat)
+                                    menuExpanded.value = false
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.EditNote,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded.value = false
+                                    showNameEditPopup.value = true
+                                    selectedChat.value = chat
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    scope.launch {
+                                        viewModel.deleteChat()
+                                        viewModel.deleteMessages()
+                                    }
+                                    menuExpanded.value = false
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
     }
-    if (showNicknameEditPopup.value&&selectedChat.value!=null) {
-        val newNicknameState = rememberTextFieldState()
-        AlertDialog(
-            onDismissRequest = { showNicknameEditPopup.value = false },
-            title = {
-                Text(
-                    "Изменить никнейм",
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            },
-            text = {
-                TextField(newNicknameState)
-            },
-            confirmButton = {
-                Text("Подтвердить", Modifier.clickable {
-                    scope.launch {
-                        val updatedChat = selectedChat.value!!.copy(nickname = newNicknameState.text.toString().takeIf { it.isNotBlank() })
-                        chatDao.upsertChat(updatedChat)
-                        selectedChat.value=updatedChat
+    if (showNameEditPopup.value && selectedChat.value != null) {
+        when (selectedChat.value!!.chatType) {
+            ChatDC.Companion.ChatTypes.CHAT -> {
+                val newNameState = rememberTextFieldState()
+                AlertDialog(
+                    onDismissRequest = { showNameEditPopup.value = false },
+                    title = {
+                        Text(
+                            "Изменить никнейм",
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    },
+                    text = {
+                        TextField(newNameState)
+                    },
+                    confirmButton = {
+                        Text("Подтвердить", Modifier.clickable {
+                            scope.launch {
+                                viewModel.renameChat(newNameState.text.toString())
+                            }
+                            showNameEditPopup.value = false
+                        })
+                    },
+                    dismissButton = {
+                        Text("Отмена", Modifier.clickable {
+                            showNameEditPopup.value = false
+                        })
                     }
-                    showNicknameEditPopup.value = false
-                })
-            },
-            dismissButton = {
-                Text("Отмена", Modifier.clickable {
-                    showNicknameEditPopup.value = false
-                })
+                )
             }
-        )
+        }
     }
 }

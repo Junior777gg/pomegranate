@@ -2,7 +2,6 @@ package org.unstabledev.pomegranate.platform
 
 import androidx.compose.runtime.Composable
 import java.awt.Toolkit
-import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
@@ -11,6 +10,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.imageio.ImageIO
+import java.awt.datatransfer.Clipboard as SystemClipboard
 
 actual val isMobile: Boolean
     get() = false
@@ -30,7 +30,7 @@ actual fun sendHaptic(amplitude: Int) { }
 actual fun sendHaptic(milliseconds: Long, amplitude: Int) { }
 
 actual class Clipboard {
-    private val clipboard: Clipboard =
+    private val clipboard: SystemClipboard =
         Toolkit.getDefaultToolkit().systemClipboard
 
     actual fun copyText(str: String) {
@@ -41,7 +41,7 @@ actual class Clipboard {
 
     actual fun copyImage(data: String) {
         try {
-            val file= KMPFile(data)
+            val file=KMPFile(data)
             if (!file.exists()) {
                 println("File does not exist: ${file.absolutePath}")
                 return
