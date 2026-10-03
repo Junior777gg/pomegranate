@@ -64,7 +64,7 @@ fun SettingsScreen(navController: NavHostController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
-                navWayObj.back()
+                navController.popBackStack()
                 AppSettings.save()
             }) {
                 Icon(
@@ -166,18 +166,18 @@ fun SettingsScreen(navController: NavHostController) {
                 }
                 Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
                     SettingsPageButton(Color(0.9f, 0.6f, 0.2f), Icons.Default.Palette, "Внешний вид")
-                        { navWayObj.goTo(Routes.SETTINGS_STYLE_SCREEN) }
+                        { navController.navigate(Routes.SettingsStyleScreen()) }
                     Spacer(Modifier.height(8.dp))
                     SettingsPageButton(Color(0.2f, 0.6f, 0.9f), Icons.Default.NetworkWifi, "Сеть")
-                        { navWayObj.goTo(Routes.SETTINGS_NETWORK_SCREEN) }
+                        { navController.navigate(Routes.SettingsNetworkScreen()) }
                     if (isMobile) {
                         Spacer(Modifier.height(8.dp))
                         SettingsPageButton(Color(0.2f, 0.8f, 0.4f), Icons.Default.BatterySaver, "Энергосбережение")
-                            { navWayObj.goTo(Routes.SETTINGS_POWER_SAVE_SCREEN) }
+                            { navController.navigate(Routes.SettingsPowerSaveScreen()) }
                     }
                     Spacer(Modifier.height(8.dp))
                     SettingsPageButton(Color(0.7f, 0.3f, 0.9f), Icons.Default.Storage, "Кэш и хранилище")
-                        { navWayObj.goTo(Routes.SETTINGS_STORAGE_SCREEN) }
+                        { navController.navigate(Routes.SettingsStorageScreen()) }
                 }
             }
         }

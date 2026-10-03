@@ -57,7 +57,7 @@ fun ContactsScreen(navController: NavHostController) {
     Column(applyScreenPadding()) {
         ContactsPanel(
             { navController.popBackStack() },
-            { navController.navigate(route = it) },
+            { navController.navigate(Routes.ChatScreen(it.key)) },
         )
     }
 }
@@ -65,7 +65,7 @@ fun ContactsScreen(navController: NavHostController) {
 @Composable
 fun ContactsPanel(
     onBack: () -> Unit,
-    onAdd: (route: Routes.ChatScreen) -> Unit,
+    onAdd: (chat: ChatDC) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.Base()) }
@@ -110,7 +110,7 @@ fun ContactsPanel(
                     scope.launch(Dispatchers.IO) {
                         val profile = try {
                             Gravatar.getProfile(email.sha256())
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             null
                         }
                         val chat = ChatDC(
@@ -126,7 +126,7 @@ fun ContactsPanel(
                         Repository.personsDao.upsert(person)
                         Repository.chatDao.upsert(chat)
                         withContext(Dispatchers.Main) {
-                            onAdd(Routes.ChatScreen(chat))
+                            onAdd(chat)
                         }
                     }
                 }) {
@@ -137,7 +137,7 @@ fun ContactsPanel(
 
         is ContactsScreenState.NewGroup -> {
             Column(
-                modifier = modifier.fillMaxSize().padding(10.dp),
+                modifier = Modifier.fillMaxSize().padding(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {

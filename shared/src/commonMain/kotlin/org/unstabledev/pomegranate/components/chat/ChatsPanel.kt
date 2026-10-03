@@ -369,8 +369,8 @@ fun ChatsList(
                                 },
                                 onClick = {
                                     scope.launch {
-                                        viewModel.deleteChat()
-                                        viewModel.deleteMessages()
+                                        viewModel.deleteChat(chat)
+                                        viewModel.deleteMessages(chat)
                                     }
                                     menuExpanded.value = false
                                 }
@@ -399,7 +399,7 @@ fun ChatsList(
                     confirmButton = {
                         Text("Подтвердить", Modifier.clickable {
                             scope.launch {
-                                viewModel.renameChat(newNameState.text.toString())
+                                viewModel.renameChat(selectedChat.value!!,newNameState.text.toString())
                             }
                             showNameEditPopup.value = false
                         })

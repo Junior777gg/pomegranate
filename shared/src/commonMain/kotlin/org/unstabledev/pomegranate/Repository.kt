@@ -73,8 +73,6 @@ object Repository {
     lateinit var messagesDao: MessagesDao
     lateinit var chatDao: ChatDao
     lateinit var personsDao: PersonDao
-    private val _lastChat = MutableStateFlow<ChatDC?>(null)
-    val lastChat: StateFlow<ChatDC?> = _lastChat
     var lastEmail = ""
 
     val availablePersons = mutableMapOf<String, MutableSharedFlow<Observer?>>()
@@ -104,10 +102,6 @@ object Repository {
                 delay(3000.milliseconds)
             }
         }
-    }
-
-    fun setLastChat(chat: ChatDC?) {
-        _lastChat.value = chat
     }
 
     fun createMessage(

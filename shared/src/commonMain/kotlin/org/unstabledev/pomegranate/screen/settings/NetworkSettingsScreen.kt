@@ -29,14 +29,14 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 @Composable
 fun NetworkSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
-    SettingsPage(navigationWays, "Сеть") {
+    SettingsPage(navController, "Сеть") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(settings.hideSendBarWhenNoNetwork, { AppSettings.setHideSendBarWhenNoNetwork(it) })
             Text("Отключать отправку без интернета")
         }
         Spacer(modifier = Modifier.padding(vertical = 5.dp))
         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
-            navigationWays.goTo(Routes.SETTINGS_SELECT_FIREBASE_SCREEN)
+            navController.navigate(Routes.SettingsSelectFirebaseScreen())
         }) {
             Row(
                 Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),

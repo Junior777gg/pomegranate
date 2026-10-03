@@ -144,7 +144,7 @@ fun HomeScreen(navController: NavHostController) {
     ) {
         SearchableChatsPanel(viewModel,
         onChatClick = {
-            navController.navigate(Routes.ChatScreen(it))
+            navController.navigate(Routes.ChatScreen(it.key))
         },
         onChatAddClick = {
             navController.navigate(Routes.ContactsScreen())
@@ -153,7 +153,7 @@ fun HomeScreen(navController: NavHostController) {
             scope.launch { drawerState.open() }
         },
         onOpenProfileClick = {
-            navController.navigate(Routes.ProfileScreen(it))
+            navController.navigate(Routes.ProfileScreen(it.key))
         })
     }
 }

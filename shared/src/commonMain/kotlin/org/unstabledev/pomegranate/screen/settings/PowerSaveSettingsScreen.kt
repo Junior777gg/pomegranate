@@ -45,7 +45,7 @@ import kotlin.math.floor
 @Composable
 fun PowerSaveSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
-    SettingsPage(navigationWays, "Энергосбережение") {
+    SettingsPage(navController, "Энергосбережение") {
         Row {
             AnimatedVisibility(!AppSettings.isInPowerSaveMode()) {
                 Text("Неактивно", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -21,60 +20,34 @@ class HomeScreenController : ViewModel() {
     init {
         viewModelScope.launch(Dispatchers.IO) {
             chatDao.getAll().collect { _chats.value = it }
-            launch {
-                while (true) {
-                    chatDao.getAll().collect { _chats.value = it }
-                    delay(1000)
-                }
-            }
-            launch {
-                Repository.lastChat.collect { last ->
-                    if (last != null) {
-                        val currentChats = _chats.value
-                        if (!currentChats.contains(last)) {
-                            chatDao.upsert(last)
-                        }
-                        chatDao.getAll().collect { _chats.value = it }
-                    }
-                    delay(1000)
-                }
-            }
         }
     }
 
-    fun deleteChat() {
+    fun deleteChat(chat: ChatDC) {
         viewModelScope.launch(Dispatchers.Default) {
-            val chat = Repository.lastChat.value
-            if (chat != null) {
-                messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
-                chatDao.delete(chat)
-            }
+            messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
+            chatDao.delete(chat)
         }
     }
 
-    fun renameChat(name: String?) {
+    fun renameChat(chat: ChatDC, name: String?) {
+        if (name.isNullOrBlank()) return
         viewModelScope.launch(Dispatchers.Default) {
-            if (name.isNullOrBlank()) return@launch
-            val chatDC = Repository.lastChat.value ?: return@launch
-            val newChat = chatDC.copy(chatName = name)
-            if (chatDao.exists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
-            if (chatDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                val newPerson = personDao.getByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
+            val newChat = chat.copy(chatName = name)
+            if (chatDao.exists(newChat.chatName, chat.chatCreator, chat.chatType)) return@launch
+            if (chat.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                val newPerson = personDao.getByEmail(chat.personsEmails[0])?.copy(nickname = name)
                 if (newPerson != null) {
                     personDao.upsert(newPerson)
                 }
             }
             chatDao.upsert(newChat)
-            Repository.setLastChat(newChat)
         }
     }
 
-    fun deleteMessages() {
+    fun deleteMessages(chat: ChatDC) {
         viewModelScope.launch(Dispatchers.Default) {
-            val chat = Repository.lastChat.value
-            if (chat != null) {
-                messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
-            }
+            messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
         }
     }
 }

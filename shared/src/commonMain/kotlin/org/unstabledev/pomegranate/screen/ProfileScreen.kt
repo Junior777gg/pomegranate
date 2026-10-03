@@ -100,8 +100,8 @@ sealed class ProfileState {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavHostController, chat: ChatDC) {
-    val viewModel = viewModel { ProfileScreenController(chat) }
+fun ProfileScreen(navController: NavHostController, chatKey: Long) {
+    val viewModel = viewModel { ProfileScreenController(chatKey) }
     val snackBarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
@@ -151,11 +151,11 @@ fun ProfileScreen(navController: NavHostController, chat: ChatDC) {
                     }
 
                     is ProfileState.Success -> {
-                        ProfileContent(Repository.lastChat.collectAsState().value!!, snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(viewModel.getChat(), snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.NotFound -> {
-                        ProfileContent(Repository.lastChat.collectAsState().value!!, snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(viewModel.getChat(), snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.Error -> {
@@ -210,7 +210,7 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
         }
 
         item {
-            ContentSwitcher(profilePage)
+            ContentSwitcher(chatDC, profilePage)
         }
 
         item {
@@ -253,13 +253,13 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                     }
                 }
                 ProfilePage.MEDIA -> {
-                    MediaList(snackBarHostState, scope, setImagePreview)
+                    MediaList(chatDC, snackBarHostState, scope, setImagePreview)
                 }
                 ProfilePage.AUDIO -> {
-                    AudioList(snackBarHostState, scope)
+                    AudioList(chatDC, snackBarHostState, scope)
                 }
                 ProfilePage.FILES -> {
-                    FilesList(snackBarHostState, scope)
+                    FilesList(chatDC,snackBarHostState, scope)
                 }
             }
         }
@@ -274,8 +274,7 @@ private object ProfilePage {
 }
 
 @Composable
-private fun ContentSwitcher(profilePage: MutableState<Int>) {
-    val chat = Repository.lastChat.collectAsState().value ?: return
+private fun ContentSwitcher(chat: ChatDC, profilePage: MutableState<Int>) {
     val hasMedia = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
         .collectAsStateWithLifecycle(initialValue = false)
     val hasAudio = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.AUDIO)
@@ -306,8 +305,7 @@ private fun ContentSwitcher(profilePage: MutableState<Int>) {
 }
 
 @Composable
-private fun FilesList(snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val chat = Repository.lastChat.collectAsState().value ?: return
+private fun FilesList(chat: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
     val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
@@ -365,8 +363,12 @@ private fun FilesList(snackBarHostState: SnackbarHostState, scope: CoroutineScop
 }
 
 @Composable
-private fun MediaList(snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
-    val chat = Repository.lastChat.collectAsState().value ?: return
+private fun MediaList(
+    chat: ChatDC,
+    snackBarHostState: SnackbarHostState,
+    scope: CoroutineScope,
+    setImagePreview: (MessageDC) -> Unit
+) {
     val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
@@ -444,8 +446,7 @@ private fun MediaGridItem(message: MessageDC, modifier: Modifier = Modifier, set
 }
 
 @Composable
-private fun AudioList(snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val chat = Repository.lastChat.collectAsState().value ?: return
+private fun AudioList(chat: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
     val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.AUDIO)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 

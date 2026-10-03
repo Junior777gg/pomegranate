@@ -50,7 +50,7 @@ import org.unstabledev.pomegranate.platform.kmpReadBytes
 fun StyleSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     val scope=rememberCoroutineScope()
-    SettingsPage(navigationWays, "Внешний вид") {
+    SettingsPage(navController, "Внешний вид") {
         Column {
             Text("Обои", Modifier.padding(bottom = 3.dp))
             LazyRow(

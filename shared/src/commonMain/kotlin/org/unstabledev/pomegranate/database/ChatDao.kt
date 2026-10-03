@@ -21,6 +21,9 @@ interface ChatDao {
     @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
     fun getByName(chatName: String): Flow<ChatDC>
 
+    @Query("SELECT * FROM chat WHERE `key` = :key LIMIT 1")
+    suspend fun getByKey(key: Long): ChatDC
+
     @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
     fun tryGetByName(chatName: String): Flow<ChatDC?>
 

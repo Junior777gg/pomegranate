@@ -24,13 +24,14 @@ import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.screen.Profile
 
 
-class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
+class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : ViewModel() {
     private val pageSizeStep = 40
     private val _pageSize = MutableStateFlow(pageSizeStep)
     private val messagesDao = Repository.messagesDao
     private val chatDao = Repository.chatDao
     private val personDao = Repository.personsDao
     private val isOnline = MutableStateFlow(false)
+    private val chatDC = runBlocking {chatDao.getByKey(chatKey)}
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val messages: StateFlow<List<MessageDC>> = _pageSize
@@ -156,6 +157,7 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             chatDao.delete(chatDC)
             messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
+            onChatDelete()
         }
     }
 
@@ -163,10 +165,6 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
         }
-    }
-
-    fun clearLastChat() {
-        Repository.setLastChat(null)
     }
 
     fun getName(): String {
@@ -187,7 +185,6 @@ class ChatScreenController(val chatDC: ChatDC) : ViewModel() {
                 }
             }
             chatDao.upsert(newChat)
-            Repository.setLastChat(newChat)
         }
     }
 

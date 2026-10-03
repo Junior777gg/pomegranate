@@ -19,12 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.screen.nav.NavigationWays
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
 @Composable
-fun SettingsPage(navWayObj: NavigationWays, header: String, content: @Composable (LazyItemScope.() -> Unit)) {
+fun SettingsPage(navController: NavHostController, header: String, content: @Composable (LazyItemScope.() -> Unit)) {
     Column(applyScreenPadding()) {
         Row(
             modifier = Modifier
@@ -34,7 +34,7 @@ fun SettingsPage(navWayObj: NavigationWays, header: String, content: @Composable
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
-                navWayObj.back()
+                navController.popBackStack()
                 AppSettings.save()
             }) {
                 Icon(

@@ -117,7 +117,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                                 panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
                             },
                             onOpenProfileClick = {
-                                navController.navigate(route = Routes.ProfileScreen(it))
+                                navController.navigate(route = Routes.ProfileScreen(it.key))
                             })
                     }
                     PanelSubScreen.CONTACTS -> {
@@ -125,13 +125,14 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             panelSubScreen = PanelSubScreen.CHATS
+                            selectedChat.value = it
                         })
                     }
                     PanelSubScreen.PROFILE_SETTINGS -> {
                         ProfileSettings(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            navController.navigate(route = Routes.ProfileScreen(selectedChat.value!!))
+                            navController.navigate(route = Routes.ProfileScreen(selectedChat.value!!.key))
                         }, {
                             navController.navigate(route = Routes.SettingsScreen())
                         }, {
@@ -167,8 +168,9 @@ fun DesktopHomeScreen(navController: NavHostController) {
                     key(chat) {
                         ChatScreen(
                             navController,
-                            chat,
-                            canBack = false
+                            chat.key,
+                            canBack = false,
+                            {selectedChat.value = null}
                         )
                     }
                 } else {

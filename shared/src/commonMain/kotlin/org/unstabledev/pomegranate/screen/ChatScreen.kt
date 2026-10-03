@@ -52,7 +52,6 @@ import org.unstabledev.pomegranate.components.ScrollToBottomButton
 import org.unstabledev.pomegranate.components.chat.ChatHeader
 import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.chat.addChatBackground
-import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
@@ -64,11 +63,12 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun ChatScreen(
     navController: NavHostController,
-    chat: ChatDC,
+    chatKey: Long,
     canBack: Boolean = true,
+    onChatDelete: () -> Unit,
 ) {
-    val viewModel = viewModel(key = chat.toString()){
-        ChatScreenController(chat)
+    val viewModel = viewModel(key = chatKey.toString()) {
+        ChatScreenController(chatKey, onChatDelete)
     }
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -110,7 +110,7 @@ fun ChatScreen(
         { msg -> messagePreview.value = msg }
     }
     if (messagePreview.value == null && isMobile) {
-        Box(Modifier.fillMaxSize().padding(top=100.dp)) {
+        Box(Modifier.fillMaxSize().padding(top = 100.dp)) {
             Box(addChatBackground().fillMaxSize())
         }
     }
@@ -137,16 +137,18 @@ fun ChatScreen(
             if (!isMobile) m = addChatBackground(m)
             Box(modifier = m) {
                 Column {
-                    val back = {
+                    val back: (canBack: Boolean) -> Unit = { canBack ->
                         if (messages.value.isEmpty()) scope.launch {
                             viewModel.deleteChat()
                             viewModel.deleteMessages()
                         }
-                        navController.navigate(route = Routes.HomeScreen())
+                        if (canBack) {
+                            navController.navigate(route = Routes.HomeScreen())
+                        }
                     }
                     ChatHeader(
                         viewModel,
-                        if (canBack) back else null,
+                        {back(canBack)},
                         {
                             viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                         },
@@ -154,7 +156,7 @@ fun ChatScreen(
                             viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                         },
                         {
-                            navController.navigate(route = Routes.ProfileScreen(chat))
+                            navController.navigate(route = Routes.ProfileScreen(chatKey))
                         },
                         {
                             scope.launch {
@@ -185,8 +187,10 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(messages.value, key = { message -> message.key }) { message ->
-                            MessageBubble(message, onImagePreviewClick,
-                                scope, snackBarHostState, settings.parseMarkdown)
+                            MessageBubble(
+                                message, onImagePreviewClick,
+                                scope, snackBarHostState, settings.parseMarkdown
+                            )
                         }
                         if (displayNewContactWidget.value) {
                             item {
@@ -218,8 +222,10 @@ fun ChatScreen(
             }
 
             if (areFilesBeingDraggedOver.value) {
-                Column(Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)),
-                    verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)),
+                    verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Отпустите, чтобы отправить файлы")
                 }
             }
@@ -269,7 +275,6 @@ fun ChatScreen(
                                 viewModel.deleteMessages()
                                 viewModel.deleteChat()
                             }
-                            viewModel.clearLastChat()
                             if (isMobile) navController.navigate(route = Routes.HomeScreen())
                             showDeleteChatPopup = false
                         })

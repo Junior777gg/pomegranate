@@ -41,7 +41,7 @@ import org.unstabledev.pomegranate.screen.control.ChatScreenController
 @Composable
 fun ChatHeader(
     viewModel: ChatScreenController,
-    onBackClick: (() -> Unit)?,
+    onBackClick: (() -> Unit),
     onAudioCallClick: (() -> Unit),
     onVideoCallClick: (() -> Unit),
     onProfileClick: () -> Unit,
@@ -62,15 +62,14 @@ fun ChatHeader(
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (onBackClick != null) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
+        IconButton(onClick = onBackClick) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Назад",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
         }
+
 
         Row(
             Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),

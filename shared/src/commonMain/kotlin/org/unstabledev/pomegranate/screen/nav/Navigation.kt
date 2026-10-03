@@ -108,11 +108,11 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
         ) {
             val route = it.toRoute<Routes.ChatScreen>()
-            ChatScreen(navController, route.chat)
+            ChatScreen(navController, route.chatId, onChatDelete = {})
         }
         composable<Routes.ProfileScreen>{
             val route = it.toRoute<Routes.ProfileScreen>()
-            ProfileScreen(navController, route.chat)
+            ProfileScreen(navController, route.chatId)
         }
         composable<Routes.CallScreen>{
             BetterCallSoulScreen(navController)

@@ -50,7 +50,7 @@ import kotlin.math.min
 fun StorageSettingsScreen(navController: NavHostController) {
     val scope=rememberCoroutineScope()
     val chatDao = Repository.chatDao
-    SettingsPage(navigationWays, "Кэш и хранилище") {
+    SettingsPage(navController, "Кэш и хранилище") {
         val deviceTotalVolume = produceState(1L) {
             value = KMPFile(pomegranatePath).getUsableSpace()
         }
