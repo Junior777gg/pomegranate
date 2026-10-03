@@ -183,7 +183,7 @@ fun StyleSettingsScreen(navController: NavHostController) {
             Checkbox(settings.chatTripleColumn, { AppSettings.setChatTripleColumn(it) })
             Text("Три линии предпросмотра чата")
         }
-        Text("Сортировка сообщений", fontWeight = FontWeight.SemiBold)
+        Text("Сортировка чатов", fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(5.dp))
         Column(Modifier.background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(10.dp)).padding(all = 3.dp)) {
             Box(Modifier.fillMaxWidth().background(
