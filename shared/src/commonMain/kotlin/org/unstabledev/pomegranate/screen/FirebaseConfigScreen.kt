@@ -44,9 +44,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.Firebase
-import org.unstabledev.pomegranate.FirebaseAddress
+import org.unstabledev.pomegranate.common.FirebaseAddress
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
 @Composable

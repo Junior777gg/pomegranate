@@ -28,8 +28,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,14 +57,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.painterResource
-import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.BackgroundStorage
-import org.unstabledev.pomegranate.ChatBackgroundIds
+import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.BackgroundStorage
+import org.unstabledev.pomegranate.common.ChatBackgroundIds
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
-import org.unstabledev.pomegranate.altClickable
+import org.unstabledev.pomegranate.common.SortingType
+import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
+import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.components.ProfileImage
@@ -90,7 +93,8 @@ fun SearchableChatsPanel(
     onChatAddClick: () -> Unit,
     onSidemenuClick: () -> Unit,
     onOpenProfileClick: (chat: ChatDC) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sorting: Int = SortingType.USE_SETTINGS_DEFAULT
 ) {
     val chats by viewModel.chats.collectAsState()
     val sufColor = MaterialTheme.colorScheme.surface
@@ -146,7 +150,7 @@ fun SearchableChatsPanel(
         }
         NetworkWarningHeader()
         if (filteredChats.isNotEmpty()) {
-            ChatsList(viewModel, filteredChats, onChatClick, onOpenProfileClick)
+            ChatsList(viewModel, filteredChats, onChatClick, onOpenProfileClick, sorting)
         } else {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -260,18 +264,61 @@ fun ChatsList(
     chats: List<ChatDC>,
     onChatClick: (chat: ChatDC) -> Unit,
     onOpenProfileClick: (chat: ChatDC) -> Unit,
+    sorting: Int = SortingType.USE_SETTINGS_DEFAULT
 ) {
     val scope = rememberCoroutineScope()
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
     val showNameEditPopup = remember { mutableStateOf(false) }
     val settings by AppSettings.state.collectAsState()
 
+    var realSorting=sorting
+    if (realSorting==SortingType.USE_SETTINGS_DEFAULT) realSorting=settings.homeScreenSortingType
+
+    val chatTimeMap = remember(chats.size) { mutableStateMapOf<Long, Long>() }
+    if (realSorting==SortingType.LAST_UPDATED_ASC || realSorting==SortingType.LAST_UPDATED_DESC) {
+        chats.forEach { chat ->
+            LaunchedEffect(chat.key) {
+                Repository.messagesDao.getLastByNameFlow(chat.chatName)
+                    .collect { message -> chatTimeMap[chat.key] = message?.time ?: 0L }
+            }
+        }
+    }
+
+    val displayNameMap = remember(chats.size) { mutableStateMapOf<Long, String>() }
+    if (realSorting==SortingType.ALPHABETICALLY_ASC || realSorting==SortingType.ALPHABETICALLY_DESC) {
+        LaunchedEffect(chats) {
+            chats.forEach { chat ->
+                if (chat.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                    val personDC = Repository.personsDao.getByEmail(chat.personsEmails[0])
+                    val profile = personDC?.profile?.deserialize()
+                    val validProfile = profile?.profileUrl?.isNotBlank() ?: false
+
+                    displayNameMap[chat.key] = personDC?.nickname
+                        ?: (if (validProfile) profile.displayName else personDC?.personEmail ?: "")
+                }
+            }
+        }
+    }
+
+    val sortedChats = when (realSorting) {
+        SortingType.LAST_UPDATED_DESC -> chats.sortedByDescending { chat -> chatTimeMap[chat.key] ?: 0L }
+        SortingType.LAST_UPDATED_ASC -> chats.sortedBy { chat -> chatTimeMap[chat.key] ?: 0L }
+        SortingType.ALPHABETICALLY_DESC -> chats.sortedByDescending { chat ->
+            displayNameMap[chat.key] ?: ""
+        }
+        SortingType.ALPHABETICALLY_ASC -> chats.sortedBy { chat ->
+            displayNameMap[chat.key] ?: ""
+        }
+        else -> chats
+    }
+
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
-        items(items = chats, key = { it }) { chat ->
+        items(items = sortedChats, key = { it }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
             val message by getLastMessageTextFlow(chat)
                 .collectAsStateWithLifecycle(initialValue = "")
             val hasLast = message.isNotEmpty()
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -381,6 +428,7 @@ fun ChatsList(
             }
         }
     }
+
     if (showNameEditPopup.value && selectedChat.value != null) {
         when (selectedChat.value!!.chatType) {
             ChatDC.Companion.ChatTypes.CHAT -> {
@@ -399,7 +447,7 @@ fun ChatsList(
                     confirmButton = {
                         Text("Подтвердить", Modifier.clickable {
                             scope.launch {
-                                viewModel.renameChat(selectedChat.value!!,newNameState.text.toString())
+                                viewModel.renameChat(selectedChat.value!!, newNameState.text.toString())
                             }
                             showNameEditPopup.value = false
                         })

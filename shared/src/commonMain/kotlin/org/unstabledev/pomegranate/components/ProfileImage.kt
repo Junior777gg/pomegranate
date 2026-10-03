@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.deserialize
 

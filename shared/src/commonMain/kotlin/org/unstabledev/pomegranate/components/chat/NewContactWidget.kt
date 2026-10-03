@@ -24,7 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 

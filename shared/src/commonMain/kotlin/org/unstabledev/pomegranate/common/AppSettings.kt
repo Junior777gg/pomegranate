@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate
+package org.unstabledev.pomegranate.common
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.Secrets
 import org.unstabledev.pomegranate.platform.Battery
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.kmpReadText
@@ -113,6 +115,7 @@ data class AppSettingsState(
     val amoledUnlocked: Boolean = false,
     val useAmoledOnDarkSystem: Boolean = false,
     val desktopHomeSplit: Float = 1.0f,
+    val homeScreenSortingType: Int = SortingType.LAST_UPDATED_DESC,
     val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(
@@ -233,6 +236,10 @@ object AppSettings {
 
     fun setMessageColor(v: Color) {
         _state.value = _state.value.copy(messageColor = v.toArgb())
+    }
+
+    fun setHomeScreenSortingType(v: Int) {
+        _state.value = _state.value.copy(homeScreenSortingType = v)
     }
 
     fun setKnownSecurityConfig(v: SecurityConfig) {

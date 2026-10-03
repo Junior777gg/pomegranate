@@ -10,10 +10,10 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessageDC

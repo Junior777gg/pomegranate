@@ -63,8 +63,8 @@ import org.unstabledev.pomegranate.platform.ClipImage
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.Util.Companion.buildTimeMarkMillis
+import org.unstabledev.pomegranate.common.Util
+import org.unstabledev.pomegranate.common.Util.Companion.buildTimeMarkMillis
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.handlePastedClipContent

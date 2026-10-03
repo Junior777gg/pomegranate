@@ -12,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
+import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import org.unstabledev.pomegranate.database.getPersonsDatabase

@@ -14,7 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.unstabledev.pomegranate.HSVColor
+import org.unstabledev.pomegranate.common.HSVColor
 
 @Composable
 fun HSVColorPicker(

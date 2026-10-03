@@ -48,7 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.platform.PlatformKeyEvents
@@ -56,7 +56,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
-import org.unstabledev.pomegranate.Util
+import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.platform.kmpReadText
@@ -82,17 +82,21 @@ fun DesktopHomeScreen(navController: NavHostController) {
     val minLeftWidth = 0.5f
     val maxLeftWidth = 2.0f
 
+    suspend fun deleteLastChatIfEmpty() {
+        val chat=selectedChat.value
+        if (chat!=null) {
+            val last=Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
+            if (last==null) Repository.chatDao.delete(chat)
+        }
+    }
+
     PlatformKeyEvents.Instance?.onBackCallback = {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
             scope.launch {
-                val chat = selectedChat.value
-                if (chat!=null) {
-                    val last=Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
-                    if (last==null) Repository.chatDao.delete(chat)
-                }
-                selectedChat.value =null
+                deleteLastChatIfEmpty()
+                selectedChat.value=null
             }
         }
     }
@@ -125,11 +129,12 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             panelSubScreen = PanelSubScreen.CHATS
+                            //scope.launch { deleteLastChatIfEmpty() }
                             selectedChat.value = it
                         })
                     }
                     PanelSubScreen.PROFILE_SETTINGS -> {
-                        ProfileSettings(userEmail, userName, {
+                        ProfileSettingsPanel(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             navController.navigate(route = Routes.ProfileScreen(selectedChat.value!!.key))
@@ -158,9 +163,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             splitPosition = newPosition.coerceIn(minLeftWidth, maxLeftWidth)
                         }
                     }
-                    .background(
-                        MaterialTheme.colorScheme.surface
-                    )
+                    .background(MaterialTheme.colorScheme.surface)
             )
             Column(Modifier.weight(1.5f)) {
                 val chat = selectedChat.value
@@ -184,8 +187,8 @@ fun DesktopHomeScreen(navController: NavHostController) {
 }
 
 @Composable
-private fun ProfileSettings(userEmail: String, userName: String,
-    onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
+private fun ProfileSettingsPanel(userEmail: String, userName: String,
+                                 onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
 ) {
     Row(
         modifier = Modifier

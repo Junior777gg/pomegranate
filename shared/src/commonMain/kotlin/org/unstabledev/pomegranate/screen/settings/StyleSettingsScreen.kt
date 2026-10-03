@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,17 +30,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.AppSettings
-import org.unstabledev.pomegranate.BackgroundStorage
-import org.unstabledev.pomegranate.ChatBackgroundIds
+import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.BackgroundStorage
+import org.unstabledev.pomegranate.common.ChatBackgroundIds
+import org.unstabledev.pomegranate.common.SortingType
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.components.HSVColorPicker
-import org.unstabledev.pomegranate.components.SettingsPage
+import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
@@ -50,9 +53,9 @@ import org.unstabledev.pomegranate.platform.kmpReadBytes
 fun StyleSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     val scope=rememberCoroutineScope()
-    SettingsPage(navController, "Внешний вид") {
+    ScrollablePage(navController, "Внешний вид") {
         Column {
-            Text("Обои", Modifier.padding(bottom = 3.dp))
+            Text("Обои", Modifier.padding(bottom = 3.dp), fontWeight = FontWeight.SemiBold)
             LazyRow(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -180,7 +183,37 @@ fun StyleSettingsScreen(navController: NavHostController) {
             Checkbox(settings.chatTripleColumn, { AppSettings.setChatTripleColumn(it) })
             Text("Три линии предпросмотра чата")
         }
-        Text("Цвет сообщений")
+        Text("Сортировка сообщений", fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(5.dp))
+        Column(Modifier.background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(10.dp)).padding(all = 3.dp)) {
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.LAST_UPDATED_DESC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_UPDATED_DESC) }) { Text("По последнему изменению") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.LAST_UPDATED_ASC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_UPDATED_ASC) }) { Text("По отсутствию изменений") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.LAST_CREATED) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_CREATED) }) { Text("По дате создания") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.ALPHABETICALLY_ASC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.ALPHABETICALLY_ASC) }) { Text("По алфавиту (А-Я)") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.ALPHABETICALLY_DESC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.ALPHABETICALLY_DESC) }) { Text("По алфавиту (Я-А)") }
+        }
+        Spacer(Modifier.height(5.dp))
+        Text("Цвет сообщений", fontWeight = FontWeight.SemiBold)
         HSVColorPicker(Color(settings.messageColor), { AppSettings.setMessageColor(it) })
     }
 }

@@ -40,9 +40,9 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository.pomegranatePath
-import org.unstabledev.pomegranate.Util
-import org.unstabledev.pomegranate.components.SettingsPage
-import org.unstabledev.pomegranate.roundTo
+import org.unstabledev.pomegranate.common.Util
+import org.unstabledev.pomegranate.components.ScrollablePage
+import org.unstabledev.pomegranate.common.roundTo
 import kotlin.math.max
 import kotlin.math.min
 
@@ -50,7 +50,7 @@ import kotlin.math.min
 fun StorageSettingsScreen(navController: NavHostController) {
     val scope=rememberCoroutineScope()
     val chatDao = Repository.chatDao
-    SettingsPage(navController, "Кэш и хранилище") {
+    ScrollablePage(navController, "Кэш и хранилище") {
         val deviceTotalVolume = produceState(1L) {
             value = KMPFile(pomegranatePath).getUsableSpace()
         }
@@ -97,7 +97,6 @@ fun StorageSettingsScreen(navController: NavHostController) {
                     style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
                 )
                 lastArc += imagesArc
-                println(lastArc)
 
                 val filesArc = getArcPercentage(filesVolume.value, fullVolume)
                 drawArc(Color(0.8f, 0.3f, 0.8f),
@@ -105,7 +104,6 @@ fun StorageSettingsScreen(navController: NavHostController) {
                     style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
                 )
                 lastArc += filesArc
-                println(lastArc)
 
                 val otherArc = getArcPercentage(otherVolume.value, fullVolume)
                 drawArc(Color(0.9f, 0.8f, 0.2f),

@@ -19,13 +19,12 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
-import org.unstabledev.pomegranate.Util.Companion.stripMarkdown
+import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessageDC.Companion.truncatedMessageDCType
 import org.unstabledev.pomegranate.database.MessagesDao
-import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.kmpCopyTo
 import kotlin.random.Random
 import kotlin.time.Clock.System.now

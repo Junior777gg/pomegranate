@@ -40,7 +40,7 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -137,18 +137,17 @@ fun ChatScreen(
             if (!isMobile) m = addChatBackground(m)
             Box(modifier = m) {
                 Column {
-                    val back: (canBack: Boolean) -> Unit = { canBack ->
+                    var back: (()->Unit)? = null
+                    if (canBack) back={
                         if (messages.value.isEmpty()) scope.launch {
                             viewModel.deleteChat()
                             viewModel.deleteMessages()
                         }
-                        if (canBack) {
-                            navController.navigate(route = Routes.HomeScreen())
-                        }
+                        navController.navigate(route = Routes.HomeScreen())
                     }
                     ChatHeader(
                         viewModel,
-                        {back(canBack)},
+                        back,
                         {
                             viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                         },

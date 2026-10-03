@@ -43,10 +43,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.screen.nav.Routes
-import org.unstabledev.pomegranate.ThemeMode
+import org.unstabledev.pomegranate.common.ThemeMode
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.sendHaptic

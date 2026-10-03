@@ -1,8 +1,10 @@
 package org.unstabledev.pomegranate.screen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,14 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +31,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -38,18 +43,17 @@ import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.api.Gravatar
+import org.unstabledev.pomegranate.components.BasicPage
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
 sealed class ContactsScreenState {
-    class NewChat : ContactsScreenState()
-    class NewGroup : ContactsScreenState()
-    class Base : ContactsScreenState()
+    class CreateGroup : ContactsScreenState()
+    class AddContact : ContactsScreenState()
 }
 
 @Composable
@@ -65,126 +69,123 @@ fun ContactsScreen(navController: NavHostController) {
 @Composable
 fun ContactsPanel(
     onBack: () -> Unit,
-    onAdd: (chat: ChatDC) -> Unit,
-    modifier: Modifier = Modifier
+    onAdd: (chat: ChatDC) -> Unit
 ) {
-    val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.Base()) }
+    val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.AddContact()) }
     val scope = rememberCoroutineScope()
     val error = remember { mutableStateOf("") }
-    IconButton(
-        onClick = {
-            when (state.value) {
-                is ContactsScreenState.Base -> onBack()
-                else -> state.value = ContactsScreenState.Base()
-            }
-        }) {
-        Icon(
-            imageVector = Icons.Default.ArrowBack,
-            contentDescription = "Назад",
-            tint = MaterialTheme.colorScheme.onBackground
-        )
-    }
-    when (state.value) {
-        is ContactsScreenState.NewChat -> {
-            Column(
-                modifier = modifier.fillMaxSize().padding(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+    val pageHeader = remember { mutableStateOf("Создать чат") }
+    BasicPage(header = pageHeader.value, onBack = {
+        error.value = ""
+        when (state.value) {
+            is ContactsScreenState.AddContact -> onBack()
+            else -> state.value = ContactsScreenState.AddContact()
+        }
+    }) {
+        when (state.value) {
+            is ContactsScreenState.CreateGroup -> {
+                pageHeader.value = "Новая группа"
                 val textState = rememberTextFieldState()
-                LabeledTextField(textState, "", "Email")
                 if (!error.value.isBlank()) {
                     Text(error.value, color = MaterialTheme.colorScheme.error)
                 }
-                Button(onClick = {
-                    val email = textState.text.toString().trimIndent()
-                    if (email.isEmpty()) {
-                        error.value = "Email обязателен!"
-                        return@Button
-                    }
-                    /*if(!Util.isValidEmail(email)) {
-                        isErrorVisible = true
-                        errorText = "Некорректный Email"
-                        return@Button
-                    }*/
-                    scope.launch(Dispatchers.IO) {
-                        val profile = try {
-                            Gravatar.getProfile(email.sha256())
-                        } catch (_: Exception) {
-                            null
+                Column {
+                    LabeledTextField(textState, "", "Название", singleLineIn = true)
+                    Button(enabled = !textState.text.isBlank(), modifier = Modifier.fillMaxWidth(), onClick = {
+                        val email = textState.text.toString().trimIndent()
+                        if (email.isEmpty()) {
+                            error.value = "Название обязательно!"
+                            return@Button
                         }
-                        val chat = ChatDC(
-                            chatName = email,
-                            personsEmails = listOf(email),
-                            chatType = ChatDC.Companion.ChatTypes.CHAT,
-                            chatCreator = email
-                        )
-                        val person = PersonDC(
-                            personEmail = email,
-                            profile = profile?.serialize()
-                        )
-                        Repository.personsDao.upsert(person)
-                        Repository.chatDao.upsert(chat)
-                        withContext(Dispatchers.Main) {
-                            onAdd(chat)
-                        }
+                    }) {
+                        Text("Создать группу")
                     }
-                }) {
-                    Text("Продолжить")
                 }
             }
-        }
 
-        is ContactsScreenState.NewGroup -> {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                val textState = rememberTextFieldState()
-                LabeledTextField(textState, "", "Название")
-                if (!error.value.isBlank()) {
-                    Text(error.value, color = MaterialTheme.colorScheme.error)
-                }
-                Button(onClick = {
-                    val email = textState.text.toString().trimIndent()
-                    if (email.isEmpty()) {
-                        error.value = "Название обязательно!"
-                        return@Button
+            is ContactsScreenState.AddContact -> {
+                Row(modifier = Modifier.clickable { state.value = ContactsScreenState.CreateGroup() }) {
+                    Box(
+                        Modifier.background(Color(120, 219, 226), shape = RoundedCornerShape(3.dp))
+                            .padding(all = 3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Group,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
                     }
-                    /*if(!Util.isValidEmail(email)) {
-                        isErrorVisible = true
-                        errorText = "Некорректный Email"
-                        return@Button
-                    }*/
-                }) {
-                    Text("Продолжить")
-                }
-            }
-        }
-
-        is ContactsScreenState.Base -> {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(modifier = Modifier.clickable { state.value = ContactsScreenState.NewChat() }) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.background(Color(127, 255, 212), shape = RoundedCornerShape(3.dp))
-                    )
                     Spacer(Modifier.width(8.dp))
-                    Text("Написать")
+                    Text("Создать групповой чат")
                 }
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.clickable { state.value = ContactsScreenState.NewGroup() }) {
-                    Icon(
-                        imageVector = Icons.Default.Group,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.background(Color(120, 219, 226), shape = RoundedCornerShape(3.dp))
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("Создать чат")
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom, horizontalAlignment = Alignment.CenterHorizontally) {
+                    val textState = rememberTextFieldState()
+                    if (!error.value.isBlank()) {
+                        Text(error.value, color = MaterialTheme.colorScheme.error)
+                    }
+                    Row(
+                        Modifier.height(35.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        BasicTextField(
+                            modifier = Modifier
+                                .fillMaxWidth().height(34.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(12.dp)
+                                ).padding(horizontal = 16.dp, vertical = 8.dp).weight(1.0f),
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            state = textState,
+                            textStyle = TextStyle(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 14.sp
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface)
+                        )
+                        AnimatedVisibility(!textState.text.isBlank()) {
+                            Button(onClick = {
+                                val email = textState.text.toString().trimIndent()
+                                if (email.isEmpty()) {
+                                    error.value = "Email обязателен!"
+                                    return@Button
+                                }
+                                /*if(!Util.isValidEmail(email)) {
+                                    isErrorVisible = true
+                                    errorText = "Некорректный Email"
+                                    return@Button
+                                }*/
+                                scope.launch(Dispatchers.IO) {
+                                    val profile = try {
+                                        Gravatar.getProfile(email.sha256())
+                                    } catch (_: Exception) {
+                                        null
+                                    }
+                                    val chat = ChatDC(
+                                        chatName = email,
+                                        personsEmails = listOf(email),
+                                        chatType = ChatDC.Companion.ChatTypes.CHAT,
+                                        chatCreator = email
+                                    )
+                                    val person = PersonDC(
+                                        personEmail = email,
+                                        profile = profile?.serialize()
+                                    )
+                                    Repository.personsDao.upsert(person)
+                                    val savedChat = Repository.chatDao.upsertAndGet(chat)
+                                    withContext(Dispatchers.Main) {
+                                        onAdd(savedChat)
+                                    }
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Send,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

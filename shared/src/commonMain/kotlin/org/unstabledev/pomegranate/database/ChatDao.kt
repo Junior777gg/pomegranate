@@ -3,7 +3,9 @@ package org.unstabledev.pomegranate.database
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -12,8 +14,17 @@ interface ChatDao {
     @Insert
     suspend fun insert(chat: ChatDC)
 
-    @Upsert
-    suspend fun upsert(chat: ChatDC)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(chat: ChatDC): Long
+
+    @Transaction
+    suspend fun upsertAndGet(chat: ChatDC): ChatDC {
+        val id = upsertInternal(chat)
+        return getByKey(id)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertInternal(chat: ChatDC): Long
 
     @Query("SELECT * FROM chat")
     fun getAll(): Flow<List<ChatDC>>

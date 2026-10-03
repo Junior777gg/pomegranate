@@ -54,7 +54,7 @@ fun LoginScreen(navController: NavHostController) {
             val state = rememberTextFieldState()
             LabeledTextField(state, "", "Email")
             if(isErrorVisible) Text(errorText, color = ColorTheme.Warning)
-            Button(onClick = {
+            Button(enabled = !state.text.isEmpty(), onClick = {
                 val email = state.text.toString().trimIndent().lowercase()
                 if(email.isEmpty()) {
                     isErrorVisible = true

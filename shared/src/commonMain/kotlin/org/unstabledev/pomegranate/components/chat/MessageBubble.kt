@@ -68,14 +68,14 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.Util.Companion.toHHMMTime
-import org.unstabledev.pomegranate.altClickable
+import org.unstabledev.pomegranate.common.Util.Companion.toHHMMTime
+import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.api.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.OpenGraphParser
 import org.unstabledev.pomegranate.components.AnimatedGifImage

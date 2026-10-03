@@ -14,6 +14,8 @@ import androidx.compose.ui.window.rememberTrayState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
 import org.unstabledev.pomegranate.database.getPersonsDatabase

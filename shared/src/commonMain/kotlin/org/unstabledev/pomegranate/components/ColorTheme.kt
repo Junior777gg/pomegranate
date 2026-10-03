@@ -2,13 +2,11 @@ package org.unstabledev.pomegranate.components
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import org.unstabledev.pomegranate.ThemeMode
+import org.unstabledev.pomegranate.common.ThemeMode
 
 class ColorTheme {
     companion object {

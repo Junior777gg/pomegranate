@@ -1,6 +1,8 @@
 package org.unstabledev.pomegranate.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,11 +22,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.unstabledev.pomegranate.AppSettings
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
 @Composable
-fun SettingsPage(navController: NavHostController, header: String, content: @Composable (LazyItemScope.() -> Unit)) {
+fun ScrollablePage(navController: NavHostController, header: String, content: @Composable (LazyItemScope.() -> Unit)) {
+    BasicPage(Modifier, Arrangement.Top, header, {
+        navController.popBackStack()
+        AppSettings.save()
+    }) {
+        LazyColumn {
+            item {
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
+                    content()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BasicPage(modifier: Modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+              header: String, navController: NavHostController, content: @Composable (ColumnScope.() -> Unit)) {
+    BasicPage(modifier, Arrangement.Center, header, {navController.popBackStack()}, content)
+}
+
+@Composable
+fun BasicPage(modifier: Modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), vertical: Arrangement.Vertical = Arrangement.Center,
+              header: String, onBack: ()->Unit, content: @Composable (ColumnScope.() -> Unit)) {
     Column(applyScreenPadding()) {
         Row(
             modifier = Modifier
@@ -33,10 +58,7 @@ fun SettingsPage(navController: NavHostController, header: String, content: @Com
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = {
-                navController.popBackStack()
-                AppSettings.save()
-            }) {
+            IconButton(onClick = { onBack() }) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Назад",
@@ -51,12 +73,10 @@ fun SettingsPage(navController: NavHostController, header: String, content: @Com
                 fontWeight = FontWeight.SemiBold
             )
         }
-        LazyColumn {
-            item {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
-                    content()
-                }
-            }
+        Column(modifier = modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = vertical) {
+            content()
         }
     }
 }
