@@ -52,6 +52,7 @@ import org.unstabledev.pomegranate.components.ScrollToBottomButton
 import org.unstabledev.pomegranate.components.chat.ChatHeader
 import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.chat.addChatBackground
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
@@ -137,9 +138,11 @@ fun ChatScreen(
             if (!isMobile) m = addChatBackground(m)
             Box(modifier = m) {
                 Column {
-                    var back: (()->Unit)? = null
-                    if (canBack) back={
-                        if (messages.value.isEmpty()) scope.launch {
+                    var back: (() -> Unit)? = null
+                    if (canBack) back = {
+                        if (messages.value.isEmpty() &&
+                            viewModel.getChat().chatType != ChatDC.Companion.ChatTypes.GROUP) scope.launch {
+
                             viewModel.deleteChat()
                             viewModel.deleteMessages()
                         }

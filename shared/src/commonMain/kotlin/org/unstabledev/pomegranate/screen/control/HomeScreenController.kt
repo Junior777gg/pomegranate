@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
@@ -48,6 +49,18 @@ class HomeScreenController : ViewModel() {
     fun deleteMessages(chat: ChatDC) {
         viewModelScope.launch(Dispatchers.Default) {
             messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
+        }
+    }
+
+    fun deleteLastChatIfEmpty(chat: ChatDC?) {
+        viewModelScope.launch(Dispatchers.Default) {
+            if (chat != null) {
+                println(chat.chatType)
+                if (chat.chatType != ChatDC.Companion.ChatTypes.GROUP) {
+                    val last = Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
+                    if (last == null) Repository.chatDao.delete(chat)
+                }
+            }
         }
     }
 }

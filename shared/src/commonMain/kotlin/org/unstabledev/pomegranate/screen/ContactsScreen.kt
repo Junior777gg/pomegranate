@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,21 +34,14 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.components.LabeledTextField
-import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.api.Gravatar
 import org.unstabledev.pomegranate.components.BasicPage
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.database.ChatDC
-import org.unstabledev.pomegranate.database.PersonDC
-import org.unstabledev.pomegranate.database.serialize
-import org.unstabledev.pomegranate.database.sha256
+import org.unstabledev.pomegranate.screen.control.ContactScreenController
 
 sealed class ContactsScreenState {
     class CreateGroup : ContactsScreenState()
@@ -71,8 +63,10 @@ fun ContactsPanel(
     onBack: () -> Unit,
     onAdd: (chat: ChatDC) -> Unit
 ) {
+    val viewModel = viewModel {
+        ContactScreenController()
+    }
     val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.AddContact()) }
-    val scope = rememberCoroutineScope()
     val error = remember { mutableStateOf("") }
     val pageHeader = remember { mutableStateOf("Создать чат") }
     BasicPage(header = pageHeader.value, onBack = {
@@ -92,11 +86,13 @@ fun ContactsPanel(
                 Column {
                     LabeledTextField(textState, "", "Название", singleLineIn = true)
                     Button(enabled = !textState.text.isBlank(), modifier = Modifier.fillMaxWidth(), onClick = {
-                        val email = textState.text.toString().trimIndent()
-                        if (email.isEmpty()) {
+                        val name = textState.text.toString().trimIndent()
+                        if (name.isEmpty()) {
                             error.value = "Название обязательно!"
                             return@Button
                         }
+                        val chat = viewModel.createGroups(name)
+                        onAdd(chat)
                     }) {
                         Text("Создать группу")
                     }
@@ -118,7 +114,11 @@ fun ContactsPanel(
                     Spacer(Modifier.width(8.dp))
                     Text("Создать групповой чат")
                 }
-                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom, horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Bottom,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     val textState = rememberTextFieldState()
                     if (!error.value.isBlank()) {
                         Text(error.value, color = MaterialTheme.colorScheme.error)
@@ -155,28 +155,8 @@ fun ContactsPanel(
                                     errorText = "Некорректный Email"
                                     return@Button
                                 }*/
-                                scope.launch(Dispatchers.IO) {
-                                    val profile = try {
-                                        Gravatar.getProfile(email.sha256())
-                                    } catch (_: Exception) {
-                                        null
-                                    }
-                                    val chat = ChatDC(
-                                        chatName = email,
-                                        personsEmails = listOf(email),
-                                        chatType = ChatDC.Companion.ChatTypes.CHAT,
-                                        chatCreator = email
-                                    )
-                                    val person = PersonDC(
-                                        personEmail = email,
-                                        profile = profile?.serialize()
-                                    )
-                                    Repository.personsDao.upsert(person)
-                                    val savedChat = Repository.chatDao.upsertAndGet(chat)
-                                    withContext(Dispatchers.Main) {
-                                        onAdd(savedChat)
-                                    }
-                                }
+                                val chat = viewModel.createChat(email)
+                                onAdd(chat)
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.Send,

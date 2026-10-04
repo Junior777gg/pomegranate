@@ -50,7 +50,7 @@ fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
         }
 
         ChatDC.Companion.ChatTypes.GROUP ->{
-
+            GeneratedProfileImage(chat.chatName, size, fontSize, isOnline)
         }
     }
 }

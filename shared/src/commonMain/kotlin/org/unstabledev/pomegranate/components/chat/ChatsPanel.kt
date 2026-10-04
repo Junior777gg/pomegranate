@@ -271,11 +271,11 @@ fun ChatsList(
     val showNameEditPopup = remember { mutableStateOf(false) }
     val settings by AppSettings.state.collectAsState()
 
-    var realSorting=sorting
-    if (realSorting==SortingType.USE_SETTINGS_DEFAULT) realSorting=settings.homeScreenSortingType
+    var realSorting = sorting
+    if (realSorting == SortingType.USE_SETTINGS_DEFAULT) realSorting = settings.homeScreenSortingType
 
     val chatTimeMap = remember(chats.size) { mutableStateMapOf<Long, Long>() }
-    if (realSorting==SortingType.LAST_UPDATED_ASC || realSorting==SortingType.LAST_UPDATED_DESC) {
+    if (realSorting == SortingType.LAST_UPDATED_ASC || realSorting == SortingType.LAST_UPDATED_DESC) {
         chats.forEach { chat ->
             LaunchedEffect(chat.key) {
                 Repository.messagesDao.getLastByNameFlow(chat.chatName)
@@ -285,7 +285,7 @@ fun ChatsList(
     }
 
     val displayNameMap = remember(chats.size) { mutableStateMapOf<Long, String>() }
-    if (realSorting==SortingType.ALPHABETICALLY_ASC || realSorting==SortingType.ALPHABETICALLY_DESC) {
+    if (realSorting == SortingType.ALPHABETICALLY_ASC || realSorting == SortingType.ALPHABETICALLY_DESC) {
         LaunchedEffect(chats) {
             chats.forEach { chat ->
                 if (chat.chatType == ChatDC.Companion.ChatTypes.CHAT) {
@@ -306,9 +306,11 @@ fun ChatsList(
         SortingType.ALPHABETICALLY_DESC -> chats.sortedByDescending { chat ->
             displayNameMap[chat.key] ?: ""
         }
+
         SortingType.ALPHABETICALLY_ASC -> chats.sortedBy { chat ->
             displayNameMap[chat.key] ?: ""
         }
+
         else -> chats
     }
 
@@ -330,100 +332,97 @@ fun ChatsList(
                         sendHaptic(HAPTIC_EFFECT_CLICK)
                     })
             ) {
-                when (chat.chatType) {
-                    ChatDC.Companion.ChatTypes.CHAT -> {
-                        val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
-                        val profile = personDC?.profile?.deserialize()
-                        val validProfile = profile?.profileUrl?.isNotBlank() ?: false
-                        Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
-                            Column(
-                                modifier = Modifier.width(64.dp).fillMaxHeight(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                ProfileImage(chat)
-                            }
-                            Column(
-                                modifier = Modifier.fillMaxSize().padding(5.dp),
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                val displayName =
-                                    personDC?.nickname
-                                        ?: (if (validProfile) profile.displayName else personDC?.personEmail ?:"")
-                                Text(
-                                    displayName,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                if (hasLast) {
-                                    Text(
-                                        text = message,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 12.sp,
-                                        maxLines = if (settings.chatTripleColumn) 2 else 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded.value,
-                            onDismissRequest = { menuExpanded.value = false },
-                            modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = {
-                                    onOpenProfileClick(chat)
-                                    menuExpanded.value = false
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.EditNote,
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded.value = false
-                                    showNameEditPopup.value = true
-                                    selectedChat.value = chat
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Удалить", color = MaterialTheme.colorScheme.error)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = {
-                                    scope.launch {
-                                        viewModel.deleteChat(chat)
-                                        viewModel.deleteMessages(chat)
-                                    }
-                                    menuExpanded.value = false
-                                }
+                val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
+                val profile = personDC?.profile?.deserialize()
+                val name = if (chat.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                    personDC?.nickname ?: profile?.displayName ?: chat.personsEmails[0]
+                }else if(chat.chatType == ChatDC.Companion.ChatTypes.GROUP) {
+                    chat.chatName
+                }else ""
+                Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+                    Column(
+                        modifier = Modifier.width(64.dp).fillMaxHeight(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        ProfileImage(chat)
+                    }
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(5.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            name,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        if (hasLast) {
+                            Text(
+                                text = message,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 12.sp,
+                                maxLines = if (settings.chatTripleColumn) 2 else 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+                }
+                DropdownMenu(
+                    expanded = menuExpanded.value,
+                    onDismissRequest = { menuExpanded.value = false },
+                    modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("Профиль", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            onOpenProfileClick(chat)
+                            menuExpanded.value = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text("Изменить никнейм", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.EditNote,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            menuExpanded.value = false
+                            showNameEditPopup.value = true
+                            selectedChat.value = chat
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text("Удалить", color = MaterialTheme.colorScheme.error)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            scope.launch {
+                                viewModel.deleteChat(chat)
+                                viewModel.deleteMessages(chat)
+                            }
+                            menuExpanded.value = false
+                        }
+                    )
                 }
             }
         }

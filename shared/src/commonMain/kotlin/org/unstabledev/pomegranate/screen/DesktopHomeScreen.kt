@@ -82,20 +82,12 @@ fun DesktopHomeScreen(navController: NavHostController) {
     val minLeftWidth = 0.5f
     val maxLeftWidth = 2.0f
 
-    suspend fun deleteLastChatIfEmpty() {
-        val chat=selectedChat.value
-        if (chat!=null) {
-            val last=Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType).first()
-            if (last==null) Repository.chatDao.delete(chat)
-        }
-    }
-
     PlatformKeyEvents.Instance?.onBackCallback = {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
             scope.launch {
-                deleteLastChatIfEmpty()
+                viewModel.deleteLastChatIfEmpty(selectedChat.value)
                 selectedChat.value=null
             }
         }
