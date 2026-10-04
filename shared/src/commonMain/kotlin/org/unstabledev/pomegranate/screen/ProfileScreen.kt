@@ -19,8 +19,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddModerator
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.FilePresent
+import androidx.compose.material.icons.filled.Microwave
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
@@ -77,6 +83,7 @@ import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
+import org.unstabledev.pomegranate.screen.nav.Routes
 
 @Serializable
 data class Profile(
@@ -151,11 +158,11 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
                     }
 
                     is ProfileState.Success -> {
-                        ProfileContent(viewModel.getChat(), snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(viewModel.getChat(), navController, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.NotFound -> {
-                        ProfileContent(viewModel.getChat(), snackBarHostState, scope, onImagePreviewClick)
+                        ProfileContent(viewModel.getChat(), navController, snackBarHostState, scope, onImagePreviewClick)
                     }
 
                     is ProfileState.Error -> {
@@ -176,7 +183,8 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
 }
 
 @Composable
-private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
+private fun ProfileContent(chatDC: ChatDC, navigator: NavHostController, snackBarHostState: SnackbarHostState,
+                           scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
     val person = runBlocking {Repository.personsDao.getByEmail(chatDC.chatName)}
     val profile = person?.profile?.deserialize()
@@ -266,7 +274,19 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                                 Text("Участники", fontWeight = FontWeight.SemiBold)
                                 Column {
                                     for (contact in chatDC.personsEmails) {
-                                        ContactRow(contact)
+                                        Row(Modifier.clickable {
+                                            //navigator.navigate(route = Routes.ProfileScreen(Repository.chatDao.tryGetByName(contact).collectAsState().value!!.key))
+                                        }, verticalAlignment = Alignment.CenterVertically) {
+                                            ContactRow(contact, modifier = Modifier.weight(1.0f))
+                                            if (contact == chatDC.chatCreator) {
+                                                Spacer(Modifier.width(3.dp))
+                                                Icon(
+                                                    imageVector = Icons.Default.Shield,
+                                                    contentDescription = "Владелец",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
                                     }
                                     Row {
                                         Text("+ Добавить участников", color = MaterialTheme.colorScheme.primary)

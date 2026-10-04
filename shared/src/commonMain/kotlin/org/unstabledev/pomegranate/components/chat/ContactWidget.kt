@@ -66,11 +66,11 @@ fun ContactRow(chat: ChatDC, hasLast: Boolean = false, message: String = "", tri
     }
 }
 @Composable
-fun ContactRow(email: String, hasLast: Boolean = false, message: String = "", tripleColumn: Boolean = false) {
+fun ContactRow(email: String, hasLast: Boolean = false, message: String = "", tripleColumn: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth()) {
     val personDC = runBlocking { Repository.personsDao.getByEmail(email) }
     val profile = personDC?.profile?.deserialize()
     val name = personDC?.nickname ?: profile?.displayName ?: email
-    Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+    Row(modifier = modifier.height(64.dp)) {
         Column(
             modifier = Modifier.width(64.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
