@@ -332,40 +332,7 @@ fun ChatsList(
                         sendHaptic(HAPTIC_EFFECT_CLICK)
                     })
             ) {
-                val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
-                val profile = personDC?.profile?.deserialize()
-                val name = if (chat.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                    personDC?.nickname ?: profile?.displayName ?: chat.personsEmails[0]
-                }else if(chat.chatType == ChatDC.Companion.ChatTypes.GROUP) {
-                    chat.chatName
-                }else ""
-                Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
-                    Column(
-                        modifier = Modifier.width(64.dp).fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ProfileImage(chat)
-                    }
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(5.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            name,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        if (hasLast) {
-                            Text(
-                                text = message,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.sp,
-                                maxLines = if (settings.chatTripleColumn) 2 else 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
+                ContactRow(chat, hasLast, message, settings.chatTripleColumn)
                 DropdownMenu(
                     expanded = menuExpanded.value,
                     onDismissRequest = { menuExpanded.value = false },

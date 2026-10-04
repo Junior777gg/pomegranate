@@ -70,6 +70,7 @@ import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
+import org.unstabledev.pomegranate.components.chat.ContactRow
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
@@ -241,13 +242,37 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                                 )
                                 Divider()
                             }
-                            InfoRow(
-                                label = "Email",
-                                value = chatDC.chatName,
-                                canBeCopied = true,
-                                snackBarHostState = snackBarHostState,
-                                valueColor = MaterialTheme.colorScheme.primary
-                            )
+                            if (chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP) {
+                                InfoRow(label = "Описание", value = "Тут будет описание группы")
+                            }
+                            if (chatDC.chatType==ChatDC.Companion.ChatTypes.CHAT) {
+                                InfoRow(
+                                    label = "Email",
+                                    value = chatDC.chatName,
+                                    canBeCopied = true,
+                                    snackBarHostState = snackBarHostState,
+                                    valueColor = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    if (chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP) {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal =  16.dp, vertical = 5.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text("Участники", fontWeight = FontWeight.SemiBold)
+                                Column {
+                                    for (contact in chatDC.personsEmails) {
+                                        ContactRow(contact)
+                                    }
+                                    Row {
+                                        Text("+ Добавить участников", color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

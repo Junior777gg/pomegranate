@@ -120,6 +120,23 @@ fun NewContactWidget(viewModel: ChatScreenController) {
                         }
                     }
                 }
+                ChatDC.Companion.ChatTypes.GROUP -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Создатель",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = chat.chatCreator,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
             }
         }
     }

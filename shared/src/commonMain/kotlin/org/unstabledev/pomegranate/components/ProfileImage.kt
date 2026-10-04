@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.database.deserialize
 
 @Composable
@@ -51,6 +52,30 @@ fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
 
         ChatDC.Companion.ChatTypes.GROUP ->{
             GeneratedProfileImage(chat.chatName, size, fontSize, isOnline)
+        }
+    }
+}
+
+@Composable
+fun ProfileImage(personDC: PersonDC?, email: String, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
+    val isOnline = false
+    val partnerEmail = personDC?.personEmail?:email
+    val profile = personDC?.profile?.deserialize()
+    Box(Modifier.size(size)) {
+        if (profile?.profileUrl?.isNotBlank() ?: false) {
+            AsyncImage(
+                model = profile.avatarUrl,
+                contentDescription = profile.displayName,
+                modifier = Modifier
+                    .size(size)
+                    .clip(if (isOnline) CircleWithCutoutShape(0.4f) else CircleShape)
+            )
+        } else GeneratedProfileImage(partnerEmail, size, fontSize, isOnline)
+        if (isOnline) {
+            Box(
+                Modifier.align(Alignment.BottomEnd).size(size * 0.3f).clip(CircleShape)
+                    .background(Color(0xFF4CAF50))
+            )
         }
     }
 }
