@@ -21,7 +21,7 @@ import org.unstabledev.pomegranate.database.getMessagesDatabase
 import org.unstabledev.pomegranate.database.getPersonsDatabase
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.platform.Notifications
-import org.unstabledev.pomegranate.platform.PlatformKeyEvents
+import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.shutdownJavaFx
 import java.awt.FileDialog
 import java.awt.Frame
@@ -105,13 +105,14 @@ fun main(args: Array<String>) {
         if (isOpen.value) {
             Window(
                 onCloseRequest = {
+                    PlatformEvents.Instance?.onAppClose()
                     AppSettings.save()
                     isOpen.value = false
                     if (!runBg) shutdownJavaFx()
                 },
                 onKeyEvent = {
                     if (it.key==Key.Escape && it.type==KeyEventType.KeyDown) {
-                        PlatformKeyEvents.Instance?.onBack()
+                        PlatformEvents.Instance?.onBack()
                     }
                     return@Window false
                 },

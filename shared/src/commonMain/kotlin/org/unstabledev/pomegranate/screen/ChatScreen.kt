@@ -44,7 +44,6 @@ import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.Routes
-import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.chat.MessageBubble
 import org.unstabledev.pomegranate.components.chat.MessageInput
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
@@ -54,6 +53,7 @@ import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
@@ -93,7 +93,6 @@ fun ChatScreen(
     var showClearChatPopup by remember { mutableStateOf(false) }
     var showDeleteChatPopup by remember { mutableStateOf(false) }
     var showNicknameEditPopup by remember { mutableStateOf(false) }
-    val messagePreview = remember { mutableStateOf<MessageDC?>(null) }
     val areFilesBeingDraggedOver = remember { mutableStateOf(false) }
 
     LaunchedEffect(listState, messages.value.size) {
@@ -107,10 +106,7 @@ fun ChatScreen(
         if (messages.value.isNotEmpty()) listState.animateScrollToItem(0)
     }
 
-    val onImagePreviewClick: (MessageDC) -> Unit = remember {
-        { msg -> messagePreview.value = msg }
-    }
-    if (messagePreview.value == null && isMobile) {
+    if (isMobile) {
         Box(Modifier.fillMaxSize().padding(top = 100.dp)) {
             Box(addChatBackground().fillMaxSize())
         }
@@ -119,203 +115,182 @@ fun ChatScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        if (messagePreview.value != null) {
-            ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackBarHostState)
-        } else {
-            var m = Modifier.fillMaxSize().fileDropArea({ dropped ->
-                println("got drag-and-drop event")
-                areFilesBeingDraggedOver.value = false
-                scope.launch {
-                    try {
-                        val preparedFiles: List<KMPFile> = dropped as List<KMPFile>
-                        println("processed ${preparedFiles.size} dropped-in files")
-                        viewModel.send(files = preparedFiles, type = MessageDC.FILE)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+        var m = Modifier.fillMaxSize().fileDropArea({ dropped ->
+            println("got drag-and-drop event")
+            areFilesBeingDraggedOver.value = false
+            scope.launch {
+                try {
+                    val preparedFiles: List<KMPFile> = dropped as List<KMPFile>
+                    println("processed ${preparedFiles.size} dropped-in files")
+                    viewModel.send(files = preparedFiles, type = MessageDC.FILE)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } }, { areFilesBeingDraggedOver.value = true }, { areFilesBeingDraggedOver.value = false })
+        if (!isMobile) m = addChatBackground(m)
+        Box(modifier = m) {
+            Column {
+                var back: (() -> Unit)? = null
+                if (canBack) back = {
+                    if (messages.value.isEmpty() &&
+                        viewModel.getChat().chatType != ChatDC.Companion.ChatTypes.GROUP) scope.launch { viewModel.deleteChat()
+                        viewModel.deleteMessages() }
+                    navController.navigate(route = Routes.HomeScreen())
+                }
+                ChatHeader(
+                    viewModel,
+                    back,
+                    {
+                        viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
+                    },
+                    {
+                        viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
+                    },
+                    {
+                        navController.navigate(route = Routes.ProfileScreen(chatKey))
+                    },
+                    {
+                        scope.launch {
+                            listState.scrollToItem(messages.value.size - 1)
+                        }
+                    },
+                    {
+                        showClearChatPopup = true
+                    },
+                    {
+                        showNicknameEditPopup = true
+                    },
+                    {
+                        showDeleteChatPopup = true
+                    }
+                )
+                NetworkWarningHeader()
+                LazyColumn(
+                    state = listState,
+                    reverseLayout = true,
+                    modifier = addChatBackground(Modifier.fillMaxSize()),
+                    contentPadding = PaddingValues(
+                        top = 10.dp,
+                        bottom = 86.dp,
+                        start = 8.dp,
+                        end = 8.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(messages.value, key = { message -> message.key }) { message ->
+                        MessageBubble(
+                            message, { navController.navigate(Routes.ImagePreview(message.key)) },
+                            scope, snackBarHostState, settings.parseMarkdown
+                        )
+                    }
+                    if (displayNewContactWidget.value) {
+                        item {
+                            NewContactWidget(viewModel)
+                        }
                     }
                 }
-            }, { areFilesBeingDraggedOver.value = true }, { areFilesBeingDraggedOver.value = false })
-            if (!isMobile) m = addChatBackground(m)
-            Box(modifier = m) {
-                Column {
-                    var back: (() -> Unit)? = null
-                    if (canBack) back = {
-                        if (messages.value.isEmpty() &&
-                            viewModel.getChat().chatType != ChatDC.Companion.ChatTypes.GROUP) scope.launch {
-
-                            viewModel.deleteChat()
+            }
+            if (messages.value.isNotEmpty()) {
+                ScrollToBottomButton(
+                    listState = listState,
+                    messagesSize = messages.value.size,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = if (isMobile) 75.dp else 64.dp, end = 8.dp)
+                )
+            }
+            if (isOnline || !settings.hideSendBarWhenNoNetwork) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                ) {
+                    MessageInput(inputState, viewModel, scope)
+                }
+            }
+        }
+        if (areFilesBeingDraggedOver.value) {
+            Column(
+                Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Отпустите, чтобы отправить файлы")
+            }
+        }
+        if (showClearChatPopup) {
+            AlertDialog(
+                onDismissRequest = { showClearChatPopup = false },
+                title = {
+                    Text(
+                        "Вы уверены что хотите очистить чат?",
+                        color = MaterialTheme.colorScheme.onBackground
+                    ) },
+                text = {
+                    Text("Это действие безвозвратно!") },
+                confirmButton = {
+                    Text("Подтвердить", Modifier.clickable {
+                        scope.launch {
                             viewModel.deleteMessages()
                         }
-                        navController.navigate(route = Routes.HomeScreen())
-                    }
-                    ChatHeader(
-                        viewModel,
-                        back,
-                        {
-                            viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
-                        },
-                        {
-                            viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
-                        },
-                        {
-                            navController.navigate(route = Routes.ProfileScreen(chatKey))
-                        },
-                        {
-                            scope.launch {
-                                listState.scrollToItem(messages.value.size - 1)
-                            }
-                        },
-                        {
-                            showClearChatPopup = true
-                        },
-                        {
-                            showNicknameEditPopup = true
-                        },
-                        {
-                            showDeleteChatPopup = true
+                        showClearChatPopup = false
+                    }) },
+                dismissButton = {
+                    Text("Отмена", Modifier.clickable {
+                        showClearChatPopup = false
+                    })
+                }
+            )
+        }
+        if (showDeleteChatPopup) {
+            AlertDialog(
+                onDismissRequest = { showDeleteChatPopup = false },
+                title = {
+                    Text(
+                        "Вы уверены что хотите удалить чат?",
+                        color = MaterialTheme.colorScheme.onBackground
+                    ) },
+                text = {
+                    Text("Это действие безвозвратно!") },
+                confirmButton = {
+                    Text("Подтвердить", Modifier.clickable {
+                        scope.launch {
+                            viewModel.deleteMessages()
+                            viewModel.deleteChat()
                         }
-                    )
-                    NetworkWarningHeader()
-                    LazyColumn(
-                        state = listState,
-                        reverseLayout = true,
-                        modifier = addChatBackground(Modifier.fillMaxSize()),
-                        contentPadding = PaddingValues(
-                            top = 10.dp,
-                            bottom = 86.dp,
-                            start = 8.dp,
-                            end = 8.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(messages.value, key = { message -> message.key }) { message ->
-                            MessageBubble(
-                                message, onImagePreviewClick,
-                                scope, snackBarHostState, settings.parseMarkdown
-                            )
+                        if (isMobile) navController.navigate(route = Routes.HomeScreen())
+                        showDeleteChatPopup = false
+                    }) },
+                dismissButton = {
+                    Text("Отмена", Modifier.clickable {
+                        showDeleteChatPopup = false
+                    })
+                }
+            )
+        }
+        if (showNicknameEditPopup) {
+            val newNameState = rememberTextFieldState()
+            AlertDialog(
+                onDismissRequest = { showNicknameEditPopup = false },
+                title = {
+                    Text(
+                        "Изменить никнейм",
+                        color = MaterialTheme.colorScheme.onBackground
+                    ) },
+                text = {
+                    TextField(newNameState) },
+                confirmButton = {
+                    Text("Подтвердить", Modifier.clickable {
+                        scope.launch {
+                            viewModel.renameChat(newNameState.text.toString().takeIf { it.isNotBlank() })
                         }
-                        if (displayNewContactWidget.value) {
-                            item {
-                                NewContactWidget(viewModel)
-                            }
-                        }
-                    }
+                        showNicknameEditPopup = false
+                    }) },
+                dismissButton = {
+                    Text("Отмена", Modifier.clickable {
+                        showNicknameEditPopup = false
+                    })
                 }
-
-                if (messages.value.isNotEmpty()) {
-                    ScrollToBottomButton(
-                        listState = listState,
-                        messagesSize = messages.value.size,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(bottom = if (isMobile) 75.dp else 64.dp, end = 8.dp)
-                    )
-                }
-
-                if (isOnline || !settings.hideSendBarWhenNoNetwork) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                    ) {
-                        MessageInput(inputState, viewModel, scope)
-                    }
-                }
-            }
-
-            if (areFilesBeingDraggedOver.value) {
-                Column(
-                    Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.3f)),
-                    verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Отпустите, чтобы отправить файлы")
-                }
-            }
-
-            if (showClearChatPopup) {
-                AlertDialog(
-                    onDismissRequest = { showClearChatPopup = false },
-                    title = {
-                        Text(
-                            "Вы уверены что хотите очистить чат?",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    },
-                    text = {
-                        Text("Это действие безвозвратно!")
-                    },
-                    confirmButton = {
-                        Text("Подтвердить", Modifier.clickable {
-                            scope.launch {
-                                viewModel.deleteMessages()
-                            }
-                            showClearChatPopup = false
-                        })
-                    },
-                    dismissButton = {
-                        Text("Отмена", Modifier.clickable {
-                            showClearChatPopup = false
-                        })
-                    }
-                )
-            }
-            if (showDeleteChatPopup) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteChatPopup = false },
-                    title = {
-                        Text(
-                            "Вы уверены что хотите удалить чат?",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    },
-                    text = {
-                        Text("Это действие безвозвратно!")
-                    },
-                    confirmButton = {
-                        Text("Подтвердить", Modifier.clickable {
-                            scope.launch {
-                                viewModel.deleteMessages()
-                                viewModel.deleteChat()
-                            }
-                            if (isMobile) navController.navigate(route = Routes.HomeScreen())
-                            showDeleteChatPopup = false
-                        })
-                    },
-                    dismissButton = {
-                        Text("Отмена", Modifier.clickable {
-                            showDeleteChatPopup = false
-                        })
-                    }
-                )
-            }
-            if (showNicknameEditPopup) {
-                val newNameState = rememberTextFieldState()
-                AlertDialog(
-                    onDismissRequest = { showNicknameEditPopup = false },
-                    title = {
-                        Text(
-                            "Изменить никнейм",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    },
-                    text = {
-                        TextField(newNameState)
-                    },
-                    confirmButton = {
-                        Text("Подтвердить", Modifier.clickable {
-                            scope.launch {
-                                viewModel.renameChat(newNameState.text.toString().takeIf { it.isNotBlank() })
-                            }
-                            showNicknameEditPopup = false
-                        })
-                    },
-                    dismissButton = {
-                        Text("Отмена", Modifier.clickable {
-                            showNicknameEditPopup = false
-                        })
-                    }
-                )
-            }
+            )
         }
     }
 }

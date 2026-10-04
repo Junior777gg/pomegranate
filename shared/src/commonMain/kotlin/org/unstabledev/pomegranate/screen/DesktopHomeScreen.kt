@@ -46,13 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
-import org.unstabledev.pomegranate.platform.PlatformKeyEvents
-import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
@@ -82,15 +80,18 @@ fun DesktopHomeScreen(navController: NavHostController) {
     val minLeftWidth = 0.5f
     val maxLeftWidth = 2.0f
 
-    PlatformKeyEvents.Instance?.onBackCallback = {
+    PlatformEvents.Instance?.onBackCallback = {
         if(panelSubScreen != PanelSubScreen.CHATS) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
             scope.launch {
-                viewModel.deleteLastChatIfEmpty(selectedChat.value)
+                viewModel.deleteChatIfEmpty(selectedChat.value!!)
                 selectedChat.value=null
             }
         }
+    }
+    PlatformEvents.Instance?.onAppCloseCallback = {
+        viewModel.deleteEmptyChats()
     }
 
     Box(

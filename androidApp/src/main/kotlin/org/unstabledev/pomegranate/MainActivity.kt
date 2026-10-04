@@ -21,6 +21,7 @@ import org.unstabledev.pomegranate.platform.Camera
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.platform.Notifications
+import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.context
 import java.io.File
 
@@ -193,5 +194,10 @@ class MainActivity : ComponentActivity() {
         }
         val mimeType = contentResolver.getType(uri)
         return MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
+    }
+
+    override fun onDestroy() {
+        PlatformEvents.Instance?.onAppClose()
+        super.onDestroy()
     }
 }

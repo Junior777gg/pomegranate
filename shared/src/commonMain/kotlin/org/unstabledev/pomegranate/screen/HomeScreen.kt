@@ -42,6 +42,7 @@ import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.Util
+import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.kmpReadText
 
@@ -49,11 +50,14 @@ import org.unstabledev.pomegranate.platform.kmpReadText
 fun HomeScreen(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val viewModel = viewModel { HomeScreenController() }
+    val scope = rememberCoroutineScope()
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
 
-    val scope = rememberCoroutineScope()
+    PlatformEvents.Instance?.onAppCloseCallback = {
+        viewModel.deleteEmptyChats()
+    }
 
     ModalNavigationDrawer(
         modifier = applyScreenPadding(),

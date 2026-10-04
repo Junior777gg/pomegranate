@@ -36,6 +36,9 @@ interface MessagesDao {
     @Query("SELECT * FROM messages WHERE data = :data")
     suspend fun getByData(data: ByteArray) : MessageDC?
 
+    @Query("SELECT * FROM messages WHERE `key` = :id")
+    suspend fun get(id: Long) : MessageDC?
+
     @Query("SELECT * FROM messages WHERE chatName = :name ORDER BY `time` DESC LIMIT 1")
     suspend fun getLastByName(name: String): MessageDC?
 

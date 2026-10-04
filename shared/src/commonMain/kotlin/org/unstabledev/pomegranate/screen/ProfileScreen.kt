@@ -22,8 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddModerator
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Attachment
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material.icons.filled.Microwave
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -74,7 +77,6 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.components.ImagePreviewPanel
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.components.chat.ContactRow
 import org.unstabledev.pomegranate.database.ChatDC
@@ -112,10 +114,18 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
     val snackBarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
-    val messagePreview = remember { mutableStateOf<MessageDC?>(null) }
     val email = Repository.lastEmail
-    val onImagePreviewClick: (MessageDC) -> Unit = remember {
-        { msg -> messagePreview.value = msg }
+    val onImagePreviewClick: (MessageDC)->Unit = remember {
+        { msg -> navController.navigate(Routes.ImagePreview(msg.key)) }
+    }
+    val onChatDelete: ()->Unit = remember {
+        {
+            scope.launch {
+                val chat = viewModel.getChat()
+                Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
+                Repository.chatDao.delete(chat)
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -129,52 +139,47 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
         snackbarHost = { SnackbarHost(snackBarHostState) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        if (messagePreview.value != null) {
-            ImagePreviewPanel({ messagePreview.value = null }, messagePreview.value, snackBarHostState)
-        } else {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.padding(8.dp)
                 ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.padding(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Назад",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Назад",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                 }
-                when (val state = profileState) {
-                    is ProfileState.Loading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) { CircularProgressIndicator() }
-                    }
-
-                    is ProfileState.Success -> {
-                        ProfileContent(viewModel.getChat(), navController, snackBarHostState, scope, onImagePreviewClick)
-                    }
-
-                    is ProfileState.NotFound -> {
-                        ProfileContent(viewModel.getChat(), navController, snackBarHostState, scope, onImagePreviewClick)
-                    }
-
-                    is ProfileState.Error -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Ошибка: ${state.message}",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
+            }
+            when (val state = profileState) {
+                is ProfileState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                }
+                is ProfileState.Success -> {
+                    ProfileContent(viewModel.getChat(), snackBarHostState, scope,
+                        onImagePreviewClick, onChatDelete)
+                }
+                is ProfileState.NotFound -> {
+                    ProfileContent(viewModel.getChat(), snackBarHostState, scope,
+                        onImagePreviewClick, onChatDelete)
+                }
+                is ProfileState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ошибка: ${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
@@ -183,8 +188,9 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
 }
 
 @Composable
-private fun ProfileContent(chatDC: ChatDC, navigator: NavHostController, snackBarHostState: SnackbarHostState,
-                           scope: CoroutineScope, setImagePreview: (MessageDC) -> Unit) {
+private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
+                           scope: CoroutineScope, setImagePreview: (MessageDC)->Unit,
+                           onChatDelete: ()->Unit) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
     val person = runBlocking {Repository.personsDao.getByEmail(chatDC.chatName)}
     val profile = person?.profile?.deserialize()
@@ -292,6 +298,35 @@ private fun ProfileContent(chatDC: ChatDC, navigator: NavHostController, snackBa
                                         Text("+ Добавить участников", color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(9.dp))
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal =  16.dp, vertical = 5.dp)
+                    ) {
+                        Column {
+                            Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp).clickable {}) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                                Spacer(Modifier.width(5.dp))
+                                Text("Настройки чата")
+                            }
+                            Spacer(Modifier.width(5.dp))
+                            Row(Modifier.fillMaxWidth().padding(all = 16.dp).clickable { onChatDelete() }) {
+                                Icon(
+                                    imageVector = if(chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP) Icons.Default.Delete else Icons.Default.ExitToApp,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(Modifier.width(5.dp))
+                                Text(if(chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP) "Покинуть чат" else "Удалить чат",
+                                    color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }

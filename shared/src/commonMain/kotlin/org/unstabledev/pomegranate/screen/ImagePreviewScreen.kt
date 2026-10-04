@@ -1,9 +1,9 @@
-package org.unstabledev.pomegranate.components
+package org.unstabledev.pomegranate.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,26 +40,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.components.AnimatedGifImage
+import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
-import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.kmpReadBytes
+import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImagePreviewPanel(
-    onBack: () -> Unit,
-    message: MessageDC?,
-    snackbarHostState: SnackbarHostState
-) {
-    if (message == null) {
-        onBack()
-        return
-    }
-
+fun ImagePreviewScreen(messageId: Long, navController: NavHostController) {
+    val message = runBlocking { Repository.messagesDao.get(messageId)!! }
+    val snackbarHostState = remember { SnackbarHostState() }
     val menuExpanded = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val filePath = remember { message.data.decodeToString() }
@@ -176,7 +175,7 @@ fun ImagePreviewPanel(
                 .height(56.dp)
                 .padding(horizontal = 4.dp)
         ) {
-            IconButton(modifier = Modifier.size(56.dp), onClick = { onBack() }) {
+            IconButton(modifier = Modifier.size(56.dp), onClick = { navController.popBackStack() }) {
                 Icon(Icons.Default.ArrowBack, "Назад", tint = Color.White)
             }
             Spacer(Modifier.weight(1f))

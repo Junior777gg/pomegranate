@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.platform.PlatformKeyEvents
+import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.pomegranatePath
@@ -38,6 +38,7 @@ import org.unstabledev.pomegranate.screen.settings.PowerSaveSettingsScreen
 import org.unstabledev.pomegranate.screen.settings.StorageSettingsScreen
 import org.unstabledev.pomegranate.screen.settings.StyleSettingsScreen
 import org.unstabledev.pomegranate.platform.separator
+import org.unstabledev.pomegranate.screen.ImagePreviewScreen
 
 @Composable
 fun applyScreenPadding(base: Modifier = Modifier): Modifier {
@@ -47,7 +48,7 @@ fun applyScreenPadding(base: Modifier = Modifier): Modifier {
 
 @Composable
 fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: MessagesDao, personsDao: PersonDao) {
-    PlatformKeyEvents.Instance = PlatformKeyEvents()
+    PlatformEvents.Instance = PlatformEvents()
     Repository.messagesDao = messagesDao
     Repository.chatDao = chatDao
     Repository.personsDao = personsDao
@@ -116,6 +117,10 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
         }
         composable<Routes.CallScreen>{
             BetterCallSoulScreen(navController)
+        }
+        composable<Routes.ImagePreview>{
+            val route = it.toRoute<Routes.ImagePreview>()
+            ImagePreviewScreen(route.messageId, navController)
         }
     }
 }

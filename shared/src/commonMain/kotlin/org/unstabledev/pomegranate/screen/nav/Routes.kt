@@ -29,4 +29,6 @@ sealed class Routes {
     class SettingsSelectFirebaseScreen: Routes()
     @Serializable
     class CallScreen: Routes()
+    @Serializable
+    data class ImagePreview(val messageId : Long): Routes()
 }
