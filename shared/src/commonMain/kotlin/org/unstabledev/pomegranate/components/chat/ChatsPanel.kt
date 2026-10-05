@@ -65,6 +65,7 @@ import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.SortingType
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
+import org.unstabledev.pomegranate.common.Util.Companion.toHHMMTime
 import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
@@ -169,10 +170,10 @@ fun SearchableChatsPanel(
     }
 }
 
-fun getLastMessageTextFlow(chat: ChatDC): Flow<String> {
+fun getLastMessageTextFlow(chat: ChatDC): Flow<List<String>> {
     return Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType)
         .map { msg ->
-            if (msg == null) return@map ""
+            if (msg == null) return@map listOf("", "")
 
             val decodedText = try {
                 when (msg.type) {
@@ -188,7 +189,7 @@ fun getLastMessageTextFlow(chat: ChatDC): Flow<String> {
             }
 
             val prefix = if (msg.isMine) "Вы: " else ""
-            prefix + decodedText
+            listOf(prefix + decodedText, msg.time.toHHMMTime())
         }
         .flowOn(Dispatchers.IO)
 }
@@ -318,7 +319,7 @@ fun ChatsList(
         items(items = sortedChats, key = { it }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
             val message by getLastMessageTextFlow(chat)
-                .collectAsStateWithLifecycle(initialValue = "")
+                .collectAsStateWithLifecycle(initialValue = listOf("",""))
             val hasLast = message.isNotEmpty()
 
             Row(
@@ -332,7 +333,7 @@ fun ChatsList(
                         sendHaptic(HAPTIC_EFFECT_CLICK)
                     })
             ) {
-                ContactRow(chat, hasLast, message, settings.chatTripleColumn)
+                ContactRow(chat, hasLast, message.first(), message.last(), settings.chatTripleColumn)
                 DropdownMenu(
                     expanded = menuExpanded.value,
                     onDismissRequest = { menuExpanded.value = false },

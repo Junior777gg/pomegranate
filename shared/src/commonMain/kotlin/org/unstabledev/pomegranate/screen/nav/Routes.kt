@@ -12,7 +12,7 @@ sealed class Routes {
     @Serializable
     data class ChatScreen(val chatId : Long): Routes()
     @Serializable
-    data class ProfileScreen(val chatId : Long): Routes()
+    data class ProfileScreen(val chatId : Long, val email: String): Routes()
     @Serializable
     class ContactsScreen: Routes()
     @Serializable

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import org.unstabledev.pomegranate.components.ProfileImage
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 
 @Composable
@@ -188,13 +190,13 @@ fun ChatHeader(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = "Удалить чат",
+                            text = "${if (viewModel.getChat().chatType==ChatDC.Companion.ChatTypes.GROUP) "Покинуть" else "Удалить"} чат",
                             color = MaterialTheme.colorScheme.error
                         )
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Delete,
+                            imageVector = if (viewModel.getChat().chatType==ChatDC.Companion.ChatTypes.GROUP) Icons.Default.ExitToApp else Icons.Default.Delete,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error
                         )

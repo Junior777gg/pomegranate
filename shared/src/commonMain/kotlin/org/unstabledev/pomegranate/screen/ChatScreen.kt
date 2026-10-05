@@ -147,7 +147,7 @@ fun ChatScreen(
                         viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                     },
                     {
-                        navController.navigate(route = Routes.ProfileScreen(chatKey))
+                        navController.navigate(route = Routes.ProfileScreen(chatKey, viewModel.getChat().personsEmails.first()))
                     },
                     {
                         scope.launch {
@@ -246,7 +246,7 @@ fun ChatScreen(
                 onDismissRequest = { showDeleteChatPopup = false },
                 title = {
                     Text(
-                        "Вы уверены что хотите удалить чат?",
+                        "Вы уверены что хотите ${if(viewModel.getChat().chatType==ChatDC.Companion.ChatTypes.GROUP) "покинуть" else "удалить"} чат?",
                         color = MaterialTheme.colorScheme.onBackground
                     ) },
                 text = {

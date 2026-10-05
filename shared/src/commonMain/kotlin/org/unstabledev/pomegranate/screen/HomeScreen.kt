@@ -157,7 +157,7 @@ fun HomeScreen(navController: NavHostController) {
             scope.launch { drawerState.open() }
         },
         onOpenProfileClick = {
-            navController.navigate(Routes.ProfileScreen(it.key))
+            navController.navigate(Routes.ProfileScreen(it.key, it.personsEmails.first()))
         })
     }
 }

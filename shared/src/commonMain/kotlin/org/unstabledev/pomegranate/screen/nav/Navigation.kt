@@ -113,7 +113,7 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
         }
         composable<Routes.ProfileScreen>{
             val route = it.toRoute<Routes.ProfileScreen>()
-            ProfileScreen(navController, route.chatId)
+            ProfileScreen(navController, route.chatId, route.email)
         }
         composable<Routes.CallScreen>{
             BetterCallSoulScreen(navController)

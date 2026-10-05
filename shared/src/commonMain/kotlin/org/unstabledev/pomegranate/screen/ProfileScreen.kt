@@ -76,6 +76,7 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
+import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.components.chat.ContactRow
@@ -109,7 +110,7 @@ sealed class ProfileState {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavHostController, chatKey: Long) {
+fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String) {
     val viewModel = viewModel { ProfileScreenController(chatKey) }
     val snackBarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
@@ -125,6 +126,16 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
                 Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
                 Repository.chatDao.delete(chat)
             }
+        }
+    }
+    val onContactClick: (String)->Unit = remember {
+        { email ->
+            navController.navigate(route = Routes.ProfileScreen(chatKey, email))
+        }
+    }
+    val onMutualChatClick: (ChatDC)->Unit = remember {
+        { chat ->
+            navController.navigate(route = Routes.ChatScreen(chat.key))
         }
     }
 
@@ -164,12 +175,14 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
                     ) { CircularProgressIndicator() }
                 }
                 is ProfileState.Success -> {
-                    ProfileContent(viewModel.getChat(), snackBarHostState, scope,
-                        onImagePreviewClick, onChatDelete)
+                    ProfileContent(viewModel.getChat(), email, snackBarHostState, scope,
+                        onImagePreviewClick, onChatDelete, onContactClick,
+                        onMutualChatClick)
                 }
                 is ProfileState.NotFound -> {
-                    ProfileContent(viewModel.getChat(), snackBarHostState, scope,
-                        onImagePreviewClick, onChatDelete)
+                    ProfileContent(viewModel.getChat(), email, snackBarHostState, scope,
+                        onImagePreviewClick, onChatDelete, onContactClick,
+                        onMutualChatClick)
                 }
                 is ProfileState.Error -> {
                     Box(
@@ -188,9 +201,10 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long) {
 }
 
 @Composable
-private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
+private fun ProfileContent(chatDC: ChatDC, email: String, snackBarHostState: SnackbarHostState,
                            scope: CoroutineScope, setImagePreview: (MessageDC)->Unit,
-                           onChatDelete: ()->Unit) {
+                           onChatDelete: ()->Unit, onProfileClick: (String)->Unit,
+                           onMutualChatClick: (ChatDC)->Unit) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
     val person = runBlocking {Repository.personsDao.getByEmail(chatDC.chatName)}
     val profile = person?.profile?.deserialize()
@@ -224,7 +238,7 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
         }
 
         item {
-            ContentSwitcher(chatDC, profilePage)
+            ContentSwitcher(chatDC, email, profilePage)
         }
 
         item {
@@ -280,9 +294,7 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                                 Text("Участники", fontWeight = FontWeight.SemiBold)
                                 Column {
                                     for (contact in chatDC.personsEmails) {
-                                        Row(Modifier.clickable {
-                                            //navigator.navigate(route = Routes.ProfileScreen(Repository.chatDao.tryGetByName(contact).collectAsState().value!!.key))
-                                        }, verticalAlignment = Alignment.CenterVertically) {
+                                        Row(Modifier.clickable { onProfileClick(contact) }, verticalAlignment = Alignment.CenterVertically) {
                                             ContactRow(contact, modifier = Modifier.weight(1.0f))
                                             if (contact == chatDC.chatCreator) {
                                                 Spacer(Modifier.width(3.dp))
@@ -308,7 +320,8 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                         modifier = Modifier.fillMaxWidth().padding(horizontal =  16.dp, vertical = 5.dp)
                     ) {
                         Column {
-                            Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp).clickable {}) {
+                            Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp).clickable {},
+                                verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
                                     contentDescription = null,
@@ -318,9 +331,9 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                                 Text("Настройки чата")
                             }
                             Spacer(Modifier.width(5.dp))
-                            Row(Modifier.fillMaxWidth().padding(all = 16.dp).clickable { onChatDelete() }) {
+                            Row(Modifier.fillMaxWidth().padding(all = 16.dp).clickable { onChatDelete() }, verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = if(chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP) Icons.Default.Delete else Icons.Default.ExitToApp,
+                                    imageVector = if(chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP) Icons.Default.ExitToApp else Icons.Default.Delete,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.error
                                 )
@@ -332,13 +345,16 @@ private fun ProfileContent(chatDC: ChatDC, snackBarHostState: SnackbarHostState,
                     }
                 }
                 ProfilePage.MEDIA -> {
-                    MediaList(chatDC, snackBarHostState, scope, setImagePreview)
+                    MediaList(chatDC, email, snackBarHostState, scope, setImagePreview)
                 }
                 ProfilePage.AUDIO -> {
-                    AudioList(chatDC, snackBarHostState, scope)
+                    AudioList(chatDC, email, snackBarHostState, scope)
                 }
                 ProfilePage.FILES -> {
-                    FilesList(chatDC,snackBarHostState, scope)
+                    FilesList(chatDC, email, snackBarHostState, scope)
+                }
+                ProfilePage.MUTUAL_CHATS -> {
+                    MutualChatsList(email, onMutualChatClick)
                 }
             }
         }
@@ -350,17 +366,19 @@ private object ProfilePage {
     const val MEDIA=1
     const val AUDIO=2
     const val FILES=3
+    const val MUTUAL_CHATS=4
 }
 
 @Composable
-private fun ContentSwitcher(chat: ChatDC, profilePage: MutableState<Int>) {
-    val hasMedia = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
-        .collectAsStateWithLifecycle(initialValue = false)
-    val hasAudio = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.AUDIO)
-        .collectAsStateWithLifecycle(initialValue = false)
-    val hasFiles = Repository.messagesDao.hasOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE)
-        .collectAsStateWithLifecycle(initialValue = false)
-    if (!hasMedia.value && !hasAudio.value && !hasFiles.value) return
+private fun ContentSwitcher(chat: ChatDC, email: String, profilePage: MutableState<Int>) {
+    val hasMedia = Repository.messagesDao.hasOfType(chat.chatName, email, chat.chatType, MessageDC.IMAGE)
+        .collectAsStateWithLifecycle(false)
+    val hasAudio = Repository.messagesDao.hasOfType(chat.chatName, email, chat.chatType, MessageDC.AUDIO)
+        .collectAsStateWithLifecycle(false)
+    val hasFiles = Repository.messagesDao.hasOfType(chat.chatName, email, chat.chatType, MessageDC.FILE)
+        .collectAsStateWithLifecycle(false)
+    val hasMutualChats = Repository.chatDao.hasChatsWith(email).collectAsStateWithLifecycle(false)
+    if (!hasMedia.value && !hasAudio.value && !hasFiles.value && !hasMutualChats.value) return
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center) {
@@ -379,13 +397,50 @@ private fun ContentSwitcher(chat: ChatDC, profilePage: MutableState<Int>) {
                 Spacer(modifier = Modifier.width(4.dp).background(MaterialTheme.colorScheme.surface))
                 ChatSwitcherButton(Modifier.clickable {profilePage.value=3}, "Файлы")
             }
+            if(hasMutualChats.value) {
+                Spacer(modifier = Modifier.width(4.dp).background(MaterialTheme.colorScheme.surface))
+                ChatSwitcherButton(Modifier.clickable {profilePage.value=4}, "Общие чаты")
+            }
         }
     }
 }
 
 @Composable
-private fun FilesList(chat: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE)
+private fun MutualChatsList(email: String, onMutualChatClick: (ChatDC)->Unit) {
+    val mutualChats = Repository.chatDao.getAllChatsWith(email).collectAsStateWithLifecycle(listOf())
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxWidth().padding(horizontal =  16.dp, vertical = 5.dp)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Column {
+                for (chat in mutualChats.value) {
+                    Row(Modifier.clickable { onMutualChatClick(chat) }, verticalAlignment = Alignment.CenterVertically) {
+                        ContactRow(chat.chatName, false, "", "", false) {
+                            GeneratedProfileImage(chat.chatName)
+                        }
+                        /*if (contact == chatDC.chatCreator) {
+                            Spacer(Modifier.width(3.dp))
+                            Icon(
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = "Владелец",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }*/
+                    }
+                }
+                Row {
+                    Text("+ Добавить участников", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilesList(chat: ChatDC, email: String, snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
+    val msgs = Repository.messagesDao.getByType(chat.chatName, email, chat.chatType, MessageDC.FILE)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(Modifier.padding(horizontal = 16.dp)) {
@@ -443,12 +498,12 @@ private fun FilesList(chat: ChatDC, snackBarHostState: SnackbarHostState, scope:
 
 @Composable
 private fun MediaList(
-    chat: ChatDC,
+    chat: ChatDC, email: String,
     snackBarHostState: SnackbarHostState,
     scope: CoroutineScope,
     setImagePreview: (MessageDC) -> Unit
 ) {
-    val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
+    val msgs = Repository.messagesDao.getByType(chat.chatName, email, chat.chatType, MessageDC.IMAGE)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(
@@ -525,8 +580,8 @@ private fun MediaGridItem(message: MessageDC, modifier: Modifier = Modifier, set
 }
 
 @Composable
-private fun AudioList(chat: ChatDC, snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
-    val msgs = Repository.messagesDao.getByType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.AUDIO)
+private fun AudioList(chat: ChatDC, email: String, snackBarHostState: SnackbarHostState, scope: CoroutineScope) {
+    val msgs = Repository.messagesDao.getByType(chat.chatName, email, chat.chatType, MessageDC.AUDIO)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Column(Modifier.padding(horizontal = 16.dp)) {

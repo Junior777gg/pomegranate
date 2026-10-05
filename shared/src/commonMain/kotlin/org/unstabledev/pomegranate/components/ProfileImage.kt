@@ -81,7 +81,7 @@ fun ProfileImage(personDC: PersonDC?, email: String, size: Dp = 50.dp, fontSize:
 }
 
 @Composable
-private fun GeneratedProfileImage(
+fun GeneratedProfileImage(
     name: String,
     size: Dp = 50.dp,
     fontSize: TextUnit = 18.sp,
