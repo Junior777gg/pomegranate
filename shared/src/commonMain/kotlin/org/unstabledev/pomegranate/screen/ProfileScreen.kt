@@ -181,12 +181,12 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String
                 is ProfileState.Success -> {
                     ProfileContent(viewModel.getChat(), email, snackBarHostState, scope,
                         onImagePreviewClick, onChatDelete, onContactClick,
-                        onMutualChatClick)
+                        onMutualChatClick, chatKey)
                 }
                 is ProfileState.NotFound -> {
                     ProfileContent(viewModel.getChat(), email, snackBarHostState, scope,
                         onImagePreviewClick, onChatDelete, onContactClick,
-                        onMutualChatClick)
+                        onMutualChatClick, chatKey)
                 }
                 is ProfileState.Error -> {
                     Box(
@@ -208,7 +208,7 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String
 private fun ProfileContent(chatDC: ChatDC?, email: String?, snackBarHostState: SnackbarHostState,
                            scope: CoroutineScope, setImagePreview: (MessageDC)->Unit,
                            onChatDelete: ()->Unit, onProfileClick: (String)->Unit,
-                           onMutualChatClick: (ChatDC)->Unit) {
+                           onMutualChatClick: (ChatDC)->Unit, chatKey: Long) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
     val person = runBlocking { Repository.personsDao.getByEmail(email?:chatDC?.chatName?:"null") }
     val profile = person?.profile?.deserialize()
@@ -245,7 +245,7 @@ private fun ProfileContent(chatDC: ChatDC?, email: String?, snackBarHostState: S
         }
 
         item {
-            if(chatDC!=null) ContentSwitcher(chatDC, email, profilePage)
+            if(chatDC!=null) ContentSwitcher(chatDC, email, profilePage, chatKey)
         }
 
         item {
@@ -321,7 +321,7 @@ private fun ProfileContent(chatDC: ChatDC?, email: String?, snackBarHostState: S
                         }
                     }
                     Spacer(Modifier.height(9.dp))
-                    if (!(chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email!=null)) {
+                    if (!(chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email!=null || chatKey==0L)) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
@@ -379,7 +379,7 @@ private object ProfilePage {
 }
 
 @Composable
-private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableState<Int>) {
+private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableState<Int>, chatKey: Long) {
     val countMedia = (
         if(email==null) Repository.messagesDao.countOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
         else Repository.messagesDao.countOfTypeFrom(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE, email)
@@ -393,7 +393,7 @@ private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableSt
         else Repository.messagesDao.countOfTypeFrom(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE, email)
     ).collectAsStateWithLifecycle(0)
     val countMutualChats =
-        if(email!=null) Repository.chatDao.countChatsWith(email).collectAsStateWithLifecycle(0)
+        if(email!=null&&chatKey!=0L) Repository.chatDao.countChatsWith(email).collectAsStateWithLifecycle(0)
         else mutableStateOf(0)
     if (countMedia.value==0 && countAudio.value==0 && countFiles.value==0 && countMutualChats.value==0) return
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(4.dp),
