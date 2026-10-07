@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,8 +44,13 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.Firebase
+import org.unstabledev.pomegranate.common.Util.Companion.toLocalDateTime
+import org.unstabledev.pomegranate.common.Util.Companion.toTimeMark
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.MessageBubble
@@ -56,7 +65,10 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +104,26 @@ fun ChatScreen(
     var showDeleteChatPopup by remember { mutableStateOf(false) }
     var showNicknameEditPopup by remember { mutableStateOf(false) }
     val areFilesBeingDraggedOver = remember { mutableStateOf(false) }
+
+    @Composable
+    fun TimeMark(time: String) {
+        Column(
+            Modifier.fillMaxWidth().height(37.dp).padding(vertical = 3.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Row(
+                Modifier.weight(1f)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(Color.Black.copy(alpha = 0.2f))
+                    .padding(vertical = 5.dp, horizontal = 15.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(time, color = Color.White)
+            }
+        }
+    }
 
     LaunchedEffect(listState, messages.value.size) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
@@ -177,10 +209,25 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(messages.value, key = { message -> message.key }) { message ->
+                        val msgTime=message.time.toLocalDateTime()
                         MessageBubble(
                             message, { navController.navigate(Routes.ImagePreview(message.key)) },
                             scope, snackBarHostState, settings.parseMarkdown
                         )
+                        val currentIndex = messages.value.indexOf(message)
+                        if (currentIndex == messages.value.size-1) {
+                            TimeMark(msgTime.toTimeMark())
+                        } else if (currentIndex > 0) {
+                            val nextMessage = messages.value[min(currentIndex + 1, messages.value.size-1)]
+                            val nextMsgTime = nextMessage.time.toLocalDateTime()
+
+                            if (msgTime.day != nextMsgTime.day ||
+                                msgTime.month != nextMsgTime.month ||
+                                msgTime.year != nextMsgTime.year) {
+
+                                TimeMark(msgTime.toTimeMark())
+                            }
+                        }
                     }
                     if (displayNewContactWidget.value) {
                         item {

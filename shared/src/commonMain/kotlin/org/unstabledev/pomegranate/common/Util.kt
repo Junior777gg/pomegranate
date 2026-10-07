@@ -13,6 +13,8 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.unstabledev.pomegranate.platform.handleTapGestures
@@ -23,6 +25,7 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.math.roundToLong
 import kotlin.random.Random
+import kotlin.time.Clock
 
 class Util {
     companion object {
@@ -151,9 +154,36 @@ class Util {
             }
         }
 
-        fun Long.toHHMMTime(): String {
+        fun Long.toLocalDateTime(): LocalDateTime {
             val timeZone = TimeZone.currentSystemDefault()
-            val localDateTime = Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
+            return Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
+        }
+
+        fun LocalDateTime.toTimeMark(): String {
+            val currentTime=Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val monthName = when (this.month) {
+                Month.JANUARY -> "января"
+                Month.FEBRUARY -> "февраля"
+                Month.MARCH -> "марта"
+                Month.APRIL -> "апреля"
+                Month.MAY -> "мая"
+                Month.JUNE -> "июня"
+                Month.JULY -> "июля"
+                Month.AUGUST -> "августа"
+                Month.SEPTEMBER -> "сентября"
+                Month.OCTOBER -> "октября"
+                Month.NOVEMBER -> "ноября"
+                Month.DECEMBER -> "декабря"
+            }
+            var str="${this.day} $monthName"
+            if (currentTime.day==this.day) str="Сегодня"
+            else if (currentTime.day==this.day+1) str="Вчера"
+            else if (currentTime.year!=this.year) str="${this.year} $str"
+            return str
+        }
+
+        fun Long.toHHMMTime(): String {
+            val localDateTime = this.toLocalDateTime()
             val hours = localDateTime.hour.toString().padStart(2, '0')
             val minutes = localDateTime.minute.toString().padStart(2, '0')
             return "$hours:$minutes"
