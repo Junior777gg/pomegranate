@@ -120,21 +120,23 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String
     }
     val onChatDelete: ()->Unit = remember {
         {
-            scope.launch {
-                val chat = viewModel.getChat()
-                Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
-                Repository.chatDao.delete(chat)
+            if(chatKey!=0L) {
+                scope.launch {
+                    val chat = viewModel.getChat()!!
+                    Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
+                    Repository.chatDao.delete(chat)
+                }
             }
         }
     }
     val onContactClick: (String)->Unit = remember {
         { email ->
-            navController.navigate(route = Routes.ProfileScreen(chatKey, email))
+            navController.navigate(Routes.ProfileScreen(chatKey, email))
         }
     }
     val onMutualChatClick: (ChatDC)->Unit = remember {
         { chat ->
-            navController.navigate(route = Routes.ChatScreen(chat.key))
+            navController.navigate(Routes.ChatScreen(chat.key))
         }
     }
 
@@ -203,12 +205,12 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String
 }
 
 @Composable
-private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: SnackbarHostState,
+private fun ProfileContent(chatDC: ChatDC?, email: String?, snackBarHostState: SnackbarHostState,
                            scope: CoroutineScope, setImagePreview: (MessageDC)->Unit,
                            onChatDelete: ()->Unit, onProfileClick: (String)->Unit,
                            onMutualChatClick: (ChatDC)->Unit) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
-    val person = runBlocking { Repository.personsDao.getByEmail(email?:chatDC.chatName) }
+    val person = runBlocking { Repository.personsDao.getByEmail(email?:chatDC?.chatName?:"null") }
     val profile = person?.profile?.deserialize()
     LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
         item {
@@ -218,13 +220,15 @@ private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: Sn
                     .fillMaxWidth()
                     .padding(top = 24.dp, bottom = 24.dp)
             ) {
-                if(email==null) ProfileImage(chatDC, 96.dp)
-                else ProfileImage(person, email, 96.dp)
+                if(email==null) {
+                    if(chatDC!=null) ProfileImage(chatDC, 96.dp)
+                    else ProfileImage(null, "null", 96.dp)
+                } else ProfileImage(person, email, 96.dp)
 
                 Spacer(Modifier.height(12.dp))
 
                 Text(
-                    text = email?:chatDC.chatName,
+                    text = email?:chatDC?.chatName?:"null",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -241,7 +245,7 @@ private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: Sn
         }
 
         item {
-            ContentSwitcher(chatDC, email, profilePage)
+            if(chatDC!=null) ContentSwitcher(chatDC, email, profilePage)
         }
 
         item {
@@ -273,7 +277,7 @@ private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: Sn
                                 )
                                 Divider()
                             }
-                            if (chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP && email==null) {
+                            if (chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email==null) {
                                 InfoRow(label = "Описание", value = "Тут будет описание группы")
                             }
                             if (email!=null) {
@@ -287,7 +291,7 @@ private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: Sn
                             }
                         }
                     }
-                    if (chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP && email==null) {
+                    if (chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email==null) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
@@ -317,7 +321,7 @@ private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: Sn
                         }
                     }
                     Spacer(Modifier.height(9.dp))
-                    if (!(chatDC.chatType==ChatDC.Companion.ChatTypes.GROUP && email!=null)) {
+                    if (!(chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email!=null)) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
@@ -350,13 +354,13 @@ private fun ProfileContent(chatDC: ChatDC, email: String?, snackBarHostState: Sn
                     }
                 }
                 ProfilePage.MEDIA -> {
-                    MediaList(chatDC, email, snackBarHostState, scope, setImagePreview)
+                    if(chatDC!=null) MediaList(chatDC, email, snackBarHostState, scope, setImagePreview)
                 }
                 ProfilePage.AUDIO -> {
-                    AudioList(chatDC, email, snackBarHostState, scope)
+                    if(chatDC!=null) AudioList(chatDC, email, snackBarHostState, scope)
                 }
                 ProfilePage.FILES -> {
-                    FilesList(chatDC, email, snackBarHostState, scope)
+                    if(chatDC!=null) FilesList(chatDC, email, snackBarHostState, scope)
                 }
                 ProfilePage.MUTUAL_CHATS -> {
                     MutualChatsList(email, onMutualChatClick)

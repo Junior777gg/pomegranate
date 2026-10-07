@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
@@ -130,8 +131,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                         ProfileSettingsPanel(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            navController.navigate(route = Routes.ProfileScreen(selectedChat.value!!.key,
-                                selectedChat.value!!.personsEmails.first()))
+                            navController.navigate(Routes.ProfileScreen(0, Repository.myEmail))
                         }, {
                             navController.navigate(route = Routes.SettingsScreen())
                         }, {

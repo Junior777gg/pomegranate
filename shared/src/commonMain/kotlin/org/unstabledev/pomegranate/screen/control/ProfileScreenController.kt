@@ -10,7 +10,10 @@ import org.unstabledev.pomegranate.screen.Profile
 
 class ProfileScreenController(val chatKey: Long) : ViewModel() {
     private val chatDao = Repository.chatDao
-    private val chat = runBlocking {chatDao.getByKey(chatKey)}
+    private val chat = runBlocking {
+        if(chatKey!=0L) chatDao.getByKey(chatKey)
+        else null
+    }
     val profile = MutableStateFlow(Profile())
     fun getProfile(email: String): Profile? {
         return runBlocking { Gravatar.getProfile(email.sha256()) }
