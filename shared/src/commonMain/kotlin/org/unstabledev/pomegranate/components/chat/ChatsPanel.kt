@@ -316,7 +316,7 @@ fun ChatsList(
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
-        items(items = sortedChats, key = { it }) { chat ->
+        items(items = sortedChats, key = { it.key }) { chat ->
             val menuExpanded = remember { mutableStateOf(false) }
             val message by getLastMessageTextFlow(chat)
                 .collectAsStateWithLifecycle(initialValue = listOf("",""))

@@ -35,8 +35,8 @@ interface ChatDao {
     @Query("SELECT * FROM chat WHERE personsEmails LIKE '%' || :email || '%'")
     fun getAllChatsWith(email: String): Flow<List<ChatDC>>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM chat WHERE personsEmails LIKE '%' || :email || '%' LIMIT 1)")
-    fun hasChatsWith(email: String): Flow<Boolean>
+    @Query("SELECT COUNT(*) FROM chat WHERE personsEmails LIKE '%' || :email || '%'")
+    fun countChatsWith(email: String): Flow<Int>
 
     @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
     fun getByName(chatName: String): Flow<ChatDC>

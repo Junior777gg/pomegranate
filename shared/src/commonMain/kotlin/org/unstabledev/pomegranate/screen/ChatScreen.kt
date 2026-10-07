@@ -53,12 +53,10 @@ import org.unstabledev.pomegranate.components.chat.NewContactWidget
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
 import kotlin.time.Duration.Companion.seconds
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,7 +133,7 @@ fun ChatScreen(
                     if (messages.value.isEmpty() &&
                         viewModel.getChat().chatType != ChatDC.Companion.ChatTypes.GROUP) scope.launch { viewModel.deleteChat()
                         viewModel.deleteMessages() }
-                    navController.navigate(route = Routes.HomeScreen())
+                    navController.navigate(Routes.HomeScreen())
                 }
                 ChatHeader(
                     viewModel,
@@ -147,7 +145,8 @@ fun ChatScreen(
                         viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
                     },
                     {
-                        navController.navigate(route = Routes.ProfileScreen(chatKey, viewModel.getChat().personsEmails.first()))
+                        if(viewModel.getChat().chatType==ChatDC.Companion.ChatTypes.GROUP) navController.navigate(Routes.ProfileScreen(chatKey, null))
+                        else navController.navigate(Routes.ProfileScreen(chatKey, viewModel.getChat().personsEmails.first()))
                     },
                     {
                         scope.launch {
