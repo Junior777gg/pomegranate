@@ -302,7 +302,7 @@ private fun ProfileContent(chatDC: ChatDC?, email: String?, snackBarHostState: S
                                 Column {
                                     for (contact in chatDC.personsEmails) {
                                         Row(Modifier.clickable { onProfileClick(contact) }, verticalAlignment = Alignment.CenterVertically) {
-                                            ContactRow(contact, modifier = Modifier.weight(1.0f))
+                                            ContactRow(contact)
                                             if (contact == chatDC.chatCreator) {
                                                 Spacer(Modifier.width(3.dp))
                                                 Icon(
@@ -438,7 +438,7 @@ private fun MutualChatsList(email: String?, onMutualChatClick: (ChatDC)->Unit) {
             Column {
                 for (chat in mutualChats.value) {
                     Row(Modifier.clickable { onMutualChatClick(chat) }, verticalAlignment = Alignment.CenterVertically) {
-                        ContactRow(chat.chatName, false, "", "", false) {
+                        ContactRow(chat.chatName, false, "", "", false, false) {
                             GeneratedProfileImage(chat.chatName)
                         }
                         /*if (contact == chatDC.chatCreator) {

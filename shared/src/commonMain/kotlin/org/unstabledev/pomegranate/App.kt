@@ -8,6 +8,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDao
@@ -26,6 +27,7 @@ fun App(chatDao: ChatDao, messagesDao: MessagesDao, personsDao: PersonDao) {
     }
 
     setStatusBarIcons(AppSettings.isLightTheme(settings))
+    PublicEventHandler.fetch()
 
     theme.AppTheme(theme = settings.theme, useAmoledOnDarkSystem = settings.useAmoledOnDarkSystem) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())

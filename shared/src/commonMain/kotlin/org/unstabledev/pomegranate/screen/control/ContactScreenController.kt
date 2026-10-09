@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.api.Gravatar
+import org.unstabledev.pomegranate.api.ext.Gravatar
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.database.serialize

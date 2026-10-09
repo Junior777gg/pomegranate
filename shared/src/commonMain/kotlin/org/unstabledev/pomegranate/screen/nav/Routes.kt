@@ -26,6 +26,8 @@ sealed class Routes {
     @Serializable
     class SettingsStorageScreen: Routes()
     @Serializable
+    class SettingsDeveloperScreen: Routes()
+    @Serializable
     class SettingsSelectFirebaseScreen: Routes()
     @Serializable
     class CallScreen: Routes()

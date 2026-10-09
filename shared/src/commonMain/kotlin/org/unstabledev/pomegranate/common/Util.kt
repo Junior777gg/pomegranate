@@ -12,6 +12,7 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
@@ -159,9 +160,8 @@ class Util {
             return Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
         }
 
-        fun LocalDateTime.toTimeMark(): String {
-            val currentTime=Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val monthName = when (this.month) {
+        fun getMonthName(month: Month): String {
+            return when (month) {
                 Month.JANUARY -> "января"
                 Month.FEBRUARY -> "февраля"
                 Month.MARCH -> "марта"
@@ -175,6 +175,35 @@ class Util {
                 Month.NOVEMBER -> "ноября"
                 Month.DECEMBER -> "декабря"
             }
+        }
+
+        fun getDayOfWeekName(dow: DayOfWeek): String {
+            return when (dow) {
+                DayOfWeek.MONDAY -> "понедельник"
+                DayOfWeek.TUESDAY -> "вторник"
+                DayOfWeek.WEDNESDAY -> "среда"
+                DayOfWeek.THURSDAY -> "четверг"
+                DayOfWeek.FRIDAY -> "пятница"
+                DayOfWeek.SATURDAY -> "суббота"
+                DayOfWeek.SUNDAY -> "воскресенье"
+            }
+        }
+
+        fun getShortDayOfWeekName(dow: DayOfWeek): String {
+            return when (dow) {
+                DayOfWeek.MONDAY -> "пн."
+                DayOfWeek.TUESDAY -> "вт."
+                DayOfWeek.WEDNESDAY -> "ср."
+                DayOfWeek.THURSDAY -> "чт."
+                DayOfWeek.FRIDAY -> "пт."
+                DayOfWeek.SATURDAY -> "сб."
+                DayOfWeek.SUNDAY -> "вс."
+            }
+        }
+
+        fun LocalDateTime.toTimeMark(): String {
+            val currentTime=Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val monthName=getMonthName(this.month)
             var str="${this.day} $monthName"
             if (currentTime.day==this.day) str="Сегодня"
             else if (currentTime.day==this.day+1) str="Вчера"
@@ -182,11 +211,32 @@ class Util {
             return str
         }
 
+        fun LocalDateTime.toFullDate(): String {
+            val year=this.year.toString().padStart(2, '0')
+            val month=this.month.ordinal.toString().padStart(2, '0')
+            val day=this.day.toString().padStart(2, '0')
+            return "${day}.${month}.${year}"
+        }
+
         fun Long.toHHMMTime(): String {
             val localDateTime = this.toLocalDateTime()
             val hours = localDateTime.hour.toString().padStart(2, '0')
             val minutes = localDateTime.minute.toString().padStart(2, '0')
             return "$hours:$minutes"
+        }
+
+        fun Long.toDatedHHMMTime(): String {
+            val currentTime=Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val localDateTime = this.toLocalDateTime()
+            if (currentTime.day==localDateTime.day) {
+                val hours = localDateTime.hour.toString().padStart(2, '0')
+                val minutes = localDateTime.minute.toString().padStart(2, '0')
+                return "$hours:$minutes"
+            } else if((currentTime.day-localDateTime.day)<7)
+                return getShortDayOfWeekName(localDateTime.dayOfWeek)
+            else if (currentTime.year!=localDateTime.year)
+                return "${localDateTime.day} ${getMonthName(localDateTime.month)}"
+            else return localDateTime.toFullDate()
         }
 
         val countryFlags = mapOf(

@@ -76,8 +76,8 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.Util.Companion.toHHMMTime
 import org.unstabledev.pomegranate.common.altClickable
-import org.unstabledev.pomegranate.api.OpenGraphDescriptor
-import org.unstabledev.pomegranate.api.OpenGraphParser
+import org.unstabledev.pomegranate.api.ext.OpenGraphDescriptor
+import org.unstabledev.pomegranate.api.ext.OpenGraphParser
 import org.unstabledev.pomegranate.common.Util.Companion.toLocalDateTime
 import org.unstabledev.pomegranate.common.Util.Companion.toTimeMark
 import org.unstabledev.pomegranate.components.AnimatedGifImage

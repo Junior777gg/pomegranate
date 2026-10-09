@@ -39,6 +39,7 @@ import org.unstabledev.pomegranate.screen.settings.StorageSettingsScreen
 import org.unstabledev.pomegranate.screen.settings.StyleSettingsScreen
 import org.unstabledev.pomegranate.platform.separator
 import org.unstabledev.pomegranate.screen.ImagePreviewScreen
+import org.unstabledev.pomegranate.screen.settings.DeveloperSettingsScreen
 
 @Composable
 fun applyScreenPadding(base: Modifier = Modifier): Modifier {
@@ -100,6 +101,9 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
         }
         composable<Routes.SettingsStorageScreen>{
             StorageSettingsScreen(navController)
+        }
+        composable<Routes.SettingsDeveloperScreen>{
+            DeveloperSettingsScreen(navController)
         }
         composable<Routes.SettingsSelectFirebaseScreen>{
             FirebaseAddressSelectScreen(navController)

@@ -1,14 +1,18 @@
 package org.unstabledev.pomegranate.screen.control
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.common.SortingType
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.platform.PlatformEvents
 
@@ -22,6 +26,17 @@ class HomeScreenController : ViewModel() {
     init {
         viewModelScope.launch(Dispatchers.IO) {
             chatDao.getAll().collect { _chats.value = it }
+        }
+    }
+
+    suspend fun getChats(searchQuery: String = ""): List<ChatDC> {
+        val chats = chats.first()
+        return if (searchQuery.isEmpty()) {
+            chats
+        } else {
+            chats.filter { chat ->
+                chat.chatName.contains(searchQuery)
+            }
         }
     }
 

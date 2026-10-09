@@ -1,4 +1,4 @@
-package org.unstabledev.pomegranate.api
+package org.unstabledev.pomegranate.api.ext
 
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.network.parseGetRequest

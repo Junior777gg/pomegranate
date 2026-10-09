@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,11 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -32,9 +36,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.TextLayoutInput
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
@@ -50,85 +62,172 @@ import kotlin.math.min
 fun StorageSettingsScreen(navController: NavHostController) {
     val scope=rememberCoroutineScope()
     val chatDao = Repository.chatDao
+    val updateStorageGraph = remember { mutableStateOf(false) }
     ScrollablePage(navController, "Кэш и хранилище") {
-        val deviceTotalVolume = produceState(1L) {
-            value = KMPFile(pomegranatePath).getUsableSpace()
-        }
-        val imagesVolume = produceState(0L) {
-            val imgDir = KMPFile("${pomegranatePath}temp/img")
-            if (!imgDir.exists()) return@produceState
-            val files = imgDir.listFiles()
-            if (files?.isEmpty()?:true) return@produceState
-            for (file in files) {
-                value += file.length()
+        key(updateStorageGraph.value) {
+            val deviceTotalVolume = produceState(1L) {
+                value = KMPFile(pomegranatePath).getUsableSpace()
             }
-        }
-        val filesVolume = produceState(0L) {
-            val imgDir = KMPFile("${pomegranatePath}temp/file")
-            if (!imgDir.exists()) return@produceState
-            val files = imgDir.listFiles()
-            if (files?.isEmpty()?:true) return@produceState
-            for (file in files) {
-                value += file.length()
+            val imagesVolume = produceState(0L) {
+                val imgDir = KMPFile("${pomegranatePath}temp/img")
+                if (!imgDir.exists()) return@produceState
+                val files = imgDir.listFiles()
+                if (files?.isEmpty() ?: true) return@produceState
+                for (file in files) {
+                    value += file.length()
+                }
             }
-        }
-        val otherVolume = produceState(0L) {
-            val imgDir = KMPFile("${pomegranatePath}temp/dat")
-            if (!imgDir.exists()) return@produceState
-            val files = imgDir.listFiles()
-            if (files?.isEmpty()?:true) return@produceState
-            for (file in files) {
-                value += file.length()
+            val filesVolume = produceState(0L) {
+                val imgDir = KMPFile("${pomegranatePath}temp/file")
+                if (!imgDir.exists()) return@produceState
+                val files = imgDir.listFiles()
+                if (files?.isEmpty() ?: true) return@produceState
+                for (file in files) {
+                    value += file.length()
+                }
             }
-        }
-        val fullVolume = imagesVolume.value + filesVolume.value + otherVolume.value
-        fun getArcPercentage(v: Long, full: Long): Float {
-            return if (full>0L) min(max((v.toDouble()/full)*360.0,0.0),360.0).toFloat()
-            else 0.0f
-        }
-        Spacer(modifier = Modifier.padding(vertical = 5.dp))
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Canvas(Modifier.size(300.dp)) {
-                var lastArc = 0.0f
+            val otherVolume = produceState(0L) {
+                val imgDir = KMPFile("${pomegranatePath}temp/dat")
+                if (!imgDir.exists()) return@produceState
+                val files = imgDir.listFiles()
+                if (files?.isEmpty() ?: true) return@produceState
+                for (file in files) {
+                    value += file.length()
+                }
+            }
+            val fullVolume = imagesVolume.value + filesVolume.value + otherVolume.value
+            fun getArcPercentage(v: Long, full: Long): Float {
+                return if (full > 0L) min(max((v.toDouble() / full) * 360.0, 0.0), 360.0).toFloat()
+                else 0.0f
+            }
+            Spacer(modifier = Modifier.padding(vertical = 5.dp))
+            Box(Modifier.fillMaxWidth().height(300.dp)) {
+                Column(
+                    Modifier.fillMaxWidth().height(300.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Canvas(Modifier.size(300.dp)) {
+                        var lastArc = 0.0f
 
-                val imagesArc = getArcPercentage(imagesVolume.value, fullVolume)
-                drawArc(Color(1.0f, 0.2f, 0.2f),
-                    lastArc, imagesArc, false,
-                    style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
-                )
-                lastArc += imagesArc
+                        val imagesArc = getArcPercentage(imagesVolume.value, fullVolume)
+                        drawArc(
+                            Color(1.0f, 0.2f, 0.2f),
+                            lastArc, imagesArc, false,
+                            style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
+                        )
+                        lastArc += imagesArc
 
-                val filesArc = getArcPercentage(filesVolume.value, fullVolume)
-                drawArc(Color(0.8f, 0.3f, 0.8f),
-                    lastArc, filesArc, false,
-                    style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
-                )
-                lastArc += filesArc
+                        val filesArc = getArcPercentage(filesVolume.value, fullVolume)
+                        drawArc(
+                            Color(0.8f, 0.3f, 0.8f),
+                            lastArc, filesArc, false,
+                            style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
+                        )
+                        lastArc += filesArc
 
-                val otherArc = getArcPercentage(otherVolume.value, fullVolume)
-                drawArc(Color(0.9f, 0.8f, 0.2f),
-                    lastArc, otherArc, false,
-                    style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
-                )
+                        val otherArc = getArcPercentage(otherVolume.value, fullVolume)
+                        drawArc(
+                            Color(0.9f, 0.8f, 0.2f),
+                            lastArc, otherArc, false,
+                            style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
+                        )
+                    }
+                }
+                Column(
+                    Modifier.fillMaxWidth().height(300.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        Util.formatBinarySize(fullVolume),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 22.sp
+                    )
+                }
             }
-        }
-        Spacer(modifier = Modifier.padding(vertical = 10.dp))
-        val percentagePomer=(fullVolume.toDouble()/deviceTotalVolume.value.toDouble())*100
-        var percentagePomerStr=percentagePomer.roundTo(1)
-        if (percentagePomer<1) percentagePomerStr=percentagePomer.roundTo(2)
-        Text("Pomegranate занимает $percentagePomerStr%",
-            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.padding(vertical = 5.dp))
-        Box(Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth()) {
-            Column(
-                Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Всего: ${Util.formatBinarySize(fullVolume)}")
-                Text("Изображения: ${Util.formatBinarySize(imagesVolume.value)}")
-                Text("Файлы: ${Util.formatBinarySize(filesVolume.value)}")
-                Text("Остальное: ${Util.formatBinarySize(otherVolume.value)}")
+            Spacer(modifier = Modifier.padding(vertical = 10.dp))
+            val percentagePomer = (fullVolume.toDouble() / deviceTotalVolume.value.toDouble()) * 100
+            var percentagePomerStr = percentagePomer.roundTo(1)
+            if (percentagePomer < 1) percentagePomerStr = percentagePomer.roundTo(2)
+            Text(
+                "Pomegranate занимает $percentagePomerStr%",
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.padding(vertical = 5.dp))
+            Box(Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth()) {
+                val deleteImages = remember { mutableStateOf(true) }
+                val deleteFiles = remember { mutableStateOf(true) }
+                val deleteOther = remember { mutableStateOf(true) }
+                Column(
+                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (imagesVolume.value > 0) {
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .clickable { deleteImages.value = !deleteImages.value },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(deleteImages.value, { deleteImages.value = it })
+                            Spacer(Modifier.width(5.dp))
+                            Text("Изображения: ${Util.formatBinarySize(imagesVolume.value)}")
+                        }
+                    }
+                    if (filesVolume.value > 0) {
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .clickable { deleteImages.value = !deleteImages.value },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(deleteFiles.value, { deleteFiles.value = it })
+                            Spacer(Modifier.width(5.dp))
+                            Text("Файлы: ${Util.formatBinarySize(filesVolume.value)}")
+                        }
+                    }
+                    if (otherVolume.value > 0) {
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .clickable { deleteImages.value = !deleteImages.value },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(deleteOther.value, { deleteOther.value = it })
+                            Spacer(Modifier.width(5.dp))
+                            Text("Остальное: ${Util.formatBinarySize(otherVolume.value)}")
+                        }
+                    }
+                    Button(
+                        {
+                            if (deleteImages.value) {
+                                val f = KMPFile("${pomegranatePath}temp/img")
+                                if (f.exists() && f.isDirectory()) {
+                                    for (sub in f.listFiles()!!) sub.delete()
+                                }
+                            }
+                            if (deleteFiles.value) {
+                                val f = KMPFile("${pomegranatePath}temp/file")
+                                if (f.exists() && f.isDirectory()) {
+                                    for (sub in f.listFiles()!!) sub.delete()
+                                }
+                            }
+                            if (deleteOther.value) {
+                                val f = KMPFile("${pomegranatePath}temp/dat")
+                                if (f.exists() && f.isDirectory()) {
+                                    for (sub in f.listFiles()!!) sub.delete()
+                                }
+                            }
+                            updateStorageGraph.value = !updateStorageGraph.value
+                        }, Modifier.fillMaxWidth(), enabled = (
+                                (deleteImages.value && imagesVolume.value > 0L) ||
+                                (deleteFiles.value && filesVolume.value > 0L) ||
+                                (deleteOther.value && otherVolume.value > 0L)
+                        )
+                    ) {
+                        Text("rm -rf")
+                    }
+                }
             }
         }
         Spacer(modifier = Modifier.padding(vertical = 5.dp))

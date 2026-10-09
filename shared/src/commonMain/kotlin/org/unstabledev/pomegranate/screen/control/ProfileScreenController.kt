@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.api.Gravatar
+import org.unstabledev.pomegranate.api.ext.Gravatar
 import org.unstabledev.pomegranate.database.sha256
 import org.unstabledev.pomegranate.screen.Profile
 

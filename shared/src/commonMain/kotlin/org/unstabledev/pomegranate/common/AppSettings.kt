@@ -4,7 +4,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -31,6 +30,10 @@ data class AppSettingsState(
     val desktopHomeSplit: Float = 1.0f,
     val homeScreenSortingType: Int = SortingType.LAST_UPDATED_DESC,
     val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
+    val pinnedChats: List<Long> = listOf(),
+    val shownPinWarning: Boolean = false,
+    val lastHiddenEventId: String = "",
+    val developerMode: Boolean = false,
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(
         FirebaseAddress(
@@ -166,6 +169,34 @@ object AppSettings {
 
     fun setPowerSaveSettings(v: PowerSaveSettings) {
         _state.value = _state.value.copy(powerSaveSettings = v)
+    }
+
+    fun addPinnedChat(chatKey: Long) {
+        val chats=_state.value.pinnedChats.toMutableList()
+        chats.add(chatKey)
+        _state.value = _state.value.copy(pinnedChats = chats.toList())
+    }
+
+    fun removePinnedChat(chatKey: Long) {
+        val chats=_state.value.pinnedChats.toMutableList()
+        chats.remove(chatKey)
+        _state.value = _state.value.copy(pinnedChats = chats.toList())
+    }
+
+    fun clearPinnedChats(chatKey: Long) {
+        _state.value = _state.value.copy(pinnedChats = listOf())
+    }
+
+    fun setShownPinWarning(v: Boolean) {
+        _state.value = _state.value.copy(shownPinWarning = v)
+    }
+
+    fun setLastHiddenEventId(v: String) {
+        _state.value = _state.value.copy(lastHiddenEventId = v)
+    }
+
+    fun setDeveloperMode(v: Boolean) {
+        _state.value = _state.value.copy(developerMode = v)
     }
 
     fun isInPowerSaveMode(): Boolean =

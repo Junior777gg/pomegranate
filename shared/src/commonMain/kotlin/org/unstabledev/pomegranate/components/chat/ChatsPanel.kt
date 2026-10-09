@@ -1,11 +1,15 @@
 package org.unstabledev.pomegranate.components.chat
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,13 +18,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -37,15 +45,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.paint
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,13 +74,16 @@ import org.unstabledev.pomegranate.common.ChatBackgroundIds
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.common.SortingType
+import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
-import org.unstabledev.pomegranate.common.Util.Companion.toHHMMTime
+import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
 import org.unstabledev.pomegranate.common.altClickable
+import org.unstabledev.pomegranate.components.CircleWithCutoutShape
+import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
-import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
@@ -86,6 +100,8 @@ import pomegranate.shared.generated.resources.def06
 import pomegranate.shared.generated.resources.def07
 import pomegranate.shared.generated.resources.def08
 import pomegranate.shared.generated.resources.menu
+import pomegranate.shared.generated.resources.pin
+import pomegranate.shared.generated.resources.unpin
 
 @Composable
 fun SearchableChatsPanel(
@@ -97,21 +113,14 @@ fun SearchableChatsPanel(
     modifier: Modifier = Modifier,
     sorting: Int = SortingType.USE_SETTINGS_DEFAULT
 ) {
-    val chats by viewModel.chats.collectAsState()
-    val sufColor = MaterialTheme.colorScheme.surface
-
     val searchState = rememberTextFieldState()
     val searchText = searchState.text.toString().trim()
 
-    val filteredChats = if (searchText.isEmpty()) {
-        chats
-    } else {
-        chats.filter { chat ->
-            chat.personsEmails.contains(searchText)
-        }
-    }
+    val settings by AppSettings.state.collectAsState()
+    val chats = runBlocking { viewModel.getChats(searchText) }
 
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val sufColor = MaterialTheme.colorScheme.surface
         Column(
             modifier = Modifier
                 .height(50.dp).fillMaxWidth()
@@ -150,27 +159,107 @@ fun SearchableChatsPanel(
             }
         }
         NetworkWarningHeader()
-        if (filteredChats.isNotEmpty()) {
-            ChatsList(viewModel, filteredChats, onChatClick, onOpenProfileClick, sorting)
-        } else {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+
+        if (settings.lastHiddenEventId!=PublicEventHandler.eventId) {
+            val menuExpanded = remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .altClickable({
+                        //TODO: Do event action
+                        println("Event was clicked")
+                    }, {
+                        menuExpanded.value = true
+                        sendHaptic(HAPTIC_EFFECT_CLICK)
+                    })
             ) {
-                Text(
-                    if (chats.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
-                    else "Ничего не найдено",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                ContactRow(PublicEventHandler.title, true,
+                    PublicEventHandler.description, "",
+                    tripleColumn = true, isPinned = false
+                ) {
+                    Box(
+                        modifier = Modifier.size(50.dp).clip(CircleShape)
+                            .background(PublicEventHandler.bgColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "🎉",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                DropdownMenu(
+                    expanded = menuExpanded.value,
+                    onDismissRequest = { menuExpanded.value = false },
+                    modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("Скрыть событие", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            AppSettings.setLastHiddenEventId(PublicEventHandler.eventId)
+                            menuExpanded.value = false
+                        }
+                    )
+                }
+            }
+        }
+
+        if (chats.isNotEmpty()) {
+            ChatsList(viewModel, chats, onChatClick, onOpenProfileClick, sorting)
+        } else {
+            val isDevSearch = searchText.lowercase()=="devmode"
+            AnimatedVisibility(!isDevSearch) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        if (chats.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
+                        else "Ничего не найдено",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+            AnimatedVisibility(isDevSearch, enter = fadeIn(), exit = fadeOut()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "Переключение режима разработчика",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    Button({
+                        AppSettings.setDeveloperMode(!settings.developerMode)
+                        searchState.clearText()
+                    }) {
+                        Text(if(settings.developerMode) "Выключить" else "Включить")
+                    }
+                }
             }
         }
     }
 }
 
-fun getLastMessageTextFlow(chat: ChatDC): Flow<List<String>> {
+private fun getLastMessageTextFlow(chat: ChatDC): Flow<List<String>> {
     return Repository.messagesDao.tryGetLast(chat.chatName, chat.chatCreator, chat.chatType)
         .map { msg ->
             if (msg == null) return@map listOf("", "")
@@ -189,7 +278,7 @@ fun getLastMessageTextFlow(chat: ChatDC): Flow<List<String>> {
             }
 
             val prefix = if (msg.isMine) "Вы: " else ""
-            listOf(prefix + decodedText, msg.time.toHHMMTime())
+            listOf(prefix + decodedText, msg.time.toDatedHHMMTime())
         }
         .flowOn(Dispatchers.IO)
 }
@@ -270,7 +359,9 @@ fun ChatsList(
     val scope = rememberCoroutineScope()
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
     val showNameEditPopup = remember { mutableStateOf(false) }
+    val showAggressivePiningWarningPopup = remember { mutableStateOf(false) }
     val settings by AppSettings.state.collectAsState()
+    val pinnedChats = settings.pinnedChats
 
     var realSorting = sorting
     if (realSorting == SortingType.USE_SETTINGS_DEFAULT) realSorting = settings.homeScreenSortingType
@@ -302,17 +393,39 @@ fun ChatsList(
     }
 
     val sortedChats = when (realSorting) {
-        SortingType.LAST_UPDATED_DESC -> chats.sortedByDescending { chat -> chatTimeMap[chat.key] ?: 0L }
-        SortingType.LAST_UPDATED_ASC -> chats.sortedBy { chat -> chatTimeMap[chat.key] ?: 0L }
-        SortingType.ALPHABETICALLY_DESC -> chats.sortedByDescending { chat ->
-            displayNameMap[chat.key] ?: ""
+        SortingType.LAST_UPDATED_DESC -> {
+            val unpinned = chats.filter { it.key !in pinnedChats }
+                .sortedByDescending { chat -> chatTimeMap[chat.key] ?: 0L }
+            val pinned = chats.filter { it.key in pinnedChats }
+                .sortedByDescending { chat -> chatTimeMap[chat.key] ?: 0L }
+            pinned + unpinned
         }
-
-        SortingType.ALPHABETICALLY_ASC -> chats.sortedBy { chat ->
-            displayNameMap[chat.key] ?: ""
+        SortingType.LAST_UPDATED_ASC -> {
+            val unpinned = chats.filter { it.key !in pinnedChats }
+                .sortedBy { chat -> chatTimeMap[chat.key] ?: 0L }
+            val pinned = chats.filter { it.key in pinnedChats }
+                .sortedBy { chat -> chatTimeMap[chat.key] ?: 0L }
+            pinned + unpinned
         }
-
-        else -> chats
+        SortingType.ALPHABETICALLY_DESC -> {
+            val unpinned = chats.filter { it.key !in pinnedChats }
+                .sortedByDescending { chat -> displayNameMap[chat.key] ?: "" }
+            val pinned = chats.filter { it.key in pinnedChats }
+                .sortedByDescending { chat -> displayNameMap[chat.key] ?: "" }
+            pinned + unpinned
+        }
+        SortingType.ALPHABETICALLY_ASC -> {
+            val unpinned = chats.filter { it.key !in pinnedChats }
+                .sortedBy { chat -> displayNameMap[chat.key] ?: "" }
+            val pinned = chats.filter { it.key in pinnedChats }
+                .sortedBy { chat -> displayNameMap[chat.key] ?: "" }
+            pinned + unpinned
+        }
+        else -> {
+            val unpinned = chats.filter { it.key !in pinnedChats }
+            val pinned = chats.filter { it.key in pinnedChats }
+            pinned + unpinned
+        }
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 5.dp)) {
@@ -321,6 +434,7 @@ fun ChatsList(
             val message by getLastMessageTextFlow(chat)
                 .collectAsStateWithLifecycle(initialValue = listOf("",""))
             val hasLast = message.isNotEmpty()
+            val isPinned=pinnedChats.contains(chat.key)
 
             Row(
                 modifier = Modifier
@@ -333,7 +447,7 @@ fun ChatsList(
                         sendHaptic(HAPTIC_EFFECT_CLICK)
                     })
             ) {
-                ContactRow(chat, hasLast, message.first(), message.last(), settings.chatTripleColumn)
+                ContactRow(chat, hasLast, message.first(), message.last(), settings.chatTripleColumn, isPinned)
                 DropdownMenu(
                     expanded = menuExpanded.value,
                     onDismissRequest = { menuExpanded.value = false },
@@ -369,6 +483,29 @@ fun ChatsList(
                             menuExpanded.value = false
                             showNameEditPopup.value = true
                             selectedChat.value = chat
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(if(isPinned) "Открепить" else "Закрепить", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = if(isPinned) painterResource(Res.drawable.unpin) else painterResource(Res.drawable.pin),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp).rotate(45.0f)
+                            )
+                        },
+                        onClick = {
+                            if (pinnedChats.size>=5 && !settings.shownPinWarning && !isPinned) {
+                                showAggressivePiningWarningPopup.value=true
+                                selectedChat.value=chat
+                            } else {
+                                if (isPinned) AppSettings.removePinnedChat(chat.key)
+                                else AppSettings.addPinnedChat(chat.key)
+                            }
+                            menuExpanded.value = false
                         }
                     )
 
@@ -427,5 +564,31 @@ fun ChatsList(
                 )
             }
         }
+    }
+    if (showAggressivePiningWarningPopup.value && selectedChat.value != null) {
+        AlertDialog(
+            onDismissRequest = { showNameEditPopup.value = false },
+            title = {
+                Text(
+                    "Вы точно хотите закрепить?",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            text = {
+                Text("У вас уже есть 5 закрепов. Большее количество может вызывать проблемы с пониманием порядка чатов. Пожалуйста одумайтесь.")
+            },
+            confirmButton = {
+                Text("Я ИСПОЛЬЗУЮ 100% МЕССЕНДЖЕРА!", Modifier.clickable {
+                    AppSettings.setShownPinWarning(true)
+                    AppSettings.addPinnedChat(selectedChat.value!!.key)
+                    showAggressivePiningWarningPopup.value = false
+                })
+            },
+            dismissButton = {
+                Text("Отмена", Modifier.clickable {
+                    showAggressivePiningWarningPopup.value = false
+                })
+            }
+        )
     }
 }

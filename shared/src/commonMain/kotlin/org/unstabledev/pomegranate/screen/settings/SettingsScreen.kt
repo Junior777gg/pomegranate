@@ -178,6 +178,11 @@ fun SettingsScreen(navController: NavHostController) {
                     Spacer(Modifier.height(8.dp))
                     SettingsPageButton(Color(0.7f, 0.3f, 0.9f), Icons.Default.Storage, "Кэш и хранилище")
                         { navController.navigate(Routes.SettingsStorageScreen()) }
+                    if (settings.developerMode) {
+                        Spacer(Modifier.height(8.dp))
+                        SettingsPageButton(Color(0.5f, 0.5f, 0.5f), Icons.Default.Storage, "Для разработчиков")
+                        { navController.navigate(Routes.SettingsDeveloperScreen()) }
+                    }
                 }
             }
         }
