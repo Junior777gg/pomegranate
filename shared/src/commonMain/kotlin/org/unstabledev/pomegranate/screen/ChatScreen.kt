@@ -209,22 +209,22 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(messages.value, key = { message -> message.key }) { message ->
-                        val msgTime=message.time.toLocalDateTime()
+                        val msgTime = message.time.toLocalDateTime()
                         MessageBubble(
                             message, { navController.navigate(Routes.ImagePreview(message.key)) },
                             scope, snackBarHostState, settings.parseMarkdown
                         )
+
                         val currentIndex = messages.value.indexOf(message)
-                        if (currentIndex == messages.value.size-1) {
+                        if (currentIndex == messages.value.size - 1) {
                             TimeMark(msgTime.toTimeMark())
-                        } else if (currentIndex > 0) {
-                            val nextMessage = messages.value[min(currentIndex + 1, messages.value.size-1)]
+                        } else {
+                            val nextMessage = messages.value[currentIndex + 1]
                             val nextMsgTime = nextMessage.time.toLocalDateTime()
 
                             if (msgTime.day != nextMsgTime.day ||
                                 msgTime.month != nextMsgTime.month ||
                                 msgTime.year != nextMsgTime.year) {
-
                                 TimeMark(msgTime.toTimeMark())
                             }
                         }
