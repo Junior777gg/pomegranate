@@ -18,19 +18,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddModerator
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FilePresent
-import androidx.compose.material.icons.filled.Microwave
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,7 +44,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -59,8 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
@@ -83,7 +75,6 @@ import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
-import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
@@ -200,12 +191,12 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
                     ) { CircularProgressIndicator() }
                 }
                 is ProfileState.Success -> {
-                    ProfileContent(email, snackBarHostState, scope,
+                    ProfileContent(viewModel, email, snackBarHostState, scope,
                         onImagePreviewClick, onChatDelete, onContactClick,
                         onMutualChatClick)
                 }
                 is ProfileState.NotFound -> {
-                    ProfileContent(email, snackBarHostState, scope,
+                    ProfileContent(viewModel, email, snackBarHostState, scope,
                         onImagePreviewClick, onChatDelete, onContactClick,
                         onMutualChatClick)
                 }
@@ -226,7 +217,7 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
 }
 
 @Composable
-private fun ProfileContent(email: String?, snackBarHostState: SnackbarHostState,
+private fun ProfileContent(viewModel: ProfileScreenController, email: String?, snackBarHostState: SnackbarHostState,
                            scope: CoroutineScope, setImagePreview: (MessageDC)->Unit,
                            onChatDelete: ()->Unit, onProfileClick: (String)->Unit,
                            onMutualChatClick: (ChatDC)->Unit) {
@@ -516,6 +507,7 @@ private fun ProfileContent(email: String?, snackBarHostState: SnackbarHostState,
                                     )
                                     ctx_chatKey = ctx_chatDC!!.key
                                     redrawIndex.value=!redrawIndex.value
+                                    viewModel.invite(em)
                                     //TODO: Networking & syncing.
                                 }
                             }

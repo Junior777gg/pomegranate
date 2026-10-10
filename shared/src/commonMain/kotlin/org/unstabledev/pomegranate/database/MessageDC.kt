@@ -12,6 +12,7 @@ data class MessageDC(
     var chatCreator: String = "",
     val messageCreator: String = "",
     var data: ByteArray,
+    var supData: ByteArray = ByteArray(0),
     var isDelivered: Boolean = false,
     val type: String = "",
     val time: Long = 0,
@@ -30,6 +31,7 @@ data class MessageDC(
         const val BEGIN_CALL = "call:begin"
         const val ACCEPT_CALL = "call:accept"
         const val END_CALL = "call:end"
+        const val INVITE = "invite"
 
         fun MessageDC.isDisplayable(): Boolean {
             return type!=SECURITY_CONFIG

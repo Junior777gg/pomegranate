@@ -171,10 +171,10 @@ fun ChatScreen(
                     viewModel,
                     back,
                     {
-                        viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
+                        viewModel.send(message = null, type = MessageDC.BEGIN_CALL, files = listOf())
                     },
                     {
-                        viewModel.send(message = null, type = MessageDC.BEGIN_CALL)
+                        viewModel.send(message = null, type = MessageDC.BEGIN_CALL, files = listOf())
                     },
                     {
                         if(viewModel.getChat().chatType==ChatDC.Companion.ChatTypes.GROUP) navController.navigate(Routes.ProfileScreen(chatKey, null))

@@ -309,7 +309,7 @@ fun MessageInput(
                                     currentVoiceFile = null
                                 }
                             } else if (text.isNotEmpty()) {
-                                viewModel.send(text, type = MessageDC.TEXT)
+                                viewModel.send(text, files = listOf(), type = MessageDC.TEXT)
                                 state.clearText()
                             } else {
                                 try {

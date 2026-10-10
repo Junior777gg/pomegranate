@@ -1,6 +1,7 @@
 package org.unstabledev.pomegranate
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.viewModelScope
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,10 +105,35 @@ object Repository {
         }
     }
 
+    fun startMessaging(email: String, messages: MutableList<MessageDC>) {
+        scope.launch(Dispatchers.IO) {
+            val manager = BaseP2P().createConnection(email)
+            try {
+                val observer = Observer(
+                    manager,
+                    manager.channel!!,
+                    email,
+                    messagesDao
+                )
+                availablePersons.getOrPut(email) { MutableSharedFlow(1) }.emit(observer)
+                messages.forEach {
+                    observer.sendMessage(it)
+                }
+            } catch (_: TimeoutCancellationException) {
+                if (waitedConnection[email] == null) {
+                    waitedConnection[email] = messages
+                } else {
+                    waitedConnection[email]!!.addAll(messages)
+                }
+            }
+        }
+    }
+
     fun createMessage(
         chatDC: ChatDC,
         message: String? = null,
         file: KMPFile? = null,
+        supData: ByteArray = byteArrayOf(),
         type: String
     ): MessageDC {
         var currentMessage: MessageDC? = null
@@ -123,20 +149,22 @@ object Repository {
                     chatName = chatDC.chatName,
                     chatType = chatDC.chatType,
                     chatCreator = chatDC.chatCreator,
+                    supData = supData,
                 )
                 currentMessage = messageDC
             }
 
-            MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> {
+            MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL, MessageDC.INVITE -> {
                 val messageDC = MessageDC(
                     messageCreator = myEmail,
-                    data = ByteArray(0),
+                    data = "some symbols".encodeToByteArray(),
                     type = type,
                     time = time,
                     isMine = true,
                     chatName = chatDC.chatName,
                     chatType = chatDC.chatType,
                     chatCreator = chatDC.chatCreator,
+                    supData = supData,
                 )
                 currentMessage = messageDC
             }
@@ -153,6 +181,7 @@ object Repository {
                     chatName = chatDC.chatName,
                     chatType = chatDC.chatType,
                     chatCreator = chatDC.chatCreator,
+                    supData = supData,
                 )
                 currentMessage = messageDC
             }
@@ -174,6 +203,7 @@ object Repository {
                         chatName = chatDC.chatName,
                         chatType = chatDC.chatType,
                         chatCreator = chatDC.chatCreator,
+                        supData = supData,
                     )
                     currentMessage = messageDC
                 }

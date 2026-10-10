@@ -165,6 +165,14 @@ class Observer(
                                         currentCallState.value = CallState.Calling
                                         currentCall.value = Call(personDC?.personEmail!!, videoManager,audioManager, false)
                                     }
+                                    if (messageDC.type == MessageDC.INVITE){
+                                        Repository.chatDao.upsert(ChatDC(
+                                            chatName = messageDC.chatName,
+                                            chatCreator = messageDC.chatCreator,
+                                            chatType = messageDC.chatType,
+                                            personsEmails = Json.decodeFromString(messageDC.supData.decodeToString())
+                                        ))
+                                    }
                                     /*if (messageDC.type == MessageDC.SECURITY_CONFIG) {
                                         val cfg=SecurityConfig().fromByteArray(messageDC.data)
                                         personDC.securityConfig = cfg.toString()
@@ -189,18 +197,17 @@ class Observer(
     fun sendMessage(message: MessageDC) {
         lastAction = now().toEpochMilliseconds()
         scope.launch {
-            var data = message.data
+            val data = message.data
             val msg = message.copy()
             val code = Random.nextInt(1, 255).toByte()
             val isCall = message.type==MessageDC.BEGIN_CALL
-            if (isCall && data.isEmpty()) {
+            if (isCall) {
                 launch {
                     val videoManager = manager.fork()
                     val audioManager = manager.fork()
                     currentCallState.value = CallState.AcceptedCall
                     currentCall.value = Call(email, videoManager,audioManager)
                 }
-                data = "call".encodeToByteArray()
             }
             deliverMap[code] = data
             if (message.type != MessageDC.TEXT && !isCall) {
