@@ -176,7 +176,8 @@ fun SearchableChatsPanel(
             ) {
                 ContactRow(PublicEventHandler.title, true,
                     PublicEventHandler.description, "",
-                    tripleColumn = true, isPinned = false
+                    tripleColumn = true, isPinned = false,
+                    Modifier.fillMaxWidth().height(64.dp)
                 ) {
                     Box(
                         modifier = Modifier.size(50.dp).clip(CircleShape)

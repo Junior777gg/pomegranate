@@ -131,7 +131,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                         ProfileSettingsPanel(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            navController.navigate(Routes.ProfileScreen(0, Repository.myEmail))
+                            navController.navigate(Routes.ProfileScreen(null, Repository.myEmail))
                         }, {
                             navController.navigate(route = Routes.SettingsScreen())
                         }, {

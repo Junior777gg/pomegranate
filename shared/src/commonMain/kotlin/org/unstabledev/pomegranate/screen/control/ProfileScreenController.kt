@@ -8,10 +8,10 @@ import org.unstabledev.pomegranate.api.ext.Gravatar
 import org.unstabledev.pomegranate.database.sha256
 import org.unstabledev.pomegranate.screen.Profile
 
-class ProfileScreenController(val chatKey: Long) : ViewModel() {
+class ProfileScreenController(val chatKey: Long?) : ViewModel() {
     private val chatDao = Repository.chatDao
     private val chat = runBlocking {
-        if(chatKey!=0L) chatDao.getByKey(chatKey)
+        if(chatKey!=null) chatDao.getByKey(chatKey)
         else null
     }
     val profile = MutableStateFlow(Profile())

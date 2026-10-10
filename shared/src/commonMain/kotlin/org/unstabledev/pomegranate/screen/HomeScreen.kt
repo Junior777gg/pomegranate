@@ -111,7 +111,7 @@ fun HomeScreen(navController: NavHostController) {
                     label = { Text("Профиль", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        navController.navigate(Routes.ProfileScreen(0, Repository.myEmail))
+                        navController.navigate(Routes.ProfileScreen(null, Repository.myEmail))
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)

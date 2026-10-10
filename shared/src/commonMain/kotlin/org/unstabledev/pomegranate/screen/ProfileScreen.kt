@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddModerator
 import androidx.compose.material.icons.filled.ArrowBack
@@ -26,11 +28,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material.icons.filled.Microwave
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -45,6 +51,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
@@ -70,13 +78,17 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.Util
+import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.GeneratedProfileImage
+import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.components.chat.ContactRow
@@ -87,6 +99,8 @@ import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.screen.control.ProfileScreenController
 import org.unstabledev.pomegranate.screen.nav.Routes
+import pomegranate.shared.generated.resources.Res
+import pomegranate.shared.generated.resources.owner
 
 @Serializable
 data class Profile(
@@ -108,13 +122,20 @@ sealed class ProfileState {
     data class Error(val message: String) : ProfileState()
 }
 
+private var ctx_chatDC: ChatDC? = null
+private var ctx_chatKey: Long? = null
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String?) {
+fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: String?) {
     val viewModel = viewModel { ProfileScreenController(chatKey) }
     val snackBarHostState = remember { SnackbarHostState() }
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
+
+    ctx_chatDC = viewModel.getChat()
+    ctx_chatKey = chatKey
+
     val onImagePreviewClick: (MessageDC)->Unit = remember {
         { msg -> navController.navigate(Routes.ImagePreview(msg.key)) }
     }
@@ -179,14 +200,14 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String
                     ) { CircularProgressIndicator() }
                 }
                 is ProfileState.Success -> {
-                    ProfileContent(viewModel.getChat(), email, snackBarHostState, scope,
+                    ProfileContent(email, snackBarHostState, scope,
                         onImagePreviewClick, onChatDelete, onContactClick,
-                        onMutualChatClick, chatKey)
+                        onMutualChatClick)
                 }
                 is ProfileState.NotFound -> {
-                    ProfileContent(viewModel.getChat(), email, snackBarHostState, scope,
+                    ProfileContent(email, snackBarHostState, scope,
                         onImagePreviewClick, onChatDelete, onContactClick,
-                        onMutualChatClick, chatKey)
+                        onMutualChatClick)
                 }
                 is ProfileState.Error -> {
                     Box(
@@ -205,167 +226,308 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long, email: String
 }
 
 @Composable
-private fun ProfileContent(chatDC: ChatDC?, email: String?, snackBarHostState: SnackbarHostState,
+private fun ProfileContent(email: String?, snackBarHostState: SnackbarHostState,
                            scope: CoroutineScope, setImagePreview: (MessageDC)->Unit,
                            onChatDelete: ()->Unit, onProfileClick: (String)->Unit,
-                           onMutualChatClick: (ChatDC)->Unit, chatKey: Long) {
+                           onMutualChatClick: (ChatDC)->Unit) {
     val profilePage = remember { mutableStateOf(ProfilePage.ABOUT) }
-    val person = runBlocking { Repository.personsDao.getByEmail(email?:chatDC?.chatName?:"null") }
+    val person = runBlocking { Repository.personsDao.getByEmail(email?:ctx_chatDC?.chatName?:"null") }
     val profile = person?.profile?.deserialize()
-    LazyColumn(Modifier.padding(top = if(isMobile) 50.dp else 0.dp)) {
-        item {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp, bottom = 24.dp)
-            ) {
-                if(email==null) {
-                    if(chatDC!=null) ProfileImage(chatDC, 96.dp)
-                    else ProfileImage(null, "null", 96.dp)
-                } else ProfileImage(person, email, 96.dp)
+    val showGroupAddPrompt = remember { mutableStateOf(false) }
+    val redrawIndex = remember { mutableStateOf(false) }
+    key(redrawIndex.value) {
+        LazyColumn(Modifier.padding(top = if (isMobile) 50.dp else 0.dp)) {
+            item {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp, bottom = 24.dp)
+                ) {
+                    if (email == null) {
+                        if (ctx_chatDC != null) ProfileImage(ctx_chatDC!!, 96.dp)
+                        else ProfileImage(null, "null", 96.dp)
+                    } else ProfileImage(person, email, 96.dp)
 
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                Text(
-                    text = email?:chatDC?.chatName?:"null",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                if (profile?.jobTitle?.isNotBlank()?:false || profile?.company?.isNotBlank()?:false) {
                     Text(
-                        text = "${profile.jobTitle} • ${profile.company}".trim(' ', '•'),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = email ?: ctx_chatDC?.chatName ?: "null",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
+
+                    if (profile?.jobTitle?.isNotBlank() ?: false || profile?.company?.isNotBlank() ?: false) {
+                        Text(
+                            text = "${profile.jobTitle} • ${profile.company}".trim(' ', '•'),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
-        }
 
-        item {
-            if(chatDC!=null) ContentSwitcher(chatDC, email, profilePage, chatKey)
-        }
+            item {
+                if (ctx_chatDC != null && ctx_chatKey != null)
+                    ContentSwitcher(ctx_chatDC!!, email, profilePage)
+            }
 
-        item {
-            when(profilePage.value) {
-                ProfilePage.ABOUT -> {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Column(Modifier.padding(vertical = 4.dp)) {
-                            if (profile?.description?.isNotBlank()?:false) {
-                                InfoRow(label = "О себе", value = profile.description)
-                                Divider()
-                            }
-                            if (profile?.location?.isNotBlank()?:false) {
-                                InfoRow(label = "Локация", value = profile.location)
-                                Divider()
-                            }
-                            if (profile?.profileUrl?.isNotBlank()?:false) {
-                                InfoRow(
-                                    label = "Ссылка",
-                                    value = profile.profileUrl,
-                                    valueColor = MaterialTheme.colorScheme.primary,
-                                    snackBarHostState = snackBarHostState,
-                                    canBeCopied = true,
-                                )
-                                Divider()
-                            }
-                            if (chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email==null) {
-                                InfoRow(label = "Описание", value = "Тут будет описание группы")
-                            }
-                            if (email!=null) {
-                                InfoRow(
-                                    label = "Email",
-                                    value = email,
-                                    canBeCopied = true,
-                                    snackBarHostState = snackBarHostState,
-                                    valueColor = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                    if (chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email==null) {
+            item {
+                when (profilePage.value) {
+                    ProfilePage.ABOUT -> {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal =  16.dp, vertical = 5.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         ) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text("Участники", fontWeight = FontWeight.SemiBold)
-                                Column {
-                                    for (contact in chatDC.personsEmails) {
-                                        Row(Modifier.clickable { onProfileClick(contact) }, verticalAlignment = Alignment.CenterVertically) {
-                                            ContactRow(contact)
-                                            if (contact == chatDC.chatCreator) {
-                                                Spacer(Modifier.width(3.dp))
-                                                Icon(
-                                                    imageVector = Icons.Default.Shield,
-                                                    contentDescription = "Владелец",
-                                                    tint = MaterialTheme.colorScheme.primary
+                            Column(Modifier.padding(vertical = 4.dp)) {
+                                if (profile?.description?.isNotBlank() ?: false) {
+                                    InfoRow(label = "О себе", value = profile.description)
+                                    Divider()
+                                }
+                                if (profile?.location?.isNotBlank() ?: false) {
+                                    InfoRow(label = "Локация", value = profile.location)
+                                    Divider()
+                                }
+                                if (profile?.profileUrl?.isNotBlank() ?: false) {
+                                    InfoRow(
+                                        label = "Ссылка",
+                                        value = profile.profileUrl,
+                                        valueColor = MaterialTheme.colorScheme.primary,
+                                        snackBarHostState = snackBarHostState,
+                                        canBeCopied = true,
+                                    )
+                                    Divider()
+                                }
+                                if (ctx_chatDC?.chatType == ChatDC.Companion.ChatTypes.GROUP && email == null) {
+                                    InfoRow(label = "Описание", value = "Тут будет описание группы")
+                                }
+                                if (email != null) {
+                                    InfoRow(
+                                        label = "Email",
+                                        value = email,
+                                        canBeCopied = true,
+                                        snackBarHostState = snackBarHostState,
+                                        valueColor = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                        if (ctx_chatDC?.chatType == ChatDC.Companion.ChatTypes.GROUP && email == null) {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 5.dp)
+                            ) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("Участники", fontWeight = FontWeight.SemiBold)
+                                    Column {
+                                        for (contact in ctx_chatDC!!.personsEmails) {
+                                            val menuExpanded = remember { mutableStateOf(false) }
+                                            Row(
+                                                Modifier.altClickable({ onProfileClick(contact) },
+                                                    { menuExpanded.value = true }),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                ContactRow(
+                                                    contact,
+                                                    modifier = Modifier.weight(2.0f)
                                                 )
+                                                if (contact == ctx_chatDC!!.chatCreator) {
+                                                    Spacer(Modifier.width(3.dp))
+                                                    Icon(
+                                                        painter = painterResource(Res.drawable.owner),
+                                                        contentDescription = "Владелец",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                                if (menuExpanded.value) {
+                                                    DropdownMenu(
+                                                        expanded = menuExpanded.value,
+                                                        onDismissRequest = { menuExpanded.value = false },
+                                                        modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
+                                                    ) {
+                                                        DropdownMenuItem(
+                                                            text = {
+                                                                Text(
+                                                                    "Профиль",
+                                                                    color = MaterialTheme.colorScheme.onBackground
+                                                                )
+                                                            },
+                                                            leadingIcon = {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Person,
+                                                                    contentDescription = null
+                                                                )
+                                                            },
+                                                            onClick = {
+                                                                onProfileClick(contact)
+                                                                menuExpanded.value = false
+                                                            }
+                                                        )
+                                                        if (contact!=Repository.myEmail) {
+                                                            DropdownMenuItem(
+                                                                text = {
+                                                                    Text(
+                                                                        "Выгнать",
+                                                                        color = MaterialTheme.colorScheme.error
+                                                                    )
+                                                                },
+                                                                leadingIcon = {
+                                                                    Icon(
+                                                                        imageVector = Icons.Default.ExitToApp,
+                                                                        tint = MaterialTheme.colorScheme.error,
+                                                                        contentDescription = null
+                                                                    )
+                                                                },
+                                                                onClick = {
+                                                                    scope.launch {
+                                                                        val emails =
+                                                                            ctx_chatDC!!.personsEmails.toMutableList()
+                                                                        emails.remove(contact)
+                                                                        ctx_chatDC =
+                                                                            Repository.chatDao.upsertAndGet(
+                                                                                ctx_chatDC!!.copy(
+                                                                                    personsEmails = emails.toList()
+                                                                                )
+                                                                            )
+                                                                        ctx_chatKey =
+                                                                            ctx_chatDC!!.key
+                                                                        redrawIndex.value =
+                                                                            !redrawIndex.value
+                                                                        //TODO: Networking & syncing.
+                                                                    }
+                                                                    menuExpanded.value = false
+                                                                }
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
+                                        Row(Modifier.clickable {
+                                            showGroupAddPrompt.value = true
+                                        }) {
+                                            Text("+ Добавить участников",
+                                                color = MaterialTheme.colorScheme.primary)
+                                        }
                                     }
-                                    Row {
-                                        Text("+ Добавить участников", color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                        if (ctx_chatDC?.chatType == ChatDC.Companion.ChatTypes.GROUP || ctx_chatKey != null) {
+                            Spacer(Modifier.height(9.dp))
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 5.dp)
+                            ) {
+                                Column {
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(
+                                            top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp
+                                        ).clickable {},
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Settings,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        Spacer(Modifier.width(5.dp))
+                                        Text("Настройки чата")
+                                    }
+                                    Spacer(Modifier.width(5.dp))
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(all = 16.dp)
+                                            .clickable { onChatDelete() },
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = if (email == null) Icons.Default.ExitToApp else Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(
+                                            if (email == null) "Покинуть чат" else "Удалить чат",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                             }
                         }
                     }
-                    Spacer(Modifier.height(9.dp))
-                    if (!(chatDC?.chatType==ChatDC.Companion.ChatTypes.GROUP && email!=null || chatKey==0L)) {
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal =  16.dp, vertical = 5.dp)
-                        ) {
-                            Column {
-                                Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp).clickable {},
-                                    verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground
-                                    )
-                                    Spacer(Modifier.width(5.dp))
-                                    Text("Настройки чата")
-                                }
-                                Spacer(Modifier.width(5.dp))
-                                Row(Modifier.fillMaxWidth().padding(all = 16.dp).clickable { onChatDelete() }, verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = if(email==null) Icons.Default.ExitToApp else Icons.Default.Delete,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                    Spacer(Modifier.width(5.dp))
-                                    Text(if(email==null) "Покинуть чат" else "Удалить чат",
-                                        color = MaterialTheme.colorScheme.error)
-                                }
-                            }
-                        }
+
+                    ProfilePage.MEDIA -> {
+                        if (ctx_chatDC != null)
+                            MediaList(ctx_chatDC!!, email,
+                                snackBarHostState, scope, setImagePreview)
                     }
-                }
-                ProfilePage.MEDIA -> {
-                    if(chatDC!=null) MediaList(chatDC, email, snackBarHostState, scope, setImagePreview)
-                }
-                ProfilePage.AUDIO -> {
-                    if(chatDC!=null) AudioList(chatDC, email, snackBarHostState, scope)
-                }
-                ProfilePage.FILES -> {
-                    if(chatDC!=null) FilesList(chatDC, email, snackBarHostState, scope)
-                }
-                ProfilePage.MUTUAL_CHATS -> {
-                    MutualChatsList(email, onMutualChatClick)
+
+                    ProfilePage.AUDIO -> {
+                        if (ctx_chatDC != null)
+                            AudioList(ctx_chatDC!!, email,
+                                snackBarHostState, scope)
+                    }
+
+                    ProfilePage.FILES -> {
+                        if (ctx_chatDC != null)
+                            FilesList(ctx_chatDC!!, email,
+                                snackBarHostState, scope)
+                    }
+
+                    ProfilePage.MUTUAL_CHATS -> {
+                        MutualChatsList(email, onMutualChatClick)
+                    }
                 }
             }
+        }
+        if (showGroupAddPrompt.value) {
+            val addUserState = rememberTextFieldState("")
+            AlertDialog(
+                onDismissRequest = { showGroupAddPrompt.value = false },
+                title = {
+                    Text(
+                        "Добавить человека",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
+                text = {
+                    LabeledTextField(addUserState, "Email")
+                },
+                confirmButton = {
+                    val em = addUserState.text.toString()
+                    Text(
+                        "Добавить",
+                        Modifier.clickable(em.isNotBlank()/*&&Util.isValidEmail(em)*/) {
+                            if (ctx_chatDC != null) {
+                                scope.launch {
+                                    val emails = ctx_chatDC!!.personsEmails.toMutableList()
+                                    emails.add(em)
+                                    ctx_chatDC = Repository.chatDao.upsertAndGet(
+                                        ctx_chatDC!!.copy(personsEmails = emails.toList())
+                                    )
+                                    ctx_chatKey = ctx_chatDC!!.key
+                                    redrawIndex.value=!redrawIndex.value
+                                    //TODO: Networking & syncing.
+                                }
+                            }
+                            showGroupAddPrompt.value = false
+                        })
+                },
+                dismissButton = {
+                    Text("Отмена", Modifier.clickable {
+                        showGroupAddPrompt.value = false
+                    })
+                }
+            )
         }
     }
 }
@@ -379,7 +541,7 @@ private object ProfilePage {
 }
 
 @Composable
-private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableState<Int>, chatKey: Long) {
+private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableState<Int>) {
     val countMedia = (
         if(email==null) Repository.messagesDao.countOfType(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE)
         else Repository.messagesDao.countOfTypeFrom(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.IMAGE, email)
@@ -393,7 +555,7 @@ private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableSt
         else Repository.messagesDao.countOfTypeFrom(chat.chatName, chat.chatCreator, chat.chatType, MessageDC.FILE, email)
     ).collectAsStateWithLifecycle(0)
     val countMutualChats =
-        if(email!=null&&chatKey!=0L) Repository.chatDao.countChatsWith(email).collectAsStateWithLifecycle(0)
+        if(email!=null) Repository.chatDao.countChatsWith(email).collectAsStateWithLifecycle(0)
         else mutableStateOf(0)
     if (countMedia.value==0 && countAudio.value==0 && countFiles.value==0 && countMutualChats.value==0) return
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(4.dp),
@@ -438,21 +600,11 @@ private fun MutualChatsList(email: String?, onMutualChatClick: (ChatDC)->Unit) {
             Column {
                 for (chat in mutualChats.value) {
                     Row(Modifier.clickable { onMutualChatClick(chat) }, verticalAlignment = Alignment.CenterVertically) {
-                        ContactRow(chat.chatName, false, "", "", false, false) {
+                        ContactRow(chat.chatName, false, "", "", false, false,
+                            Modifier.fillMaxWidth().height(64.dp)) {
                             GeneratedProfileImage(chat.chatName)
                         }
-                        /*if (contact == chatDC.chatCreator) {
-                            Spacer(Modifier.width(3.dp))
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = "Владелец",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }*/
                     }
-                }
-                Row {
-                    Text("+ Добавить участников", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

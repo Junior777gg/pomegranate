@@ -41,7 +41,7 @@ import pomegranate.shared.generated.resources.welcome_mobile
 
 @Composable
 fun ContactRow(chat: ChatDC, hasLast: Boolean = false, message: String = "", messageTime: String = "",
-               tripleColumn: Boolean = false, isPinned: Boolean = false) {
+               tripleColumn: Boolean = false, isPinned: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
     val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
     val profile = personDC?.profile?.deserialize()
     val name = when (chat.chatType) {
@@ -53,35 +53,35 @@ fun ContactRow(chat: ChatDC, hasLast: Boolean = false, message: String = "", mes
         }
         else -> ""
     }
-    ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned) {
+    ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned, modifier) {
         ProfileImage(chat)
     }
 }
 @Composable
 fun ContactRow(email: String, hasLast: Boolean = false, message: String = "", messageTime: String = "",
-               tripleColumn: Boolean = false, isPinned: Boolean = false) {
+               tripleColumn: Boolean = false, isPinned: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
     val personDC = runBlocking { Repository.personsDao.getByEmail(email) }
     val profile = personDC?.profile?.deserialize()
     val name = personDC?.nickname ?: profile?.displayName ?: email
-    ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned) {
+    ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned, modifier) {
         ProfileImage(personDC, email)
     }
 }
 @Composable
 fun ContactRow(personDC: PersonDC, hasLast: Boolean = false, message: String = "", messageTime: String = "",
-               tripleColumn: Boolean = false, isPinned: Boolean = false) {
+               tripleColumn: Boolean = false, isPinned: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
     val profile = personDC.profile?.deserialize()
     val name = personDC.nickname ?: profile?.displayName ?: ""
-    ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned) {
+    ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned, modifier) {
         ProfileImage(personDC, personDC.personEmail)
     }
 }
 
 @Composable
 fun ContactRow(name: String, hasLast: Boolean, message: String,
-                       messageTime: String, tripleColumn: Boolean, isPinned: Boolean,
-                       pfp: @Composable (ColumnScope.() -> Unit)) {
-    Row(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+               messageTime: String, tripleColumn: Boolean, isPinned: Boolean,
+               modifier: Modifier, pfp: @Composable (ColumnScope.() -> Unit)) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Column(
             modifier = Modifier.width(64.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
@@ -100,11 +100,12 @@ fun ContactRow(name: String, hasLast: Boolean, message: String,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 12.sp,
                     maxLines = if (tripleColumn) 2 else 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = true
                 )
             }
         }
-        Row(Modifier.padding(5.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.padding(5.dp).fillMaxHeight(), verticalAlignment = Alignment.Top) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(messageTime, color = MaterialTheme.colorScheme.onSurface, autoSize = TextAutoSize.StepBased(8.sp, 12.sp))
                 if (isPinned) {

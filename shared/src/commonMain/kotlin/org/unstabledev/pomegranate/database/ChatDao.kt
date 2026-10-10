@@ -19,12 +19,9 @@ interface ChatDao {
 
     @Transaction
     suspend fun upsertAndGet(chat: ChatDC): ChatDC {
-        val id = upsertInternal(chat)
+        val id = upsert(chat)
         return getByKey(id)
     }
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertInternal(chat: ChatDC): Long
 
     @Query("SELECT * FROM chat")
     fun getAll(): Flow<List<ChatDC>>
