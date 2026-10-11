@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -113,146 +114,153 @@ fun SearchableChatsPanel(
     modifier: Modifier = Modifier,
     sorting: Int = SortingType.USE_SETTINGS_DEFAULT
 ) {
-    val searchState = rememberTextFieldState()
-    val searchText = searchState.text.toString().trim()
+    key(viewModel.chats.value.hashCode()) {
+        val searchState = rememberTextFieldState()
+        val searchText = searchState.text.toString().trim()
 
-    val settings by AppSettings.state.collectAsState()
-    val chats = runBlocking { viewModel.getChats(searchText) }
+        val settings by AppSettings.state.collectAsState()
+        val chats = runBlocking { viewModel.getChats(searchText) }
 
-    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        val sufColor = MaterialTheme.colorScheme.surface
-        Column(
-            modifier = Modifier
-                .height(50.dp).fillMaxWidth()
-                .drawBehind {
-                    drawLine(
-                        color = sufColor,
-                        start = Offset(x = 0f, y = size.height),
-                        end = Offset(x = size.width, y = size.height),
-                        strokeWidth = 1.dp.toPx()
-                    )
-                }
-                .padding(start = 5.dp, end = 5.dp, top = 0.dp)
-        ) {
-            Row(
-                modifier = Modifier.height(50.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clickable { onSidemenuClick() },
-                    painter = painterResource(Res.drawable.menu),
-                    contentDescription = "menu",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-                Icon(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clickable { onChatAddClick() },
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "add",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-                LabeledTextField(searchState, "Поиск", singleLineIn = true)
-            }
-        }
-        NetworkWarningHeader()
-
-        if (settings.lastHiddenEventId!=PublicEventHandler.eventId) {
-            val menuExpanded = remember { mutableStateOf(false) }
-            Row(
+        Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            val sufColor = MaterialTheme.colorScheme.surface
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .altClickable({
-                        //TODO: Do event action
-                        println("Event was clicked")
-                    }, {
-                        menuExpanded.value = true
-                        sendHaptic(HAPTIC_EFFECT_CLICK)
-                    })
+                    .height(50.dp).fillMaxWidth()
+                    .drawBehind {
+                        drawLine(
+                            color = sufColor,
+                            start = Offset(x = 0f, y = size.height),
+                            end = Offset(x = size.width, y = size.height),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                    }
+                    .padding(start = 5.dp, end = 5.dp, top = 0.dp)
             ) {
-                ContactRow(PublicEventHandler.title, true,
-                    PublicEventHandler.description, "",
-                    tripleColumn = true, isPinned = false,
-                    Modifier.fillMaxWidth().height(64.dp)
+                Row(
+                    modifier = Modifier.height(50.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier.size(50.dp).clip(CircleShape)
-                            .background(PublicEventHandler.bgColor),
-                        contentAlignment = Alignment.Center
+                    Icon(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .clickable { onSidemenuClick() },
+                        painter = painterResource(Res.drawable.menu),
+                        contentDescription = "menu",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                    Icon(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .clickable { onChatAddClick() },
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "add",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                    LabeledTextField(searchState, "Поиск", singleLineIn = true)
+                }
+            }
+            NetworkWarningHeader()
+
+            if (settings.lastHiddenEventId != PublicEventHandler.eventId) {
+                val menuExpanded = remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .altClickable({
+                            //TODO: Do event action
+                            println("Event was clicked")
+                        }, {
+                            menuExpanded.value = true
+                            sendHaptic(HAPTIC_EFFECT_CLICK)
+                        })
+                ) {
+                    ContactRow(
+                        PublicEventHandler.title, true,
+                        PublicEventHandler.description, "",
+                        tripleColumn = true, isPinned = false,
+                        Modifier.fillMaxWidth().height(64.dp)
                     ) {
-                        Text(
-                            text = "🎉",
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
+                        Box(
+                            modifier = Modifier.size(50.dp).clip(CircleShape)
+                                .background(PublicEventHandler.bgColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "🎉",
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded.value,
+                        onDismissRequest = { menuExpanded.value = false },
+                        modifier = Modifier.width(230.dp)
+                            .background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    "Скрыть событие",
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                AppSettings.setLastHiddenEventId(PublicEventHandler.eventId)
+                                menuExpanded.value = false
+                            }
                         )
                     }
                 }
-                DropdownMenu(
-                    expanded = menuExpanded.value,
-                    onDismissRequest = { menuExpanded.value = false },
-                    modifier = Modifier.width(230.dp).background(MaterialTheme.colorScheme.surface)
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text("Скрыть событие", color = MaterialTheme.colorScheme.onBackground)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            AppSettings.setLastHiddenEventId(PublicEventHandler.eventId)
-                            menuExpanded.value = false
-                        }
-                    )
-                }
             }
-        }
 
-        if (chats.isNotEmpty()) {
-            ChatsList(viewModel, chats, onChatClick, onOpenProfileClick, sorting)
-        } else {
-            val isDevSearch = searchText.lowercase()=="devmode"
-            AnimatedVisibility(!isDevSearch) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        if (chats.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
-                        else "Ничего не найдено",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+            if (chats.isNotEmpty()) {
+                ChatsList(viewModel, chats, onChatClick, onOpenProfileClick, sorting)
+            } else {
+                val isDevSearch = searchText.lowercase() == "devmode"
+                AnimatedVisibility(!isDevSearch) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            if (chats.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
+                            else "Ничего не найдено",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                 }
-            }
-            AnimatedVisibility(isDevSearch, enter = fadeIn(), exit = fadeOut()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "Переключение режима разработчика",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(Modifier.height(5.dp))
-                    Button({
-                        AppSettings.setDeveloperMode(!settings.developerMode)
-                        searchState.clearText()
-                    }) {
-                        Text(if(settings.developerMode) "Выключить" else "Включить")
+                AnimatedVisibility(isDevSearch, enter = fadeIn(), exit = fadeOut()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "Переключение режима разработчика",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(Modifier.height(5.dp))
+                        Button({
+                            AppSettings.setDeveloperMode(!settings.developerMode)
+                            searchState.clearText()
+                        }) {
+                            Text(if (settings.developerMode) "Выключить" else "Включить")
+                        }
                     }
                 }
             }
