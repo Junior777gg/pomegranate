@@ -12,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.database.getChatDatabase
 import org.unstabledev.pomegranate.database.getMessagesDatabase
@@ -24,10 +25,17 @@ import org.unstabledev.pomegranate.platform.Notifications
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.context
 import java.io.File
+import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        AppSettings.load()
+        val appState = AppSettings.state.value
+        if (appState.currentLink == ""){
+            AppSettings.setCurrentLink(Random.nextLong().toString())
+            AppSettings.save()
+        }
         context = this
         Camera.context = this
         Notifications.context = this

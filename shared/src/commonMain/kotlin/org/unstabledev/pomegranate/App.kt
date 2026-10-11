@@ -21,11 +21,6 @@ import org.unstabledev.pomegranate.screen.nav.Navigation
 fun App(chatDao: ChatDao, messagesDao: MessagesDao, personsDao: PersonDao) {
     val theme = ColorTheme()
     val settings by AppSettings.state.collectAsState()
-
-    LaunchedEffect(Unit) {
-        AppSettings.load()
-    }
-
     setStatusBarIcons(AppSettings.isLightTheme(settings))
     PublicEventHandler.fetch()
 

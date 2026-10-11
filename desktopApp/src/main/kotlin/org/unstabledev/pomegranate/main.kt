@@ -27,9 +27,18 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import java.io.FilenameFilter
+import kotlin.random.Random
+import kotlin.random.nextLong
 
 fun main(args: Array<String>) {
+    AppSettings.load()
     val isOpen = mutableStateOf(true)
+    val appState = AppSettings.state.value
+    println(appState.currentLink)
+    if (appState.currentLink == ""){
+        AppSettings.setCurrentLink(Random.nextLong().toString())
+        AppSettings.save()
+    }
     val chatBuilder = getChatDatabaseBuilder()
     val chatDatabase = getChatDatabase(chatBuilder)
     val chatDao = chatDatabase.chatDao()

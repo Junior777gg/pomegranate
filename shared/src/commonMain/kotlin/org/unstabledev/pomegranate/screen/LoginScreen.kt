@@ -28,9 +28,11 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.kmpWriteText
+import org.unstabledev.pomegranate.platform.separator
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -66,11 +68,23 @@ fun LoginScreen(navController: NavHostController) {
                     errorText = "Некорректный Email"
                     return@Button
                 }*/
-                val file = KMPFile(fistFilePath).apply {
+                KMPFile(fistFilePath).apply {
                     createNewFile()
                 kmpWriteText(email)}
-                //Repository.lastOpponentEmail = email
-                navController.navigate(Routes.HomeScreen())
+                val appState = AppSettings.state.value
+                if (appState.accountLinks[email] != null) {
+                    KMPFile("${Repository.pomegranatePath}${appState.currentLink}").delete()
+                    AppSettings.setCurrentLink(appState.accountLinks[email]!!)
+                }else{
+                    val map = appState.accountLinks.toMutableMap().apply {
+                        set(email, appState.currentLink)
+                    }
+                    println(map[email]!!)
+                    AppSettings.setCurrentLink(map[email]!!)
+                    AppSettings.setAccountLinks(map)
+                }
+                AppSettings.save()
+                throw Exception("але")
             }){
                 Text("Войти")
             }

@@ -40,6 +40,7 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository.fistFilePath
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.platform.PlatformEvents
@@ -132,6 +133,7 @@ fun HomeScreen(navController: NavHostController) {
                     selected = false,
                     onClick = {
                         KMPFile(fistFilePath).delete()
+                        AppSettings.setCurrentLink("")
                         navController.navigate(Routes.LoginScreen())
                     },
                     icon = {

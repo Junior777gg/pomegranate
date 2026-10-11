@@ -136,6 +136,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             navController.navigate(route = Routes.SettingsScreen())
                         }, {
                             KMPFile(fistFilePath).delete()
+                            AppSettings.setCurrentLink("")
                             navController.navigate(route = Routes.LoginScreen())
                         })
                     }
