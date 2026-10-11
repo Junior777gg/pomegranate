@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -124,7 +126,7 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
 
-    ctx_chatDC = viewModel.getChat()
+    ctx_chatDC = viewModel.getChat()?.collectAsState(null)?.value
     ctx_chatKey = chatKey
 
     val onImagePreviewClick: (MessageDC)->Unit = remember {
@@ -134,7 +136,7 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
         {
             if(chatKey!=0L) {
                 scope.launch {
-                    val chat = viewModel.getChat()!!
+                    val chat = viewModel.getChat()?.first()!!
                     Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
                     Repository.chatDao.delete(chat)
                 }
@@ -384,9 +386,9 @@ private fun ProfileContent(viewModel: ProfileScreenController, email: String?, s
                                                                         ctx_chatDC =
                                                                             Repository.chatDao.upsertAndGet(
                                                                                 ctx_chatDC!!.copy(
-                                                                                    personsEmails = emails.toList()
+                                                                                    personsEmails = emails
                                                                                 )
-                                                                            )
+                                                                            ).first()
                                                                         ctx_chatKey =
                                                                             ctx_chatDC!!.key
                                                                         redrawIndex.value =
@@ -503,8 +505,8 @@ private fun ProfileContent(viewModel: ProfileScreenController, email: String?, s
                                     val emails = ctx_chatDC!!.personsEmails.toMutableList()
                                     emails.add(em)
                                     ctx_chatDC = Repository.chatDao.upsertAndGet(
-                                        ctx_chatDC!!.copy(personsEmails = emails.toList())
-                                    )
+                                        ctx_chatDC!!.copy(personsEmails = emails)
+                                    ).first()
                                     ctx_chatKey = ctx_chatDC!!.key
                                     redrawIndex.value=!redrawIndex.value
                                     viewModel.invite(em)

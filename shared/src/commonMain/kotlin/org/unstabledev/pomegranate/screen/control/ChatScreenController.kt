@@ -35,7 +35,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
     private val chatDao = Repository.chatDao
     private val personDao = Repository.personsDao
     private val isOnline = MutableStateFlow(false)
-    private val chatDC = runBlocking { chatDao.getByKey(chatKey) }
+    private val chatDC = runBlocking {chatDao.getByKey(chatKey).first()}
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val messages: StateFlow<List<MessageDC>> = _pageSize
@@ -97,6 +97,27 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
                 ChatDC.Companion.ChatTypes.GROUP -> {
                     val clients = chatDC.personsEmails.toMutableList()
                     clients.remove(Repository.myEmail)
+                    println(clients)
+                    if (clients.isEmpty()) {return@launch}
+                    if (clients.size == 1) {
+                        val observer = Repository.availablePersons[clients.first()]?.first()
+                        if (observer != null) {
+                            messagesList.forEach { message ->
+                                val currentMessage = message.apply {
+                                    supData = Json.encodeToString(clients).encodeToByteArray()
+                                }
+                                observer.sendMessage(currentMessage)
+                            }
+                        } else {
+                            messagesList.forEach { message ->
+                                message.apply {
+                                    supData = Json.encodeToString(clients).encodeToByteArray()
+                                }
+                            }
+                            Repository.startMessaging(clients.first(), messagesList)
+                        }
+                        return@launch
+                    }
                     val pair = if (clients.size % 2 == 0) {
                         clients.chunked(clients.size / 2)
                     } else {

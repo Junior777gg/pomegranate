@@ -215,7 +215,7 @@ class Observer(
             }
             val json = Json.encodeToString(msg).encodeToByteArray()
             channel.send(json, code)
-            if (message.type == MessageDC.TEXT || isCall) {
+            if (message.type == MessageDC.TEXT || isCall || message.type == MessageDC.INVITE) {
                 println(data.size)
                 channel.send(data, code)
             } else {

@@ -2,6 +2,7 @@ package org.unstabledev.pomegranate.screen.control
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.Repository
@@ -20,7 +21,7 @@ class ContactScreenController : ViewModel() {
         }
         val chat = ChatDC(
             chatName = email,
-            personsEmails = listOf(email),
+            personsEmails = mutableListOf(email),
             chatType = ChatDC.Companion.ChatTypes.CHAT,
             chatCreator = email
         )
@@ -31,18 +32,18 @@ class ContactScreenController : ViewModel() {
         viewModelScope.launch {
             Repository.personsDao.upsert(person)
         }
-        val savedChat = runBlocking { Repository.chatDao.upsertAndGet(chat) }
+        val savedChat = runBlocking { Repository.chatDao.upsertAndGet(chat).first() }
         return savedChat
     }
 
     fun createGroups(name: String): ChatDC {
         val chat = ChatDC(
             chatName = name,
-            personsEmails = listOf(Repository.myEmail),
+            personsEmails = mutableListOf(Repository.myEmail),
             chatType = ChatDC.Companion.ChatTypes.GROUP,
             chatCreator = Repository.myEmail
         )
-        val savedChat = runBlocking { Repository.chatDao.upsertAndGet(chat) }
+        val savedChat = runBlocking { Repository.chatDao.upsertAndGet(chat).first() }
         return savedChat
     }
 }

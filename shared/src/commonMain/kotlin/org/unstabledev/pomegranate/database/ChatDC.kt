@@ -15,13 +15,13 @@ class ChatConverters {
     }
 
     @TypeConverter
-    fun fromStringList(value: List<String>): String {
+    fun fromStringList(value: MutableList<String>): String {
         return json.encodeToString(value)
     }
 
     @TypeConverter
-    fun toStringList(value: String): List<String> {
-        return if (value.isEmpty()) emptyList() else json.decodeFromString(value)
+    fun toStringList(value: String): MutableList<String> {
+        return if (value.isEmpty()) mutableListOf() else json.decodeFromString(value)
     }
 }
 
@@ -32,7 +32,7 @@ data class ChatDC(
     val chatName: String,
     val chatType: String,
     val chatCreator: String,
-    val personsEmails: List<String>,
+    val personsEmails: MutableList<String>,
     @PrimaryKey(autoGenerate = true)
     val key: Long = 0,
 ) {

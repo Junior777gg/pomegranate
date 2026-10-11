@@ -17,8 +17,7 @@ interface ChatDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(chat: ChatDC): Long
 
-    @Transaction
-    suspend fun upsertAndGet(chat: ChatDC): ChatDC {
+    suspend fun upsertAndGet(chat: ChatDC): Flow<ChatDC> {
         val id = upsert(chat)
         return getByKey(id)
     }
@@ -39,7 +38,7 @@ interface ChatDao {
     fun getByName(chatName: String): Flow<ChatDC>
 
     @Query("SELECT * FROM chat WHERE `key` = :key LIMIT 1")
-    suspend fun getByKey(key: Long): ChatDC
+    fun getByKey(key: Long): Flow<ChatDC>
 
     @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
     fun tryGetByName(chatName: String): Flow<ChatDC?>
