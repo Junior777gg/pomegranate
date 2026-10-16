@@ -35,12 +35,20 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
     private val chatDao = Repository.chatDao
     private val personDao = Repository.personsDao
     private val isOnline = MutableStateFlow(false)
-    private val chatDC = runBlocking {chatDao.getByKey(chatKey).first()}
+    private val chatDC = MutableStateFlow<ChatDC?>(null)
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            chatDC.value = chatDao.getByKey(chatKey).first()
+        }
+    }
+
+    fun getChat() = chatDC.value!!
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val messages: StateFlow<List<MessageDC>> = _pageSize
         .flatMapLatest { limit ->
-            messagesDao.getPaged(chatDC.chatName, chatDC.chatCreator, chatDC.chatType, limit)
+            messagesDao.getPaged(getChat().chatName, getChat().chatCreator, getChat().chatType, limit)
         }
         .stateIn(
             scope = viewModelScope,
@@ -55,7 +63,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
     fun send(message: String? = null, files: List<KMPFile>, type: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val messagesList = mutableListOf<MessageDC>()
-            val currentChat = chatDC
+            val currentChat = getChat()
             if (message != null && type == MessageDC.TEXT) {
                 val messageDC =
                     Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
@@ -65,7 +73,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
             if (message == null && type == MessageDC.INVITE) {
                 val messageDC =
                     Repository.createMessage(currentChat, type = MessageDC.INVITE,
-                        supData = Json.encodeToString(chatDC.personsEmails).encodeToByteArray())
+                        supData = Json.encodeToString(currentChat.personsEmails).encodeToByteArray())
                 messagesDao.insert(messageDC)
                 messagesList.add(messageDC)
             }
@@ -82,11 +90,11 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
                     messagesList.add(messageDC)
                 }
             }
-            when (chatDC.chatType) {
+            when (currentChat.chatType) {
                 ChatDC.Companion.ChatTypes.CHAT -> {
-                    val observer = Repository.availablePersons[chatDC.personsEmails[0]]?.first()
+                    val observer = Repository.availablePersons[currentChat.personsEmails[0]]?.first()
                     if (observer == null) {
-                        Repository.startMessaging(chatDC.personsEmails[0], messagesList)
+                        Repository.startMessaging(currentChat.personsEmails[0], messagesList)
                     } else {
                         messagesList.forEach { message ->
                             observer.sendMessage(message)
@@ -95,7 +103,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
                 }
 
                 ChatDC.Companion.ChatTypes.GROUP -> {
-                    val clients = chatDC.personsEmails.toMutableList()
+                    val clients = currentChat.personsEmails.toMutableList()
                     clients.remove(Repository.myEmail)
                     println(clients)
                     if (clients.isEmpty()) {return@launch}
@@ -148,41 +156,37 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
 
     fun deleteChat() {
         viewModelScope.launch(Dispatchers.Default) {
-            chatDao.delete(chatDC)
-            messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
+            chatDao.delete(getChat())
+            messagesDao.deleteAll(getChat().chatName, getChat().chatCreator, getChat().chatType)
             onChatDelete()
         }
     }
 
     fun deleteMessages() {
         viewModelScope.launch(Dispatchers.Default) {
-            messagesDao.deleteAll(chatDC.chatName, chatDC.chatCreator, chatDC.chatType)
+            messagesDao.deleteAll(getChat().chatName, getChat().chatCreator, getChat().chatType)
         }
     }
 
     fun getName(): String {
         return getProfile(getChat().personsEmails[0])?.displayName ?:
         //personDao.tryGetPersonByEmailFlow(chatDC.personsEmails[0]).first()?.personEmail?:
-        chatDC.chatName
+        getChat().chatName
     }
 
     fun renameChat(name: String?) {
         viewModelScope.launch(Dispatchers.Default) {
             if (name.isNullOrBlank()) return@launch
-            val newChat = chatDC.copy(chatName = name)
-            if (chatDao.exists(newChat.chatName, chatDC.chatCreator, chatDC.chatType)) return@launch
-            if (chatDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                val newPerson = personDao.getByEmail(chatDC.personsEmails[0])?.copy(nickname = name)
+            val newChat = getChat().copy(chatName = name)
+            if (chatDao.exists(newChat.chatName, getChat().chatCreator, getChat().chatType)) return@launch
+            if (getChat().chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                val newPerson = personDao.getByEmail(getChat().personsEmails[0])?.copy(nickname = name)
                 if (newPerson != null) {
                     personDao.upsert(newPerson)
                 }
             }
             chatDao.upsert(newChat)
         }
-    }
-
-    fun getChat(): ChatDC {
-        return chatDC
     }
 
     fun getProfile(email: String): Profile? {

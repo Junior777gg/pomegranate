@@ -74,8 +74,7 @@ fun HomeScreen(navController: NavHostController) {
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
                         .clickable(indication = null, interactionSource = null) {
-                            Repository.lastEmail = Repository.myEmail
-                            navController.navigate(Routes.ProfileScreen)
+                            navController.navigate(Routes.ProfileScreen(null, Repository.myEmail))
                         }
                 ) {
                     Box(
@@ -149,17 +148,10 @@ fun HomeScreen(navController: NavHostController) {
         }
     ) {
         SearchableChatsPanel(viewModel,
-        onChatClick = {
-            navController.navigate(Routes.ChatScreen(it.key))
-        },
-        onChatAddClick = {
-            navController.navigate(Routes.ContactsScreen())
-        },
-        onSidemenuClick = {
-            scope.launch { drawerState.open() }
-        },
-        onOpenProfileClick = {
-            navController.navigate(Routes.ProfileScreen(it.key, it.personsEmails.first()))
-        })
+            onChatClick = { navController.navigate(Routes.ChatScreen(it.key)) },
+            onChatAddClick = { navController.navigate(Routes.ContactsScreen()) },
+            onSidemenuClick = { scope.launch { drawerState.open() } },
+            onOpenProfileClick = { navController.navigate(Routes.ProfileScreen(it.key, it.personsEmails.first())) }
+        )
     }
 }

@@ -16,9 +16,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
-import org.unstabledev.pomegranate.database.getChatDatabase
-import org.unstabledev.pomegranate.database.getMessagesDatabase
-import org.unstabledev.pomegranate.database.getPersonsDatabase
+import org.unstabledev.pomegranate.database.buildChatDatabase
+import org.unstabledev.pomegranate.database.buildMessagesDatabase
+import org.unstabledev.pomegranate.database.buildPersonsDatabase
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.platform.Notifications
 import org.unstabledev.pomegranate.platform.PlatformEvents
@@ -28,7 +28,6 @@ import java.awt.Frame
 import java.io.File
 import java.io.FilenameFilter
 import kotlin.random.Random
-import kotlin.random.nextLong
 
 fun main(args: Array<String>) {
     AppSettings.load()
@@ -40,14 +39,14 @@ fun main(args: Array<String>) {
         AppSettings.save()
     }
     val chatBuilder = getChatDatabaseBuilder()
-    val chatDatabase = getChatDatabase(chatBuilder)
-    val chatDao = chatDatabase.chatDao()
+    val chatDatabase = buildChatDatabase(chatBuilder)
+    val chatDao = chatDatabase.get()
     val messagesBuilder = getMessagesDatabaseBuilder()
-    val messagesDatabase = getMessagesDatabase(messagesBuilder)
-    val messagesDao = messagesDatabase.messagesDao()
+    val messagesDatabase = buildMessagesDatabase(messagesBuilder)
+    val messagesDao = messagesDatabase.get()
     val personsBuilder = getPersonsDatabaseBuilder()
-    val personsDatabase = getPersonsDatabase(personsBuilder)
-    val personsDao = personsDatabase.personDao()
+    val personsDatabase = buildPersonsDatabase(personsBuilder)
+    val personsDao = personsDatabase.get()
     val runBg = !args.contains("--no-bg-service")
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()

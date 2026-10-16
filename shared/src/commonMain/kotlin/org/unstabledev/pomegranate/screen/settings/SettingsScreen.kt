@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.NetworkWifi
@@ -47,6 +49,8 @@ import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.ThemeMode
+import org.unstabledev.pomegranate.components.ScrollablePage
+import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.sendHaptic
@@ -55,135 +59,106 @@ import org.unstabledev.pomegranate.platform.sendHaptic
 fun SettingsScreen(navController: NavHostController) {
     val settings by AppSettings.state.collectAsState()
 
-    Column(applyScreenPadding()) {
+    ScrollablePage(navController, "Настройки", paddingH = 0.dp) {
+        val amoledClicks = remember { mutableStateOf(0) }
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(32.dp)).height(64.dp)
         ) {
-            IconButton(onClick = {
-                navController.popBackStack()
-                AppSettings.save()
-            }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Text(
-                text = "Настройки",
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        LazyColumn {
-            item {
-                val amoledClicks = remember { mutableStateOf(0) }
+            Box(
+                Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize()
+            ) {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(32.dp)).height(64.dp)
+                    Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Box(
-                        Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize()
-                    ) {
-                        Row(
-                            Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            IconButton(onClick = {
-                                AppSettings.setTheme(ThemeMode.SYSTEM)
-                                sendHaptic(HAPTIC_EFFECT_TICK)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.BrightnessAuto,
-                                    contentDescription = "Системная тема",
-                                    tint = if (settings.theme == ThemeMode.SYSTEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                            VerticalDivider(
-                                color = MaterialTheme.colorScheme.background,
-                                thickness = 3.dp,
-                                modifier = Modifier.padding(start = 16.dp)
+                    IconButton(onClick = {
+                        AppSettings.setTheme(ThemeMode.SYSTEM)
+                        sendHaptic(HAPTIC_EFFECT_TICK)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.BrightnessAuto,
+                            contentDescription = "Системная тема",
+                            tint = if (settings.theme == ThemeMode.SYSTEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    VerticalDivider(
+                        color = MaterialTheme.colorScheme.background,
+                        thickness = 3.dp,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                    IconButton(onClick = {
+                        AppSettings.setTheme(ThemeMode.LIGHT)
+                        sendHaptic(HAPTIC_EFFECT_TICK)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.LightMode,
+                            contentDescription = "Светлая",
+                            tint = if (settings.theme == ThemeMode.LIGHT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    VerticalDivider(
+                        color = MaterialTheme.colorScheme.background,
+                        thickness = 3.dp,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                    IconButton(onClick = {
+                        AppSettings.setTheme(ThemeMode.DARK)
+                        sendHaptic(HAPTIC_EFFECT_TICK)
+                        amoledClicks.value += 1
+                        if (amoledClicks.value>3) AppSettings.setAmoledUnlocked(true)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.DarkMode,
+                            contentDescription = "Тёмная",
+                            tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    if (settings.amoledUnlocked) {
+                        VerticalDivider(
+                            color = MaterialTheme.colorScheme.background,
+                            thickness = 3.dp,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                        IconButton(onClick = {
+                            AppSettings.setTheme(ThemeMode.AMOLED)
+                            sendHaptic(HAPTIC_EFFECT_TICK)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.ShieldMoon,
+                                contentDescription = "Amoled",
+                                tint = if (settings.theme == ThemeMode.AMOLED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
                             )
-                            IconButton(onClick = {
-                                AppSettings.setTheme(ThemeMode.LIGHT)
-                                sendHaptic(HAPTIC_EFFECT_TICK)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.LightMode,
-                                    contentDescription = "Светлая",
-                                    tint = if (settings.theme == ThemeMode.LIGHT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                            VerticalDivider(
-                                color = MaterialTheme.colorScheme.background,
-                                thickness = 3.dp,
-                                modifier = Modifier.padding(start = 16.dp)
-                            )
-                            IconButton(onClick = {
-                                AppSettings.setTheme(ThemeMode.DARK)
-                                sendHaptic(HAPTIC_EFFECT_TICK)
-                                amoledClicks.value += 1
-                                if (amoledClicks.value>3) AppSettings.setAmoledUnlocked(true)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.DarkMode,
-                                    contentDescription = "Тёмная",
-                                    tint = if (settings.theme == ThemeMode.DARK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                            if (settings.amoledUnlocked) {
-                                VerticalDivider(
-                                    color = MaterialTheme.colorScheme.background,
-                                    thickness = 3.dp,
-                                    modifier = Modifier.padding(start = 16.dp)
-                                )
-                                IconButton(onClick = {
-                                    AppSettings.setTheme(ThemeMode.AMOLED)
-                                    sendHaptic(HAPTIC_EFFECT_TICK)
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.ShieldMoon,
-                                        contentDescription = "Amoled",
-                                        tint = if (settings.theme == ThemeMode.AMOLED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
-                                    )
-                                }
-                            }
                         }
                     }
                 }
-                if (settings.amoledUnlocked && settings.theme==ThemeMode.SYSTEM) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(settings.useAmoledOnDarkSystem, { AppSettings.setUseAmoledOnDarkSystem(it) })
-                        Text("Amoled вместо Тёмной темы")
-                    }
-                }
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
-                    SettingsPageButton(Color(0.9f, 0.6f, 0.2f), Icons.Default.Palette, "Внешний вид")
-                        { navController.navigate(Routes.SettingsStyleScreen()) }
-                    Spacer(Modifier.height(8.dp))
-                    SettingsPageButton(Color(0.2f, 0.6f, 0.9f), Icons.Default.NetworkWifi, "Сеть")
-                        { navController.navigate(Routes.SettingsNetworkScreen()) }
-                    if (isMobile) {
-                        Spacer(Modifier.height(8.dp))
-                        SettingsPageButton(Color(0.2f, 0.8f, 0.4f), Icons.Default.BatterySaver, "Энергосбережение")
-                            { navController.navigate(Routes.SettingsPowerSaveScreen()) }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    SettingsPageButton(Color(0.7f, 0.3f, 0.9f), Icons.Default.Storage, "Кэш и хранилище")
-                        { navController.navigate(Routes.SettingsStorageScreen()) }
-                    if (settings.developerMode) {
-                        Spacer(Modifier.height(8.dp))
-                        SettingsPageButton(Color(0.5f, 0.5f, 0.5f), Icons.Default.Storage, "Для разработчиков")
-                        { navController.navigate(Routes.SettingsDeveloperScreen()) }
-                    }
-                }
+            }
+        }
+        if (settings.amoledUnlocked && settings.theme==ThemeMode.SYSTEM) {
+            SwitchButton(settings.useAmoledOnDarkSystem, "Amoled вместо Тёмной темы",
+                Modifier.padding(horizontal = 16.dp)) {
+                AppSettings.setUseAmoledOnDarkSystem(it)
+            }
+        }
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
+            SettingsPageButton(Color(0.9f, 0.6f, 0.2f), Icons.Default.Palette, "Внешний вид")
+            { navController.navigate(Routes.SettingsStyleScreen()) }
+            Spacer(Modifier.height(8.dp))
+            SettingsPageButton(Color(0.2f, 0.6f, 0.9f), Icons.Default.NetworkWifi, "Сеть")
+            { navController.navigate(Routes.SettingsNetworkScreen()) }
+            if (isMobile) {
+                Spacer(Modifier.height(8.dp))
+                SettingsPageButton(Color(0.2f, 0.8f, 0.4f), Icons.Default.BatterySaver, "Энергосбережение")
+                { navController.navigate(Routes.SettingsPowerSaveScreen()) }
+            }
+            Spacer(Modifier.height(8.dp))
+            SettingsPageButton(Color(0.7f, 0.3f, 0.9f), Icons.Default.Storage, "Кэш и хранилище")
+            { navController.navigate(Routes.SettingsStorageScreen()) }
+            if (settings.developerMode) {
+                Spacer(Modifier.height(8.dp))
+                SettingsPageButton(Color(0.5f, 0.5f, 0.5f), Icons.Default.BugReport, "Для разработчиков")
+                { navController.navigate(Routes.SettingsDeveloperScreen()) }
             }
         }
     }
@@ -213,13 +188,7 @@ fun SettingsPageButton(color: Color, icon: ImageVector, header: String, onClick:
                 tint = MaterialTheme.colorScheme.surface
             )
         }
-        VerticalDivider(
-            color = Color.Transparent,
-            thickness = 3.dp,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .height(30.dp)
-        )
+        Spacer(Modifier.width(1.dp))
         Text(
             text = header,
             modifier = Modifier.padding(start = 16.dp)

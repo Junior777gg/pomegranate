@@ -1,6 +1,10 @@
 package org.unstabledev.pomegranate.platform
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 
 expect val isMobile: Boolean
 expect val handleTapGestures: Boolean
@@ -38,4 +42,14 @@ expect object Battery {
     fun isPowerSaveMode(): Boolean
     fun getLevel(): Int
     fun isCharging(): Boolean
+}
+
+object VirtualKeyboard {
+    fun close(keyboard: SoftwareKeyboardController?) {
+        keyboard?.hide()
+    }
+    fun open(keyboard: SoftwareKeyboardController?, focus: FocusRequester) {
+        focus.requestFocus()
+        keyboard?.show()
+    }
 }

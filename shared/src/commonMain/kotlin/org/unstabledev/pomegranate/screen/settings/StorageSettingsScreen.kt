@@ -132,6 +132,14 @@ fun StorageSettingsScreen(navController: NavHostController) {
                             lastArc, otherArc, false,
                             style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
                         )
+
+                        if (lastArc==0.0f) {
+                            drawArc(
+                                Color(0.5f, 0.5f, 0.5f),
+                                lastArc, 360.0f, false,
+                                style = Stroke(25.dp.toPx(), cap = StrokeCap.Round)
+                            )
+                        }
                     }
                 }
                 Column(
@@ -149,88 +157,100 @@ fun StorageSettingsScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.padding(vertical = 10.dp))
             val percentagePomer = (fullVolume.toDouble() / deviceTotalVolume.value.toDouble()) * 100
             var percentagePomerStr = percentagePomer.roundTo(1)
-            if (percentagePomer < 1) percentagePomerStr = percentagePomer.roundTo(2)
+            if (percentagePomer < 1) percentagePomerStr = "<1"
             Text(
                 "Pomegranate занимает $percentagePomerStr%",
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.padding(vertical = 5.dp))
-            Box(Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth()) {
-                val deleteImages = remember { mutableStateOf(true) }
-                val deleteFiles = remember { mutableStateOf(true) }
-                val deleteOther = remember { mutableStateOf(true) }
-                Column(
-                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    if (imagesVolume.value > 0) {
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .clickable { deleteImages.value = !deleteImages.value },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(deleteImages.value, { deleteImages.value = it })
-                            Spacer(Modifier.width(5.dp))
-                            Text("Изображения: ${Util.formatBinarySize(imagesVolume.value)}")
-                        }
-                    }
-                    if (filesVolume.value > 0) {
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .clickable { deleteImages.value = !deleteImages.value },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(deleteFiles.value, { deleteFiles.value = it })
-                            Spacer(Modifier.width(5.dp))
-                            Text("Файлы: ${Util.formatBinarySize(filesVolume.value)}")
-                        }
-                    }
-                    if (otherVolume.value > 0) {
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .clickable { deleteImages.value = !deleteImages.value },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(deleteOther.value, { deleteOther.value = it })
-                            Spacer(Modifier.width(5.dp))
-                            Text("Остальное: ${Util.formatBinarySize(otherVolume.value)}")
-                        }
-                    }
-                    Button(
-                        {
-                            if (deleteImages.value) {
-                                val f = KMPFile("${pomegranatePath}temp/img")
-                                if (f.exists() && f.isDirectory()) {
-                                    for (sub in f.listFiles()!!) sub.delete()
-                                }
-                            }
-                            if (deleteFiles.value) {
-                                val f = KMPFile("${pomegranatePath}temp/file")
-                                if (f.exists() && f.isDirectory()) {
-                                    for (sub in f.listFiles()!!) sub.delete()
-                                }
-                            }
-                            if (deleteOther.value) {
-                                val f = KMPFile("${pomegranatePath}temp/dat")
-                                if (f.exists() && f.isDirectory()) {
-                                    for (sub in f.listFiles()!!) sub.delete()
-                                }
-                            }
-                            updateStorageGraph.value = !updateStorageGraph.value
-                        }, Modifier.fillMaxWidth(), enabled = (
-                                (deleteImages.value && imagesVolume.value > 0L) ||
-                                (deleteFiles.value && filesVolume.value > 0L) ||
-                                (deleteOther.value && otherVolume.value > 0L)
-                        )
+            if (fullVolume>0L) {
+                Spacer(modifier = Modifier.padding(vertical = 5.dp))
+                Box(Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth()) {
+                    val deleteImages = remember { mutableStateOf(true) }
+                    val deleteFiles = remember { mutableStateOf(true) }
+                    val deleteOther = remember { mutableStateOf(true) }
+                    Column(
+                        Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("rm -rf")
+                        if (imagesVolume.value > 0) {
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clickable { deleteImages.value = !deleteImages.value },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(deleteImages.value, { deleteImages.value = it })
+                                Spacer(Modifier.width(5.dp))
+                                Text("Изображения: ${Util.formatBinarySize(imagesVolume.value)}")
+                            }
+                        }
+                        if (filesVolume.value > 0) {
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clickable { deleteImages.value = !deleteImages.value },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(deleteFiles.value, { deleteFiles.value = it })
+                                Spacer(Modifier.width(5.dp))
+                                Text("Файлы: ${Util.formatBinarySize(filesVolume.value)}")
+                            }
+                        }
+                        if (otherVolume.value > 0) {
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clickable { deleteImages.value = !deleteImages.value },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(deleteOther.value, { deleteOther.value = it })
+                                Spacer(Modifier.width(5.dp))
+                                Text("Остальное: ${Util.formatBinarySize(otherVolume.value)}")
+                            }
+                        }
+                        Button(
+                            {
+                                if (deleteImages.value) {
+                                    val f = KMPFile("${pomegranatePath}temp/img")
+                                    if (f.exists() && f.isDirectory()) {
+                                        for (sub in f.listFiles()!!) sub.delete()
+                                    }
+                                }
+                                if (deleteFiles.value) {
+                                    val f = KMPFile("${pomegranatePath}temp/file")
+                                    if (f.exists() && f.isDirectory()) {
+                                        for (sub in f.listFiles()!!) sub.delete()
+                                    }
+                                }
+                                if (deleteOther.value) {
+                                    val f = KMPFile("${pomegranatePath}temp/dat")
+                                    if (f.exists() && f.isDirectory()) {
+                                        for (sub in f.listFiles()!!) sub.delete()
+                                    }
+                                }
+                                updateStorageGraph.value = !updateStorageGraph.value
+                            }, Modifier.fillMaxWidth(), enabled = (
+                                    (deleteImages.value && imagesVolume.value > 0L) ||
+                                            (deleteFiles.value && filesVolume.value > 0L) ||
+                                            (deleteOther.value && otherVolume.value > 0L)
+                                    )
+                        ) {
+                            Text(
+                                "Очистить ${
+                                    Util.formatBinarySize(
+                                        if (deleteImages.value) imagesVolume.value else 0L +
+                                                if (deleteFiles.value) filesVolume.value else 0L +
+                                                        if (deleteOther.value) otherVolume.value else 0L
+                                    )
+                                }"
+                            )
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.padding(vertical = 5.dp))
         }
-        Spacer(modifier = Modifier.padding(vertical = 5.dp))
+
         Text("Чаты", fontWeight = FontWeight.SemiBold)
         val chatCount = produceState(0) {
             chatDao.getAll().collect { value = it.size }

@@ -3,7 +3,6 @@ package org.unstabledev.pomegranate.platform
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Handler
@@ -15,7 +14,6 @@ import android.util.Log
 
 @SuppressLint("StaticFieldLeak")
 object AudioPlaybackManager {
-    lateinit var context: Context
     private var mediaPlayer: MediaPlayer? = null
     var currentPath: String? = null
         private set
@@ -44,23 +42,23 @@ object AudioPlaybackManager {
             return
         }
 
-        val mediaButtonReceiver = ComponentName(context, AudioMediaButtonReceiver::class.java)
+        val mediaButtonReceiver = ComponentName(androidContext!!, AudioMediaButtonReceiver::class.java)
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
             component = mediaButtonReceiver
         }
         val pendingIntent = PendingIntent.getBroadcast(
-            context,
+            androidContext!!,
             0,
             mediaButtonIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val sessionIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        val sessionIntent = androidContext!!.packageManager.getLaunchIntentForPackage(androidContext!!.packageName)
         val sessionPendingIntent = PendingIntent.getActivity(
-            context, 0, sessionIntent,
+            androidContext!!, 0, sessionIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        mediaSession = MediaSessionCompat(context, "AudioPlayback", mediaButtonReceiver, pendingIntent).apply {
+        mediaSession = MediaSessionCompat(androidContext!!, "AudioPlayback", mediaButtonReceiver, pendingIntent).apply {
             setCallback(object : MediaSessionCompat.Callback() {
                 override fun onPlay() {
                     currentPath?.let { play(it) }
@@ -145,7 +143,7 @@ object AudioPlaybackManager {
                 handler.removeCallbacks(positionUpdateRunnable)
                 completionListener?.invoke()
                 updatePlaybackState(PlaybackStateCompat.STATE_PAUSED, getDuration())
-                AudioPlaybackService.updateState(context, isPlaying = false)
+                AudioPlaybackService.updateState(androidContext!!, isPlaying = false)
             }
             mp.setOnErrorListener { _, what, extra ->
                 Log.e("AudioPlayback", "MediaPlayer error: what=$what, extra=$extra")
@@ -185,8 +183,8 @@ object AudioPlaybackManager {
             handler.removeCallbacks(positionUpdateRunnable)
             handler.post(positionUpdateRunnable)
 
-            AudioPlaybackService.start(context)
-            AudioPlaybackService.updateState(context, isPlaying = true)
+            AudioPlaybackService.start(androidContext!!)
+            AudioPlaybackService.updateState(androidContext!!, isPlaying = true)
         } catch (e: Exception) {
             Log.e("AudioPlayback", "Error starting playback: ${e.message}", e)
         }
@@ -198,7 +196,7 @@ object AudioPlaybackManager {
             mediaPlayer?.pause()
             handler.removeCallbacks(positionUpdateRunnable)
             updatePlaybackState(PlaybackStateCompat.STATE_PAUSED, getCurrentPosition())
-            AudioPlaybackService.updateState(context, isPlaying = false)
+            AudioPlaybackService.updateState(androidContext!!, isPlaying = false)
         } catch (e: Exception) {
             Log.e("AudioPlayback", "Error pausing: ${e.message}", e)
         }
@@ -247,7 +245,7 @@ object AudioPlaybackManager {
         handler.removeCallbacks(positionUpdateRunnable)
         releaseInternal()
         updatePlaybackState(PlaybackStateCompat.STATE_STOPPED)
-        AudioPlaybackService.stop(context)
+        AudioPlaybackService.stop(androidContext!!)
     }
 
     private fun releaseInternal() {

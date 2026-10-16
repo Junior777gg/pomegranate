@@ -1,7 +1,6 @@
 package org.unstabledev.pomegranate.platform
 
 import android.Manifest
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.RequiresPermission
 import androidx.camera.compose.CameraXViewfinder
@@ -28,10 +27,6 @@ import java.io.File
 import java.util.concurrent.Executors
 
 actual class Camera {
-    companion object {
-        lateinit var context: Context
-    }
-
     private lateinit var owner: LifecycleOwner
 
     private var surfaceRequest by mutableStateOf<SurfaceRequest?>(null)
@@ -56,7 +51,7 @@ actual class Camera {
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture?.takePicture(
             outputOptions,
-            ContextCompat.getMainExecutor(context),
+            ContextCompat.getMainExecutor(androidContext!!),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {}
                 override fun onError(exception: ImageCaptureException) {
@@ -71,7 +66,7 @@ actual class Camera {
     private fun initCamera(front: Boolean) {
         isFrontCamera = front
 
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(androidContext!!)
         cameraProviderFuture.addListener({
             val provider = cameraProviderFuture.get()
             cameraProvider = provider
@@ -104,7 +99,7 @@ actual class Camera {
                     }
                 }
             bindCamera()
-        }, ContextCompat.getMainExecutor(context))
+        }, ContextCompat.getMainExecutor(androidContext!!))
     }
 
     private fun bindCamera() {
@@ -121,6 +116,7 @@ actual class Camera {
         provider.bindToLifecycle(owner, cameraSelector, preview, imageCapture, imageAnalysis)
     }
 
+    @RequiresPermission(Manifest.permission.CAMERA)
     actual fun startCamera(lifeOwner: LifecycleOwner, front: Boolean) {
         owner = lifeOwner
         if (cameraProvider == null) {
@@ -150,10 +146,7 @@ actual class Camera {
         }
     }
 
-    // ВАРИАНТ 1 (рекомендуемый для стрима): берём последний кадр из анализатора.
-    // Быстро, не тормозит камеру, идеально для видеозвонка.
     actual suspend fun getFrame(): ByteArray {
-        // ждём пока появится хотя бы один кадр
         var waited = 0
         while (latestJpeg == null && waited < 5000) {
             delay(50)

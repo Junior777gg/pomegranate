@@ -76,6 +76,7 @@ import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.api.event.PublicEventHandler
+import org.unstabledev.pomegranate.api.event.StandardPublicEvents
 import org.unstabledev.pomegranate.common.SortingType
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
@@ -180,7 +181,8 @@ fun SearchableChatsPanel(
 
         NetworkWarningHeader()
 
-        if (settings.lastHiddenEventId != PublicEventHandler.eventId) {
+        if (settings.lastHiddenEventId != PublicEventHandler.currentEvent.id
+            && PublicEventHandler.currentEvent != StandardPublicEvents.NONE) {
             val menuExpanded = remember { mutableStateOf(false) }
             Row(
                 modifier = Modifier
@@ -194,8 +196,8 @@ fun SearchableChatsPanel(
                     })
             ) {
                 ContactRow(
-                    PublicEventHandler.title, true,
-                    PublicEventHandler.description, "",
+                    PublicEventHandler.currentEvent.title, true,
+                    PublicEventHandler.currentEvent.description, "",
                     tripleColumn = true, isPinned = false,
                     Modifier.fillMaxWidth().height(64.dp)
                 ) {
@@ -203,7 +205,7 @@ fun SearchableChatsPanel(
                         modifier = Modifier
                             .size(50.dp)
                             .clip(CircleShape)
-                            .background(PublicEventHandler.bgColor),
+                            .background(PublicEventHandler.currentEvent.bgColor),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -235,7 +237,7 @@ fun SearchableChatsPanel(
                             )
                         },
                         onClick = {
-                            AppSettings.setLastHiddenEventId(PublicEventHandler.eventId)
+                            AppSettings.setLastHiddenEventId(PublicEventHandler.currentEvent.id)
                             menuExpanded.value = false
                         }
                     )

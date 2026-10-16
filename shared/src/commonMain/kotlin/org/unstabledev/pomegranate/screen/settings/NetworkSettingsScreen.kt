@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,15 +23,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.components.ScrollablePage
+import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.screen.nav.Routes
 
 @Composable
 fun NetworkSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     ScrollablePage(navController, "Сеть") {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(settings.hideSendBarWhenNoNetwork, { AppSettings.setHideSendBarWhenNoNetwork(it) })
-            Text("Отключать отправку без интернета")
+        SwitchButton(settings.hideSendBarWhenNoNetwork, "Отключать отправку без интернета") {
+            AppSettings.setHideSendBarWhenNoNetwork(it)
         }
         Spacer(modifier = Modifier.padding(vertical = 5.dp))
         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {

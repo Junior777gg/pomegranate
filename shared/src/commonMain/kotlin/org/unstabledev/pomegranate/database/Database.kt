@@ -14,14 +14,14 @@ import kotlinx.coroutines.IO
 )
 @ConstructedBy(ChatDatabaseConstructor::class)
 abstract class ChatDatabase: RoomDatabase() {
-    abstract fun chatDao(): ChatDao
+    abstract fun get(): ChatDao
 }
 
 @Suppress("KotlinNoActualForExpect")
 expect object ChatDatabaseConstructor : RoomDatabaseConstructor<ChatDatabase> {
     override fun initialize(): ChatDatabase
 }
-fun getChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
+fun buildChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
@@ -35,14 +35,14 @@ fun getChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
 )
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {
-    abstract fun messagesDao(): MessagesDao
+    abstract fun get(): MessagesDao
 }
 
 @Suppress("KotlinNoActualForExpect")
 expect object MessagesDatabaseConstructor : RoomDatabaseConstructor<MessagesDatabase> {
     override fun initialize(): MessagesDatabase
 }
-fun getMessagesDatabase(builder: RoomDatabase.Builder<MessagesDatabase>): MessagesDatabase{
+fun buildMessagesDatabase(builder: RoomDatabase.Builder<MessagesDatabase>): MessagesDatabase{
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
@@ -56,14 +56,14 @@ fun getMessagesDatabase(builder: RoomDatabase.Builder<MessagesDatabase>): Messag
 )
 @ConstructedBy(PersonDatabaseConstructor::class)
 abstract class PersonDatabase: RoomDatabase() {
-    abstract fun personDao(): PersonDao
+    abstract fun get(): PersonDao
 }
 
 @Suppress("KotlinNoActualForExpect")
 expect object PersonDatabaseConstructor : RoomDatabaseConstructor<PersonDatabase> {
     override fun initialize(): PersonDatabase
 }
-fun getPersonsDatabase(builder: RoomDatabase.Builder<PersonDatabase>): PersonDatabase {
+fun buildPersonsDatabase(builder: RoomDatabase.Builder<PersonDatabase>): PersonDatabase {
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)

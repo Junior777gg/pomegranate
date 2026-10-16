@@ -75,7 +75,7 @@ fun LoginScreen(navController: NavHostController) {
                 if (appState.accountLinks[email] != null) {
                     KMPFile("${Repository.pomegranatePath}${appState.currentLink}").delete()
                     AppSettings.setCurrentLink(appState.accountLinks[email]!!)
-                }else{
+                } else {
                     val map = appState.accountLinks.toMutableMap().apply {
                         set(email, appState.currentLink)
                     }
@@ -84,7 +84,6 @@ fun LoginScreen(navController: NavHostController) {
                     AppSettings.setAccountLinks(map)
                 }
                 AppSettings.save()
-                throw Exception("але")
             }){
                 Text("Войти")
             }

@@ -118,7 +118,6 @@ sealed class ProfileState {
 private var ctx_chatDC: ChatDC? = null
 private var ctx_chatKey: Long? = null
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: String?) {
     val viewModel = viewModel { ProfileScreenController(chatKey) }
@@ -555,7 +554,7 @@ private fun ContentSwitcher(chat: ChatDC, email: String?, profilePage: MutableSt
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center) {
-        Row(Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background),
+        Row(Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.background).padding(horizontal = 3.dp),
             horizontalArrangement = Arrangement.SpaceEvenly) {
             ChatSwitcherButton(Modifier.clickable {profilePage.value=0}, "Описание")
             if(countMedia.value!=0) {
@@ -594,8 +593,9 @@ private fun MutualChatsList(email: String?, onMutualChatClick: (ChatDC)->Unit) {
             Column {
                 for (chat in mutualChats.value) {
                     Row(Modifier.clickable { onMutualChatClick(chat) }, verticalAlignment = Alignment.CenterVertically) {
-                        ContactRow(chat.chatName, false, "", "", false, false,
-                            Modifier.fillMaxWidth().height(64.dp)) {
+                        ContactRow(chat.chatName, false, "", "", tripleColumn = false, isPinned = false,
+                            modifier = Modifier.fillMaxWidth().height(64.dp)
+                        ) {
                             GeneratedProfileImage(chat.chatName)
                         }
                     }

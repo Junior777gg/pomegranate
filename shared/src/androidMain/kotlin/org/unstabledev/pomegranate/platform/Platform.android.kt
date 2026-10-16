@@ -18,7 +18,10 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
@@ -61,7 +64,7 @@ actual fun sendHaptic(amplitude: Int) {
 @RequiresApi(Build.VERSION_CODES.Q)
 @RequiresPermission(Manifest.permission.VIBRATE)
 actual fun sendHaptic(milliseconds: Long, amplitude: Int) {
-    val vibrator = context?.getSystemService(Vibrator::class.java)
+    val vibrator = androidContext?.getSystemService(Vibrator::class.java)
     if(amplitude in -1..5)
         vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
     else
@@ -69,8 +72,8 @@ actual fun sendHaptic(milliseconds: Long, amplitude: Int) {
 }
 
 actual class Clipboard {
-    private val clipboard = context?.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-    private val authority = "${context?.packageName}.fileprovider"
+    private val clipboard = androidContext?.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    private val authority = "${androidContext?.packageName}.fileprovider"
 
     actual fun copyText(str: String) {
         try {
@@ -109,7 +112,7 @@ actual class Clipboard {
 
     private fun saveBitmapAndCopy(bitmap: Bitmap) {
         try {
-            val imagesFolder = File(context?.cacheDir, "shared_images")
+            val imagesFolder = File(androidContext?.cacheDir, "shared_images")
             if (!imagesFolder.exists()) imagesFolder.mkdirs()
 
             imagesFolder.listFiles()?.forEach { file ->
@@ -128,11 +131,11 @@ actual class Clipboard {
                 return
             }
 
-            val contentUri = FileProvider.getUriForFile(context!!, authority, file)
+            val contentUri = FileProvider.getUriForFile(androidContext!!, authority, file)
 
-            val clip = ClipData.newUri(context?.contentResolver, "Image", contentUri)
+            val clip = ClipData.newUri(androidContext?.contentResolver, "Image", contentUri)
             clipboard?.setPrimaryClip(clip)
-            context?.grantUriPermission(
+            androidContext?.grantUriPermission(
                 "com.android.systemui",
                 contentUri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -165,7 +168,7 @@ actual class Clipboard {
     }
     actual fun getText(): String? {
         val item = clipboard?.primaryClip?.getItemAt(0)
-        return item?.text?.toString() ?: item?.coerceToText(context)?.toString()
+        return item?.text?.toString() ?: item?.coerceToText(androidContext)?.toString()
     }
     actual fun getImage(): ByteArray? {
         val clip = clipboard?.primaryClip ?: return null
@@ -173,7 +176,7 @@ actual class Clipboard {
         val uri = item.uri ?: return null
 
         return try {
-            context?.contentResolver?.openInputStream(uri)?.use { inputStream ->
+            androidContext?.contentResolver?.openInputStream(uri)?.use { inputStream ->
                 inputStream.readBytes()
             }
         } catch (e: Exception) {
@@ -185,8 +188,8 @@ actual class Clipboard {
 }
 
 actual object Battery {
-    private val batteryManager=context?.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-    private val powerManager=context?.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private val batteryManager=androidContext?.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+    private val powerManager=androidContext?.getSystemService(Context.POWER_SERVICE) as PowerManager
     actual fun isPowerSaveMode(): Boolean = powerManager.isPowerSaveMode
     actual fun getLevel(): Int {
         return try {

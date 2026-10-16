@@ -43,6 +43,7 @@ import org.unstabledev.pomegranate.common.SortingType
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.components.HSVColorPicker
 import org.unstabledev.pomegranate.components.ScrollablePage
+import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
@@ -175,14 +176,10 @@ fun StyleSettingsScreen(navController: NavHostController) {
                 )
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(settings.parseMarkdown, { AppSettings.setParseMarkdown(it) })
-            Text("Парсить Markdown")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(settings.chatTripleColumn, { AppSettings.setChatTripleColumn(it) })
-            Text("Три линии предпросмотра чата")
-        }
+        SwitchButton(settings.parseMarkdown, "Парсить Markdown")
+            { AppSettings.setParseMarkdown(it) }
+        SwitchButton(settings.chatTripleColumn, "Три линии предпросмотра чата")
+            { AppSettings.setChatTripleColumn(it) }
         Text("Сортировка чатов", fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(5.dp))
         Column(Modifier.background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(10.dp)).padding(all = 3.dp)) {

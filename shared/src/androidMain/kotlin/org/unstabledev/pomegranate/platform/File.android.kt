@@ -42,10 +42,10 @@ import kotlin.time.Clock
 import java.io.File as FileAccess
 
 
-var context: Context? = null
+var androidContext: Context? = null
 actual val rootDirectory by lazy {
-    while (context == null){}
-    context!!.cacheDir?.absolutePath ?: ""}
+    while (androidContext == null){}
+    androidContext!!.cacheDir?.absolutePath ?: ""}
 actual val separator : String = FileAccess.separator
 actual typealias KMPFile = FileAccess
 actual fun KMPFile.kmpCopyTo(file: KMPFile) = copyTo(file)
@@ -75,10 +75,9 @@ actual fun ByteArray.inputStream(): KMPInputStream = ByteArrayInputStream(this)
 
 @SuppressLint("StaticFieldLeak")
 actual object FileSaver {
-    lateinit var context: Context
     actual suspend fun save(path: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val resolver = context.contentResolver
+            val resolver = androidContext!!.contentResolver
             val currentFile = File(path)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -111,7 +110,7 @@ actual object FileSaver {
 }
 
 actual suspend fun DroppedFile.readBytes(): ByteArray = withContext(Dispatchers.IO) {
-    val context = FileSaver.context
+    val context = androidContext!!
     val uri = Uri.parse(uriString)
 
     context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -207,7 +206,7 @@ actual suspend fun processClipImage(clipEntry: ClipEntry, tempDir: KMPFile): Cli
 
                     val fileName="pasted_${Clock.System.now().toEpochMilliseconds()}.$extension"
                     val tempFile= KMPFile(tempDir, fileName)
-                    context?.contentResolver?.openInputStream(uri)?.use { input ->
+                    androidContext?.contentResolver?.openInputStream(uri)?.use { input ->
                         tempFile.kmpWriteBytes(input.readBytes())
                     }
 

@@ -125,8 +125,7 @@ fun ContactsPanel(
                     }
                     Row(
                         Modifier.height(35.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         BasicTextField(
                             modifier = Modifier

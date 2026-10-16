@@ -8,11 +8,13 @@ import androidx.compose.ui.graphics.Color
  *
  * TODO: Add networking + API endpoint.
 */
+
+data class PublicEventEntry(
+    val id: String = "null", val bgColor: Color = Color.Black,
+    val title: String = "None", val description: String = "")
+
 object PublicEventHandler {
-    var eventId: String = ""
-    var bgColor: Color = Color.Magenta
-    var title: String = ""
-    var description: String = ""
+    var currentEvent: PublicEventEntry = StandardPublicEvents.NONE
 
     fun fetch() {}
     fun sendBool(eventId: String, v: Boolean) {}
@@ -20,5 +22,5 @@ object PublicEventHandler {
     fun sendFloat(eventId: String, v: Float) {}
     fun sendString(eventId: String, v: String) {}
 
-    fun setDebugEvent(v: String) { eventId = v }
+    fun setDebugEvent(v: PublicEventEntry) { currentEvent = v }
 }

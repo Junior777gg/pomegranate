@@ -3,6 +3,7 @@ package org.unstabledev.pomegranate
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
@@ -11,38 +12,31 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
-import org.unstabledev.pomegranate.database.getChatDatabase
-import org.unstabledev.pomegranate.database.getMessagesDatabase
-import org.unstabledev.pomegranate.database.getPersonsDatabase
-import org.unstabledev.pomegranate.platform.AudioPlaybackManager
-import org.unstabledev.pomegranate.platform.Camera
-import org.unstabledev.pomegranate.platform.FileSaver
+import org.unstabledev.pomegranate.database.buildChatDatabase
+import org.unstabledev.pomegranate.database.buildMessagesDatabase
+import org.unstabledev.pomegranate.database.buildPersonsDatabase
 import org.unstabledev.pomegranate.platform.MediaSelector
-import org.unstabledev.pomegranate.platform.Notifications
 import org.unstabledev.pomegranate.platform.PlatformEvents
-import org.unstabledev.pomegranate.platform.context
+import org.unstabledev.pomegranate.platform.androidContext
 import java.io.File
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        androidContext = this
+        super.onCreate(savedInstanceState)
         AppSettings.load()
         val appState = AppSettings.state.value
-        if (appState.currentLink == ""){
+        if (appState.currentLink == "") {
             AppSettings.setCurrentLink(Random.nextLong().toString())
             AppSettings.save()
         }
-        context = this
-        Camera.context = this
-        Notifications.context = this
-        FileSaver.context = this
-        Camera.context = this
-        AudioPlaybackManager.context = applicationContext
-        super.onCreate(savedInstanceState)
         BackgroundStorage.ensureBackgroundDir()
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
@@ -50,6 +44,37 @@ class MainActivity : ComponentActivity() {
                 launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.CAMERA,
                     Manifest.permission.RECORD_AUDIO))
             }
+        initializeSelectors()
+
+        val chatDao = buildChatDatabase(getChatDatabaseBuilder(applicationContext)).get()
+        val messagesDao = buildMessagesDatabase(getMessagesDatabaseBuilder(applicationContext)).get()
+        val personsDao = buildPersonsDatabase(getPersonsDatabaseBuilder(applicationContext)).get()
+        baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
+        setContent {
+            App(chatDao, messagesDao, personsDao)
+        }
+    }
+
+    private fun getNameFromUri(uri: Uri): String {
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex != -1 && cursor.moveToFirst()) {
+                val name = cursor.getString(nameIndex)
+                if (!name.isNullOrEmpty() && name.contains(".")) {
+                    return name.lowercase()
+                }
+            }
+        }
+        val mimeType = contentResolver.getType(uri)
+        return MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
+    }
+
+    override fun onDestroy() {
+        PlatformEvents.Instance?.onAppClose()
+        super.onDestroy()
+    }
+
+    private fun initializeSelectors() {
         var pendingFilesResult: ((List<File>) -> Unit)? = null
         val pickFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             val selectedFiles = mutableListOf<File>()
@@ -174,38 +199,5 @@ class MainActivity : ComponentActivity() {
             pendingImageResult = onResult
             pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
-
-        val chatBuilder = getChatDatabaseBuilder(applicationContext)
-        val chatDatabase = getChatDatabase(chatBuilder)
-        val chatDao = chatDatabase.chatDao()
-        val messagesBuilder = getMessagesDatabaseBuilder(applicationContext)
-        val messagesDatabase = getMessagesDatabase(messagesBuilder)
-        val messagesDao = messagesDatabase.messagesDao()
-        val personsBuilder = getPersonsDatabaseBuilder(applicationContext)
-        val personsDatabase = getPersonsDatabase(personsBuilder)
-        val personsDao = personsDatabase.personDao()
-        baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
-        setContent {
-            App(chatDao, messagesDao, personsDao)
-        }
-    }
-
-    private fun getNameFromUri(uri: Uri): String {
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameIndex != -1 && cursor.moveToFirst()) {
-                val name = cursor.getString(nameIndex)
-                if (!name.isNullOrEmpty() && name.contains(".")) {
-                    return name.lowercase()
-                }
-            }
-        }
-        val mimeType = contentResolver.getType(uri)
-        return MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
-    }
-
-    override fun onDestroy() {
-        PlatformEvents.Instance?.onAppClose()
-        super.onDestroy()
     }
 }

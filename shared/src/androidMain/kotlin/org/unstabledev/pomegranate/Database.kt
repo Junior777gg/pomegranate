@@ -13,7 +13,7 @@ private val link = AppSettings.state.value.currentLink
 
 fun getChatDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatDatabase> {
     val appContext = context.applicationContext
-    val dbFile = appContext.getDatabasePath("$link${File.separator}chat.db")
+    val dbFile = appContext.getDatabasePath("${link}_chat.db")
     return Room.databaseBuilder<ChatDatabase>(
         context = appContext,
         name = dbFile.absolutePath
@@ -21,7 +21,7 @@ fun getChatDatabaseBuilder(context: Context): RoomDatabase.Builder<ChatDatabase>
 }
 fun getMessagesDatabaseBuilder(context: Context): RoomDatabase.Builder<MessagesDatabase> {
     val appContext = context.applicationContext
-    val dbFile = appContext.getDatabasePath("$link${File.separator}messages.db")
+    val dbFile = appContext.getDatabasePath("${link}_messages.db")
     return Room.databaseBuilder<MessagesDatabase>(
         context = appContext,
         name = dbFile.absolutePath
@@ -30,7 +30,7 @@ fun getMessagesDatabaseBuilder(context: Context): RoomDatabase.Builder<MessagesD
 
 fun getPersonsDatabaseBuilder(context: Context): RoomDatabase.Builder<PersonDatabase> {
     val appContext = context.applicationContext
-    val dbFile = appContext.getDatabasePath("$link${File.separator}persons.db")
+    val dbFile = appContext.getDatabasePath("${link}_persons.db")
     return Room.databaseBuilder<PersonDatabase>(
         context = appContext,
         name = dbFile.absolutePath

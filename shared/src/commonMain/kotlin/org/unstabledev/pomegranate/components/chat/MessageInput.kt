@@ -49,9 +49,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,6 +69,7 @@ import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.buildTimeMarkMillis
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.platform.VirtualKeyboard
 import org.unstabledev.pomegranate.platform.handlePastedClipContent
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
@@ -86,6 +89,7 @@ fun MessageInput(
     var currentVoiceFile by remember { mutableStateOf<KMPFile?>(null) }
     val elapsedSeconds = remember { mutableStateOf(0) }
     val pastedClipImages = remember { mutableStateListOf<ClipImage>() }
+    val keyboard = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -182,7 +186,10 @@ fun MessageInput(
                             Box(
                                 modifier = Modifier
                                     .height(22.5.dp)
-                                    .clickable { isAttachMediaOpen.value = !isAttachMediaOpen.value },
+                                    .clickable {
+                                        isAttachMediaOpen.value = !isAttachMediaOpen.value
+                                        VirtualKeyboard.close(keyboard)
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -192,7 +199,7 @@ fun MessageInput(
                                     modifier = Modifier.size(22.5.dp).rotate(315.0f)
                                 )
                             }
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(25.dp))
                         }
 
                         if (isRecording) {
@@ -326,6 +333,7 @@ fun MessageInput(
                                     currentVoiceFile = voiceFile
                                     recorder.start(voiceFile)
                                     isRecording = true
+                                    VirtualKeyboard.close(keyboard)
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                     isRecording = false

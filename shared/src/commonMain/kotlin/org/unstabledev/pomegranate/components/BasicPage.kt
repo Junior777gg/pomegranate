@@ -20,20 +20,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
 @Composable
-fun ScrollablePage(navController: NavHostController, header: String, content: @Composable (LazyItemScope.() -> Unit)) {
+fun ScrollablePage(navController: NavHostController, header: String,
+                   paddingH: Dp = 14.dp, paddingV: Dp = 8.dp,
+                   content: @Composable (LazyItemScope.() -> Unit)) {
     BasicPage(Modifier, Arrangement.Top, header, {
         navController.popBackStack()
         AppSettings.save()
     }) {
         LazyColumn {
             item {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = paddingH, vertical = paddingV)) {
                     content()
                 }
             }

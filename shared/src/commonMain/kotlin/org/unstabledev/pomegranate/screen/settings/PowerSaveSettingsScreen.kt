@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Battery1Bar
 import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.UsbOff
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,8 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
-import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.components.ScrollablePage
+import org.unstabledev.pomegranate.components.SwitchButton
+import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.platform.sendHaptic
 import kotlin.math.floor
 
@@ -146,17 +146,11 @@ fun PowerSaveSettingsScreen(navController: NavHostController) {
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(settings.powerSaveSettings.animateGifs, {
-                AppSettings.setPowerSaveSettings(settings.powerSaveSettings.copy(animateGifs = it))
-            })
-            Text("Анимировать изображения")
+        SwitchButton(settings.powerSaveSettings.animateGifs, "Анимировать изображения") {
+            AppSettings.setPowerSaveSettings(settings.powerSaveSettings.copy(animateGifs = it))
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(settings.powerSaveSettings.decodeImages, {
-                AppSettings.setPowerSaveSettings(settings.powerSaveSettings.copy(decodeImages = it))
-            })
-            Text("Декодировать изображения")
+        SwitchButton(settings.powerSaveSettings.decodeImages, "Декодировать изображения") {
+            AppSettings.setPowerSaveSettings(settings.powerSaveSettings.copy(decodeImages = it))
         }
     }
 }

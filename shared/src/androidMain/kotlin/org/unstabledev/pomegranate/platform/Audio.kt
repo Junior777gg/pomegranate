@@ -7,7 +7,10 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,8 +65,9 @@ actual class AudioPlayer actual constructor() {
 actual class AudioRecorder actual constructor() {
     private var recorder: MediaRecorder? = null
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     actual fun start(outputFile: KMPFile) {
-        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(androidContext!!, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             throw SecurityException("RECORD_AUDIO permission not granted")
         }
 
@@ -117,10 +121,11 @@ actual class CallAudioRecorder actual constructor(){
     private var audioRecord: AudioRecord? = null
     lateinit var scope: Job
     val lastChunk = Channel<ByteArray>()
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     actual fun start() {
         val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
         val chunkSize = 640
-        if (ContextCompat.checkSelfPermission(AudioPlaybackManager.context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(androidContext!!, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             throw SecurityException("RECORD_AUDIO permission not granted")
         }
         audioRecord = AudioRecord(
