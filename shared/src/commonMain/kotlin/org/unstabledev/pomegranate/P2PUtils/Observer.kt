@@ -19,6 +19,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
+import org.unstabledev.pomegranate.common.SecurityConfig
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
@@ -155,7 +156,7 @@ class Observer(
                                         )
                                     }
                                     if(messageDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                                        messageDC.chatCreator == personDC?.personEmail
+                                        messageDC.chatCreator = personDC?.personEmail?:"null"
                                         messageDC.chatName = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
                                     }
                                     val isCall = messageDC.type==MessageDC.BEGIN_CALL
@@ -173,11 +174,11 @@ class Observer(
                                             personsEmails = Json.decodeFromString(messageDC.supData.decodeToString())
                                         ))
                                     }
-                                    /*if (messageDC.type == MessageDC.SECURITY_CONFIG) {
-                                        val cfg=SecurityConfig().fromByteArray(messageDC.data)
-                                        personDC.securityConfig = cfg.toString()
-                                        Repository.chatDao.upsertChat(chatDC)
-                                    }*/
+                                    if (messageDC.type == MessageDC.SECURITY_CONFIG) {
+                                        val cfg = SecurityConfig().fromByteArray(messageDC.data)
+                                        personDC?.securityConfig = cfg.toString()
+                                        if(personDC!=null) Repository.personsDao.upsert(personDC)
+                                    }
                                     messageDC.isMine = false
                                     messageDC.isDelivered = true
                                     messagesDao.insert(messageDC)

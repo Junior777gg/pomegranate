@@ -6,6 +6,7 @@ import kotlinx.coroutines.withTimeout
 import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
 import org.unstabledev.pomegranate.database.sha256
 import org.unstabledev.pomegranate.platform.KMPFile
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class BaseP2P {
@@ -23,7 +24,7 @@ class BaseP2P {
                     email = Firebase.get<String>("p2p/${myEmail}") ?: ""
                 } catch (_: Exception) {
                 }
-                delay(1000)
+                delay(1000.milliseconds)
             }
             println("New connection: $email")
             Firebase.delete("p2p/${myEmail}")
@@ -37,7 +38,7 @@ class BaseP2P {
                 try {
                     answer = Firebase.get<String>("p2p/${myEmail}/${email.sha256()}/answer") ?: ""
                 } catch (_: Exception) { }
-                delay(100)
+                delay(100.milliseconds)
             }
             manager.createConnection(answer)
             return email to manager
@@ -51,10 +52,10 @@ class BaseP2P {
         } catch (_: Exception) { }
         var offer = ""
         try {
-            withTimeout(7000) {
+            withTimeout(7000.milliseconds) {
                 while (offer == "") {
                     offer = Firebase.get<String>("p2p/${email.sha256()}/${myEmail.sha256()}/offer") ?: ""
-                    delay(100)
+                    delay(100.milliseconds)
                 }
             }
         } catch (e: TimeoutCancellationException) {

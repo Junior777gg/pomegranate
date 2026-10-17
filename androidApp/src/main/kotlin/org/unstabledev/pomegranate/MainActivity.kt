@@ -16,9 +16,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
-import org.unstabledev.pomegranate.database.buildChatDatabase
-import org.unstabledev.pomegranate.database.buildMessagesDatabase
-import org.unstabledev.pomegranate.database.buildPersonsDatabase
+import org.unstabledev.pomegranate.database.DatabaseBuilder
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.androidContext
@@ -46,12 +44,9 @@ class MainActivity : ComponentActivity() {
             }
         initializeSelectors()
 
-        val chatDao = buildChatDatabase(getChatDatabaseBuilder(applicationContext)).get()
-        val messagesDao = buildMessagesDatabase(getMessagesDatabaseBuilder(applicationContext)).get()
-        val personsDao = buildPersonsDatabase(getPersonsDatabaseBuilder(applicationContext)).get()
         baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent {
-            App(chatDao, messagesDao, personsDao)
+            App()
         }
     }
 

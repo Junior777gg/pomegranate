@@ -12,17 +12,21 @@ import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDao
+import org.unstabledev.pomegranate.database.DatabaseBuilder
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.PersonDao
 import org.unstabledev.pomegranate.platform.setStatusBarIcons
 import org.unstabledev.pomegranate.screen.nav.Navigation
 
 @Composable
-fun App(chatDao: ChatDao, messagesDao: MessagesDao, personsDao: PersonDao) {
+fun App() {
     val theme = ColorTheme()
     val settings by AppSettings.state.collectAsState()
     setStatusBarIcons(AppSettings.isLightTheme(settings))
     PublicEventHandler.fetch()
+    val chatDao = DatabaseBuilder.chats().get()
+    val messagesDao = DatabaseBuilder.messages().get()
+    val personsDao = DatabaseBuilder.persons().get()
 
     theme.AppTheme(theme = settings.theme, useAmoledOnDarkSystem = settings.useAmoledOnDarkSystem) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())

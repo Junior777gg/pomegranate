@@ -8,10 +8,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-@Database(
-    entities = [ChatDC::class],
-    version = 16,
-)
+@Database(entities = [ChatDC::class], version = 16)
 @ConstructedBy(ChatDatabaseConstructor::class)
 abstract class ChatDatabase: RoomDatabase() {
     abstract fun get(): ChatDao
@@ -21,18 +18,8 @@ abstract class ChatDatabase: RoomDatabase() {
 expect object ChatDatabaseConstructor : RoomDatabaseConstructor<ChatDatabase> {
     override fun initialize(): ChatDatabase
 }
-fun buildChatDatabase(builder: RoomDatabase.Builder<ChatDatabase>): ChatDatabase{
-    return builder
-        .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.IO)
-        .fallbackToDestructiveMigration(true)
-        .build()
-}
 
-@Database(
-    entities = [MessageDC::class],
-    version = 21,
-)
+@Database(entities = [MessageDC::class], version = 21)
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {
     abstract fun get(): MessagesDao
@@ -42,18 +29,8 @@ abstract class MessagesDatabase: RoomDatabase() {
 expect object MessagesDatabaseConstructor : RoomDatabaseConstructor<MessagesDatabase> {
     override fun initialize(): MessagesDatabase
 }
-fun buildMessagesDatabase(builder: RoomDatabase.Builder<MessagesDatabase>): MessagesDatabase{
-    return builder
-        .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.IO)
-        .fallbackToDestructiveMigration(true)
-        .build()
-}
 
-@Database(
-    entities = [PersonDC::class],
-    version = 1,
-)
+@Database(entities = [PersonDC::class], version = 1)
 @ConstructedBy(PersonDatabaseConstructor::class)
 abstract class PersonDatabase: RoomDatabase() {
     abstract fun get(): PersonDao
@@ -63,7 +40,14 @@ abstract class PersonDatabase: RoomDatabase() {
 expect object PersonDatabaseConstructor : RoomDatabaseConstructor<PersonDatabase> {
     override fun initialize(): PersonDatabase
 }
-fun buildPersonsDatabase(builder: RoomDatabase.Builder<PersonDatabase>): PersonDatabase {
+
+expect object DatabaseBuilder {
+    fun chats(): ChatDatabase
+    fun messages(): MessagesDatabase
+    fun persons(): PersonDatabase
+}
+
+fun <T : RoomDatabase> buildDatabase(builder: RoomDatabase.Builder<T>): T {
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
