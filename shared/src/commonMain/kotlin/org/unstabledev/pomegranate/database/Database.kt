@@ -8,7 +8,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-@Database(entities = [ChatDC::class], version = 16)
+@Database(entities = [ChatDC::class], version = 17)
 @ConstructedBy(ChatDatabaseConstructor::class)
 abstract class ChatDatabase: RoomDatabase() {
     abstract fun get(): ChatDao
@@ -19,7 +19,7 @@ expect object ChatDatabaseConstructor : RoomDatabaseConstructor<ChatDatabase> {
     override fun initialize(): ChatDatabase
 }
 
-@Database(entities = [MessageDC::class], version = 21)
+@Database(entities = [MessageDC::class], version = 22)
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {
     abstract fun get(): MessagesDao
@@ -30,7 +30,7 @@ expect object MessagesDatabaseConstructor : RoomDatabaseConstructor<MessagesData
     override fun initialize(): MessagesDatabase
 }
 
-@Database(entities = [PersonDC::class], version = 1)
+@Database(entities = [PersonDC::class], version = 2)
 @ConstructedBy(PersonDatabaseConstructor::class)
 abstract class PersonDatabase: RoomDatabase() {
     abstract fun get(): PersonDao

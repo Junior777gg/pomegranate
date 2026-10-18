@@ -30,11 +30,6 @@ class MainActivity : ComponentActivity() {
         androidContext = this
         super.onCreate(savedInstanceState)
         AppSettings.load()
-        val appState = AppSettings.state.value
-        if (appState.currentLink == "") {
-            AppSettings.setCurrentLink(Random.nextLong().toString())
-            AppSettings.save()
-        }
         BackgroundStorage.ensureBackgroundDir()
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
