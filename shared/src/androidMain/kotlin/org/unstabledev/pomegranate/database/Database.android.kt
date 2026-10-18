@@ -4,12 +4,11 @@ import androidx.room.Room
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.androidContext
 
-private val link = AppSettings.state.value.currentLink
 
 actual object DatabaseBuilder {
     actual fun chats(): ChatDatabase {
         val appContext = androidContext!!.applicationContext
-        val dbFile = appContext.getDatabasePath("${link}_chat.db")
+        val dbFile = appContext.getDatabasePath("chat.db")
         return buildDatabase(Room.databaseBuilder<ChatDatabase>(
             context = appContext,
             name = dbFile.absolutePath
@@ -17,7 +16,7 @@ actual object DatabaseBuilder {
     }
     actual fun messages(): MessagesDatabase {
         val appContext = androidContext!!.applicationContext
-        val dbFile = appContext.getDatabasePath("${link}_messages.db")
+        val dbFile = appContext.getDatabasePath("messages.db")
         return buildDatabase(Room.databaseBuilder<MessagesDatabase>(
             context = appContext,
             name = dbFile.absolutePath
@@ -25,7 +24,7 @@ actual object DatabaseBuilder {
     }
     actual fun persons(): PersonDatabase {
         val appContext = androidContext!!.applicationContext
-        val dbFile = appContext.getDatabasePath("${link}_persons.db")
+        val dbFile = appContext.getDatabasePath("persons.db")
         return buildDatabase(Room.databaseBuilder<PersonDatabase>(
             context = appContext,
             name = dbFile.absolutePath

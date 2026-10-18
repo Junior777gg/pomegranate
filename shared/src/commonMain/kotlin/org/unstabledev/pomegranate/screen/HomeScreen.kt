@@ -132,7 +132,6 @@ fun HomeScreen(navController: NavHostController) {
                     selected = false,
                     onClick = {
                         KMPFile(fistFilePath).delete()
-                        AppSettings.setCurrentLink("")
                         navController.navigate(Routes.LoginScreen())
                     },
                     icon = {

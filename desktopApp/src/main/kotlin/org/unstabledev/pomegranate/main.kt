@@ -30,12 +30,6 @@ import kotlin.random.Random
 fun main(args: Array<String>) {
     AppSettings.load()
     val isOpen = mutableStateOf(true)
-    val appState = AppSettings.state.value
-    println(appState.currentLink)
-    if (appState.currentLink == ""){
-        AppSettings.setCurrentLink(Random.nextLong().toString())
-        AppSettings.save()
-    }
     val runBg = !args.contains("--no-bg-service")
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()

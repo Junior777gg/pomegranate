@@ -70,20 +70,8 @@ fun LoginScreen(navController: NavHostController) {
                 }*/
                 KMPFile(fistFilePath).apply {
                     createNewFile()
-                kmpWriteText(email)}
-                val appState = AppSettings.state.value
-                if (appState.accountLinks[email] != null) {
-                    KMPFile("${Repository.pomegranatePath}${appState.currentLink}").delete()
-                    AppSettings.setCurrentLink(appState.accountLinks[email]!!)
-                } else {
-                    val map = appState.accountLinks.toMutableMap().apply {
-                        set(email, appState.currentLink)
-                    }
-                    println(map[email]!!)
-                    AppSettings.setCurrentLink(map[email]!!)
-                    AppSettings.setAccountLinks(map)
-                }
-                AppSettings.save()
+                    kmpWriteText(email)}
+                navController.navigate(Routes.HomeScreen())
             }){
                 Text("Войти")
             }

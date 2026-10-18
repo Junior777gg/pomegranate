@@ -35,9 +35,6 @@ data class AppSettingsState(
     val shownPinWarning: Boolean = false,
     val lastHiddenEventId: String = "",
     val developerMode: Boolean = false,
-    val accountLinks: Map<String, String> = mapOf(),
-    val currentLink: String = "",
-
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(
         FirebaseAddress(
@@ -189,14 +186,6 @@ object AppSettings {
 
     fun clearPinnedChats(chatKey: Long) {
         _state.value = _state.value.copy(pinnedChats = listOf())
-    }
-
-    fun setCurrentLink(link: String) {
-        _state.value = _state.value.copy(currentLink = link)
-    }
-
-    fun setAccountLinks(links: Map<String,String>) {
-        _state.value = _state.value.copy(accountLinks = links)
     }
 
     fun setShownPinWarning(v: Boolean) {
