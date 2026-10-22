@@ -11,7 +11,14 @@ import androidx.compose.ui.graphics.Color
 
 data class PublicEventEntry(
     val id: String = "null", val bgColor: Color = Color.Black,
-    val title: String = "None", val description: String = "")
+    val title: String = "None", val description: String = "",
+    val deco: Int = EventDeco.GENERIC_CHAT
+)
+
+object EventDeco {
+    val GENERIC_CHAT=0
+    val NEW_YEAR_TIMER=1
+}
 
 object PublicEventHandler {
     var currentEvent: PublicEventEntry = StandardPublicEvents.NONE

@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -75,6 +76,7 @@ import org.unstabledev.pomegranate.common.ChatBackgroundIds
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_CLICK
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.api.event.EventDeco
 import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.api.event.StandardPublicEvents
 import org.unstabledev.pomegranate.common.DraftManager
@@ -87,6 +89,7 @@ import org.unstabledev.pomegranate.components.CircleWithCutoutShape
 import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
+import org.unstabledev.pomegranate.components.event.Event_NewYearTimer
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
@@ -184,42 +187,11 @@ fun SearchableChatsPanel(
 
         if (settings.lastHiddenEventId != PublicEventHandler.currentEvent.id
             && PublicEventHandler.currentEvent != StandardPublicEvents.NONE) {
-            val menuExpanded = remember { mutableStateOf(false) }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .altClickable({
-                        println("Event was clicked")
-                    }, {
-                        menuExpanded.value = true
-                        sendHaptic(HAPTIC_EFFECT_CLICK)
-                    })
-            ) {
-                ContactRow(
-                    PublicEventHandler.currentEvent.title, true,
-                    PublicEventHandler.currentEvent.description, "",
-                    tripleColumn = true, isPinned = false,
-                    Modifier.fillMaxWidth().height(64.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(PublicEventHandler.currentEvent.bgColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "🎉",
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+            @Composable
+            fun ReadyDrop(expanded: MutableState<Boolean>) {
                 DropdownMenu(
-                    expanded = menuExpanded.value,
-                    onDismissRequest = { menuExpanded.value = false },
+                    expanded = expanded.value,
+                    onDismissRequest = { expanded.value = false },
                     modifier = Modifier
                         .width(230.dp)
                         .background(MaterialTheme.colorScheme.surface)
@@ -239,9 +211,49 @@ fun SearchableChatsPanel(
                         },
                         onClick = {
                             AppSettings.setLastHiddenEventId(PublicEventHandler.currentEvent.id)
-                            menuExpanded.value = false
+                            expanded.value = false
                         }
                     )
+                }
+            }
+            val menuExpanded = remember { mutableStateOf(false) }
+            when (PublicEventHandler.currentEvent.deco) {
+                EventDeco.NEW_YEAR_TIMER->Event_NewYearTimer(menuExpanded, {ReadyDrop(menuExpanded)})
+                else->{
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .altClickable({
+                                println("Event was clicked")
+                            }, {
+                                menuExpanded.value = true
+                                sendHaptic(HAPTIC_EFFECT_CLICK)
+                            })
+                    ) {
+                        ContactRow(
+                            PublicEventHandler.currentEvent.title, true,
+                            PublicEventHandler.currentEvent.description, "",
+                            tripleColumn = true, isPinned = false,
+                            Modifier.fillMaxWidth().height(64.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape)
+                                    .background(PublicEventHandler.currentEvent.bgColor),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "🎉",
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        ReadyDrop(menuExpanded)
+                    }
                 }
             }
         }
