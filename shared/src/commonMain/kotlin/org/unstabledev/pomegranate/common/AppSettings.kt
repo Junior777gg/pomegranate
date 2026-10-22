@@ -11,6 +11,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Secrets
+import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.platform.Battery
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.kmpReadText
@@ -22,9 +23,13 @@ import kotlin.time.Clock
 data class AppSettingsState(
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
-    val messageColor: Int = 0x8BFF1A,
+    val messageColor: Int = AppSettings.DefaultMessageColor.toArgb(),
+    val primaryColor: Int = ColorTheme.AccentDark.toArgb(),
     val hideSendBarWhenNoNetwork: Boolean = true,
     val parseMarkdown: Boolean = true,
+    val messageUnifiedRounding: Boolean = false,
+    val messageRounding: Float = 16.0f,
+    val messageMaxWidth: Int = 280,
     val chatTripleColumn: Boolean = false,
     val amoledUnlocked: Boolean = false,
     val useAmoledOnDarkSystem: Boolean = false,
@@ -64,6 +69,7 @@ object AppSettings {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+    val DefaultMessageColor=Color(0x8BFF1A)
 
     fun save() {
         try {
@@ -156,8 +162,20 @@ object AppSettings {
         _state.value = _state.value.copy(messageColor = v.toArgb())
     }
 
+    fun setPrimaryColor(v: Color) {
+        _state.value = _state.value.copy(primaryColor = v.toArgb())
+    }
+
     fun setHomeScreenSortingType(v: Int) {
         _state.value = _state.value.copy(homeScreenSortingType = v)
+    }
+
+    fun setMessageRounding(v: Float) {
+        _state.value = _state.value.copy(messageRounding = v)
+    }
+
+    fun setMessageUnifiedRounding(v: Boolean) {
+        _state.value = _state.value.copy(messageUnifiedRounding = v)
     }
 
     fun setKnownSecurityConfig(v: SecurityConfig) {

@@ -118,13 +118,13 @@ fun MessageBubble(
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier): Modifier {
         if(!apply) {
-            return base.widthIn(max = 280.dp)
+            return base.widthIn(max = settings.messageMaxWidth.dp)
                 .clip(
                     RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (message.isMine) 16.dp else 4.dp,
-                        bottomEnd = if (message.isMine) 4.dp else 16.dp
+                        topStart = settings.messageRounding.dp,
+                        topEnd = settings.messageRounding.dp,
+                        bottomStart = if (message.isMine||settings.messageUnifiedRounding) settings.messageRounding.dp else 0.dp,
+                        bottomEnd = if (!message.isMine||settings.messageUnifiedRounding) settings.messageRounding.dp else 0.dp
                     )
                 )
                 .background(msgColor)

@@ -63,6 +63,7 @@ class ColorTheme {
     fun AppTheme(
         theme: ThemeMode = ThemeMode.SYSTEM,
         useAmoledOnDarkSystem: Boolean = false,
+        primaryColor: Color? = null,
         content: @Composable () -> Unit
     ) {
         val darkTheme = when(theme) {
@@ -71,10 +72,11 @@ class ColorTheme {
             ThemeMode.DARK -> true
             ThemeMode.AMOLED -> true
         }
-        val colorScheme =
+        var colorScheme =
             if (theme==ThemeMode.AMOLED || (useAmoledOnDarkSystem && theme==ThemeMode.SYSTEM && darkTheme)) AmoledColorScheme
             else if (darkTheme) DarkColorScheme
             else LightColorScheme
+        if(primaryColor!=null) colorScheme=colorScheme.copy(primary = primaryColor)
 
         MaterialTheme(
             colorScheme = colorScheme,

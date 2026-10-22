@@ -39,8 +39,6 @@ object DraftManager {
             if (raw.isBlank()) return
 
             drafts = json.decodeFromString<MutableMap<Long,MessageDraft>>(raw)
-
-            println("Loaded drafts")
         } catch (e: Exception) {
             e.printStackTrace()
         }
