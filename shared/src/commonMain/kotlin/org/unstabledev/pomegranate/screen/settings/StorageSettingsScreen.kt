@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Drafts
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -52,6 +54,8 @@ import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository.pomegranatePath
+import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.common.roundTo
@@ -257,6 +261,30 @@ fun StorageSettingsScreen(navController: NavHostController) {
         }
         Text("Чатов: ${chatCount.value}")
         Spacer(modifier = Modifier.padding(vertical = 5.dp))
+        if (DraftManager.drafts.isNotEmpty()) {
+            Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
+                scope.launch {
+                    DraftManager.drafts.clear()
+                    DraftManager.save()
+                }
+            }) {
+                Row(
+                    Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Draw,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    Text("Очистить черновики", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            Spacer(modifier = Modifier.padding(vertical = 5.dp))
+        }
         var showDeleteChatsPopup by remember { mutableStateOf(false) }
         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
             showDeleteChatsPopup = true
@@ -287,7 +315,12 @@ fun StorageSettingsScreen(navController: NavHostController) {
                 },
                 confirmButton = {
                     Text("Подтвердить", Modifier.clickable {
-                        scope.launch { chatDao.deleteAll() }
+                        scope.launch {
+                            chatDao.deleteAll()
+                            AppSettings.clearPinnedChats()
+                            DraftManager.drafts.clear()
+                            DraftManager.save()
+                        }
                         showDeleteChatsPopup = false
                     })
                 },

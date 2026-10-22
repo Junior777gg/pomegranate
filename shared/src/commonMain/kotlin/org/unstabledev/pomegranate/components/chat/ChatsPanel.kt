@@ -77,6 +77,7 @@ import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.api.event.StandardPublicEvents
+import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.common.SortingType
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
@@ -558,6 +559,9 @@ fun ChatsList(
                         },
                         onClick = {
                             scope.launch {
+                                AppSettings.removePinnedChat(chat.key)
+                                DraftManager.drafts.remove(chat.key)
+                                DraftManager.save()
                                 viewModel.deleteChat(chat)
                                 viewModel.deleteMessages(chat)
                             }

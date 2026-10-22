@@ -17,6 +17,8 @@ import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.pomegranatePath
+import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.database.PersonDao
@@ -113,7 +115,11 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
         ) {
             val route = it.toRoute<Routes.ChatScreen>()
-            ChatScreen(navController, route.chatId, onChatDelete = {})
+            ChatScreen(navController, route.chatId, onChatDelete = {
+                DraftManager.drafts.remove(route.chatId)
+                DraftManager.save()
+                AppSettings.removePinnedChat(route.chatId)
+            })
         }
         composable<Routes.ProfileScreen>{
             val route = it.toRoute<Routes.ProfileScreen>()

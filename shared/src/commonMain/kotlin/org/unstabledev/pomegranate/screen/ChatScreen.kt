@@ -49,6 +49,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.Firebase
+import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.common.Util.Companion.toLocalDateTime
 import org.unstabledev.pomegranate.common.Util.Companion.toTimeMark
 import org.unstabledev.pomegranate.platform.KMPFile
@@ -84,7 +85,7 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    val inputState = rememberTextFieldState()
+    val inputState = rememberTextFieldState(if (DraftManager.drafts.contains(chatKey)) DraftManager.drafts[chatKey]?.message?:"" else "")
     val listState = rememberLazyListState()
     val messages = viewModel.messages.collectAsState()
     val settings by AppSettings.state.collectAsState()
@@ -92,11 +93,8 @@ fun ChatScreen(
     val isOnline by produceState(initialValue = true) {
         while (isActive) {
             value = Firebase.isAvailable()
-            if (value) {
-                delay(10.seconds)
-            } else {
-                delay(4.seconds)
-            }
+            if (value) delay(10.seconds)
+            else delay(4.seconds)
         }
     }
     val displayNewContactWidget = remember { mutableStateOf(true) }
@@ -165,6 +163,7 @@ fun ChatScreen(
                     if (messages.value.isEmpty() &&
                         viewModel.getChat().chatType != ChatDC.Companion.ChatTypes.GROUP) scope.launch { viewModel.deleteChat()
                         viewModel.deleteMessages() }
+                    DraftManager.save()
                     navController.navigate(Routes.HomeScreen())
                 }
                 ChatHeader(
@@ -251,7 +250,7 @@ fun ChatScreen(
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                 ) {
-                    MessageInput(inputState, viewModel, scope)
+                    MessageInput(inputState, viewModel, chatKey, scope)
                 }
             }
         }

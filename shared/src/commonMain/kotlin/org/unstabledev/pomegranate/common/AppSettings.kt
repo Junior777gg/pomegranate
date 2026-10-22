@@ -184,7 +184,7 @@ object AppSettings {
         _state.value = _state.value.copy(pinnedChats = chats.toList())
     }
 
-    fun clearPinnedChats(chatKey: Long) {
+    fun clearPinnedChats() {
         _state.value = _state.value.copy(pinnedChats = listOf())
     }
 

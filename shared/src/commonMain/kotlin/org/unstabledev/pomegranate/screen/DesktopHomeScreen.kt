@@ -53,6 +53,8 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.Repository.fistFilePath
+import org.unstabledev.pomegranate.common.DraftManager
+import org.unstabledev.pomegranate.common.MessageDraft
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.common.Util
@@ -86,6 +88,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
             panelSubScreen = PanelSubScreen.CHATS
         } else {
             scope.launch {
+                DraftManager.save()
                 viewModel.deleteChatIfEmpty(selectedChat.value!!)
                 selectedChat.value=null
             }
@@ -160,14 +163,22 @@ fun DesktopHomeScreen(navController: NavHostController) {
                     .background(MaterialTheme.colorScheme.surface)
             )
             Column(Modifier.weight(1.5f)) {
-                val chat = selectedChat.value
+                var chat = selectedChat.value
                 if(chat != null) {
                     key(chat) {
                         ChatScreen(
                             navController,
-                            chat.key,
+                            chat!!.key,
                             canBack = false,
-                            {selectedChat.value = null}
+                            {
+                                if(selectedChat.value!=null) {
+                                    AppSettings.removePinnedChat(selectedChat.value!!.key)
+                                    DraftManager.drafts.remove(selectedChat.value!!.key)
+                                    DraftManager.save()
+                                }
+                                selectedChat.value = null
+                                chat = null
+                            }
                         )
                     }
                 } else {

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.database.ChatDao
 import org.unstabledev.pomegranate.database.DatabaseBuilder
@@ -23,6 +24,7 @@ fun App() {
     val theme = ColorTheme()
     val settings by AppSettings.state.collectAsState()
     setStatusBarIcons(AppSettings.isLightTheme(settings))
+    DraftManager.load()
     PublicEventHandler.fetch()
     val chatDao = DatabaseBuilder.chats().get()
     val messagesDao = DatabaseBuilder.messages().get()

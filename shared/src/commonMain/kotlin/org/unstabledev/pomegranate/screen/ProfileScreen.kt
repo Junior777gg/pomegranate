@@ -77,6 +77,7 @@ import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
@@ -136,6 +137,7 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
             if(chatKey!=0L) {
                 scope.launch {
                     val chat = viewModel.getChat()?.first()!!
+                    AppSettings.removePinnedChat(chat.key)
                     Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
                     Repository.chatDao.delete(chat)
                 }

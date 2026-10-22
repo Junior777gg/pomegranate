@@ -65,6 +65,8 @@ import org.unstabledev.pomegranate.platform.ClipImage
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.common.DraftManager
+import org.unstabledev.pomegranate.common.MessageDraft
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.buildTimeMarkMillis
 import org.unstabledev.pomegranate.components.ColorTheme
@@ -81,6 +83,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun MessageInput(
     state: TextFieldState,
     viewModel: ChatScreenController,
+    chatKey: Long,
     scope: CoroutineScope
 ) {
     val isAttachMediaOpen = remember { mutableStateOf(false) }
@@ -97,6 +100,9 @@ fun MessageInput(
             delay(100.milliseconds)
             elapsedSeconds.value++
         }
+    }
+    LaunchedEffect(state.text) {
+        DraftManager.drafts[chatKey] = MessageDraft(state.text.toString())
     }
     DisposableEffect(Unit) {
         onDispose {
@@ -316,6 +322,7 @@ fun MessageInput(
                                     currentVoiceFile = null
                                 }
                             } else if (text.isNotEmpty()) {
+                                DraftManager.drafts.remove(chatKey)
                                 viewModel.send(text, files = listOf(), type = MessageDC.TEXT)
                                 state.clearText()
                             } else {
