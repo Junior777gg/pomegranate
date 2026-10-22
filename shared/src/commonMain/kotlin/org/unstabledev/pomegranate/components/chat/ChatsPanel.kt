@@ -483,6 +483,9 @@ fun ChatsList(
             val message by getLastMessageTextFlow(chat)
                 .collectAsStateWithLifecycle(initialValue = listOf("",""))
             val hasLast = message.isNotEmpty()
+            val hasDraft = DraftManager.drafts.contains(chat.key)
+            val draftMessage=mutableStateOf("")
+            if (hasDraft) draftMessage.value="Черновик: ${DraftManager.drafts[chat.key]?.message?:""}"
             val isPinned=pinnedChats.contains(chat.key)
 
             Row(
@@ -496,7 +499,8 @@ fun ChatsList(
                         sendHaptic(HAPTIC_EFFECT_CLICK)
                     })
             ) {
-                ContactRow(chat, hasLast, message.first(), message.last(), settings.chatTripleColumn, isPinned)
+                ContactRow(chat, hasLast||hasDraft, if(hasDraft) draftMessage.value else message.first(),
+                    if(hasDraft) "" else message.last(), settings.chatTripleColumn, isPinned)
                 DropdownMenu(
                     expanded = menuExpanded.value,
                     onDismissRequest = { menuExpanded.value = false },
