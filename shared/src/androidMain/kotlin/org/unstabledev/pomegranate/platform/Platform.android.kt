@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
@@ -28,6 +29,7 @@ import androidx.core.view.WindowCompat
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.jvm.java
+import androidx.core.net.toUri
 
 actual val isMobile: Boolean
     get() = true
@@ -203,4 +205,11 @@ actual object Battery {
         return status == BatteryManager.BATTERY_STATUS_CHARGING ||
                 status == BatteryManager.BATTERY_STATUS_FULL
     }
+}
+
+actual fun openUrlInBrowser(url: String) {
+    val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    androidContext?.startActivity(intent)
 }

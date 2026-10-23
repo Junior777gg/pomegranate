@@ -1,6 +1,7 @@
 package org.unstabledev.pomegranate.platform
 
 import androidx.compose.runtime.Composable
+import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -9,6 +10,7 @@ import java.awt.datatransfer.UnsupportedFlavorException
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.net.URI
 import javax.imageio.ImageIO
 import java.awt.datatransfer.Clipboard as SystemClipboard
 
@@ -128,4 +130,9 @@ actual object Battery {
     actual fun isCharging(): Boolean {
         return true
     }
+}
+
+actual fun openUrlInBrowser(url: String) {
+    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
+        Desktop.getDesktop().browse(URI(url))
 }

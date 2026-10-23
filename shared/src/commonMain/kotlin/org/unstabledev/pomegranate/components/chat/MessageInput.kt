@@ -80,12 +80,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MessageInput(
-    state: TextFieldState,
-    viewModel: ChatScreenController,
-    chatKey: Long,
-    scope: CoroutineScope
-) {
+fun MessageInput(state: TextFieldState, viewModel: ChatScreenController,
+    chatKey: Long, scope: CoroutineScope) {
+
     val isAttachMediaOpen = remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
     val recorder = remember { AudioRecorder() }
@@ -120,6 +117,8 @@ fun MessageInput(
             pastedClipImages.remove(it)
         }
     }
+
+    if(state.text.isEmpty()) DraftManager.drafts.remove(chatKey)
 
     Column {
         Row(

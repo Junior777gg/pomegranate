@@ -32,6 +32,7 @@ data class MessageDC(
         const val ACCEPT_CALL = "call:accept"
         const val END_CALL = "call:end"
         const val INVITE = "invite"
+        const val BUTTON = "button"
 
         fun MessageDC.isDisplayable(): Boolean {
             return type!=SECURITY_CONFIG

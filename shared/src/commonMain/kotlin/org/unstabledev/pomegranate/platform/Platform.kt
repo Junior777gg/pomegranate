@@ -53,3 +53,5 @@ object VirtualKeyboard {
         keyboard?.show()
     }
 }
+
+expect fun openUrlInBrowser(url: String)

@@ -87,12 +87,14 @@ import org.unstabledev.pomegranate.components.GifDecoder
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.ACCEPT_CALL
 import org.unstabledev.pomegranate.database.MessageDC.Companion.BEGIN_CALL
+import org.unstabledev.pomegranate.database.MessageDC.Companion.BUTTON
 import org.unstabledev.pomegranate.database.MessageDC.Companion.END_CALL
 import org.unstabledev.pomegranate.database.MessageDC.Companion.INVITE
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.kmpReadBytes
+import org.unstabledev.pomegranate.platform.openUrlInBrowser
 import org.unstabledev.pomegranate.platform.sendHaptic
 
 @Composable
@@ -114,7 +116,8 @@ fun MessageBubble(
     val menuOpen = remember { mutableStateOf(false) }
     val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
     val needPadding = message.type != MessageDC.IMAGE
-    val noNeedForBubble = message.type==BEGIN_CALL || message.type==ACCEPT_CALL || message.type==END_CALL || message.type==INVITE
+    val noNeedForBubble = message.type==BEGIN_CALL || message.type==ACCEPT_CALL || message.type==END_CALL ||
+            message.type==INVITE || message.type==BUTTON
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier): Modifier {
         if(!apply) {
@@ -573,6 +576,23 @@ fun MessageBubble(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Text(getText(), color = Color.White)
+                            }
+                        }
+                    }
+
+                    MessageDC.BUTTON -> {
+                        val decodedText = remember(message.data) { message.data.decodeToString() }
+                        if (decodedText.contains("|^|")) return
+                        Column(Modifier.fillMaxWidth().height(30.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center) {
+                            Row(Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                .background(MaterialTheme.colorScheme.surface).padding(vertical = 5.dp, horizontal = 15.dp).clickable {
+                                    openUrlInBrowser(decodedText.split("|^|")[1])
+                                },
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(decodedText.split("|^|")[0], color = Color.White)
                             }
                         }
                     }
