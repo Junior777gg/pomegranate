@@ -23,9 +23,10 @@ import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.database.deserialize
+import kotlin.random.Random
 
 @Composable
-fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
+fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp, useEmoji: Boolean = false) {
     val isOnline = false
     when (chat.chatType) {
         ChatDC.Companion.ChatTypes.CHAT -> {
@@ -40,7 +41,7 @@ fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
                             .size(size)
                             .clip(if (isOnline) CircleWithCutoutShape(0.4f) else CircleShape)
                     )
-                } else GeneratedProfileImage(partnerEmail, size, fontSize, isOnline)
+                } else GeneratedProfileImage(partnerEmail, size, fontSize, isOnline, useEmoji)
                 if (isOnline) {
                     Box(
                         Modifier.align(Alignment.BottomEnd).size(size * 0.3f).clip(CircleShape)
@@ -51,13 +52,13 @@ fun ProfileImage(chat: ChatDC, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
         }
 
         ChatDC.Companion.ChatTypes.GROUP ->{
-            GeneratedProfileImage(chat.chatName, size, fontSize, isOnline)
+            GeneratedProfileImage(chat.chatName, size, fontSize, isOnline, useEmoji)
         }
     }
 }
 
 @Composable
-fun ProfileImage(personDC: PersonDC?, email: String, size: Dp = 50.dp, fontSize: TextUnit = 18.sp) {
+fun ProfileImage(personDC: PersonDC?, email: String, size: Dp = 50.dp, fontSize: TextUnit = 18.sp, useEmoji: Boolean = false) {
     val isOnline = false
     val partnerEmail = personDC?.personEmail?:email
     val profile = personDC?.profile?.deserialize()
@@ -70,7 +71,7 @@ fun ProfileImage(personDC: PersonDC?, email: String, size: Dp = 50.dp, fontSize:
                     .size(size)
                     .clip(if (isOnline) CircleWithCutoutShape(0.4f) else CircleShape)
             )
-        } else GeneratedProfileImage(partnerEmail, size, fontSize, isOnline)
+        } else GeneratedProfileImage(partnerEmail, size, fontSize, isOnline, useEmoji)
         if (isOnline) {
             Box(
                 Modifier.align(Alignment.BottomEnd).size(size * 0.3f).clip(CircleShape)
@@ -80,12 +81,17 @@ fun ProfileImage(personDC: PersonDC?, email: String, size: Dp = 50.dp, fontSize:
     }
 }
 
+private val availableEmojis: List<Char> =
+    "🎈🎆🎇🧨✨🎉🎊🎃🎄🎁🎞🎟🎠🎡🎢🎪🎭🎨🧶🥽👔🧦👗👑🎩🎓💎⚽⚾🏀🏈🎱🏆🎮🕹🎲🔮🧸🪀🎵🧪💊🧰💿💾📡💡🍕🍔🥞🧀🍭🍺🍌🥝🍉🍑🍓🍆🌶🥔🥦❤☢".toList()
+
+
 @Composable
 fun GeneratedProfileImage(
     name: String,
     size: Dp = 50.dp,
     fontSize: TextUnit = 18.sp,
-    isOnline: Boolean = false
+    isOnline: Boolean = false,
+    useEmoji: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -95,7 +101,8 @@ fun GeneratedProfileImage(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = name.take(1).uppercase(),
+            text = if(useEmoji) availableEmojis[Random(name.hashCode()).nextInt(availableEmojis.size-1)].toString()
+            else name.take(1).uppercase(),
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = fontSize,
             fontWeight = FontWeight.Medium

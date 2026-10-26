@@ -18,13 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,24 +54,24 @@ import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.common.ChatBackgroundIds
 import org.unstabledev.pomegranate.common.SortingType
-import org.unstabledev.pomegranate.common.ThemeMode
+import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.components.HSVColorPicker
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.components.chat.MessageBubble
+import org.unstabledev.pomegranate.components.chat.TimeMark
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.kmpCopyTo
 import org.unstabledev.pomegranate.platform.kmpReadBytes
-import org.unstabledev.pomegranate.platform.sendHaptic
-import kotlin.math.floor
+import kotlin.math.roundToInt
+import kotlin.time.Clock
 import kotlin.time.Clock.System.now
 
 @Composable
@@ -237,10 +234,11 @@ fun StyleSettingsScreen(navController: NavHostController) {
         Spacer(Modifier.height(5.dp))
         Text("Сообщение", fontWeight = FontWeight.SemiBold)
         Column(addChatBackground(Modifier.fillMaxWidth().padding(10.dp)).clip(RoundedCornerShape(10.dp)).padding(10.dp)) {
+            if(settings.displayTimeMarksChat) TimeMark("Сегодня")
             MessageBubble(
                 MessageDC(
                     messageCreator = "unknown",
-                    data = "Расскажи о себе".encodeToByteArray(),
+                    data = "Расскажи что-то интересное".encodeToByteArray(),
                     type = MessageDC.TEXT,
                     time = now().toEpochMilliseconds(),
                     isMine = false,
@@ -256,36 +254,68 @@ fun StyleSettingsScreen(navController: NavHostController) {
                 Repository.createMessage(ChatDC("Вы",ChatDC.Companion.ChatTypes.SELFCHAT,
                     Repository.myEmail,mutableListOf(),0),
                     "Я сразу смазал карту будня,\nплеснувши краску из стакана;\nя показал на блюде студня\nкосые скулы океана.\n" +
-                            "На чешуе жестяной рыбы\nпрочёл я зовы новых губ.\nА вы\nноктюрн сыграть\nмогли бы\nна флейте водосточных труб?\n\n" +
+                            "На чешуе жестяной рыбы\nпрочёл я зовы новых губ.\nА вы\n**ноктюрн** сыграть\nмогли бы\nна *флейте водосточных труб*?\n\n" +
                             "- Владимир Маяковский", type = MessageDC.TEXT),
                 setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
             )
         }
-        val sliderValue = remember { mutableFloatStateOf(settings.messageRounding) }
+        val sliderValueRounding = remember { mutableFloatStateOf(settings.messageRounding) }
         val sliderColors = SliderDefaults.colors().copy(
             activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
             disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent
         )
-        val sliderState = rememberSliderState(
+        val sliderStateRounding = rememberSliderState(
             value = settings.messageRounding,
             steps = 32,
             valueRange = 0f..32f,
             onValueChangeFinished = {
-                AppSettings.setMessageRounding(sliderValue.value)
+                AppSettings.setMessageRounding(sliderValueRounding.value)
             }
         )
-        LaunchedEffect(sliderState.value) {
-            sliderValue.value = sliderState.value
+        LaunchedEffect(sliderStateRounding.value) {
+            sliderValueRounding.value = sliderStateRounding.value
         }
         LaunchedEffect(settings.messageRounding) {
-            if (sliderState.value != settings.messageRounding) {
-                sliderState.value = settings.messageRounding
-                sliderValue.value = settings.messageRounding
+            if (sliderStateRounding.value != settings.messageRounding) {
+                sliderStateRounding.value = settings.messageRounding
+                sliderValueRounding.value = settings.messageRounding
             }
         }
-        Text("Скругление")
-        Slider(sliderState, modifier = Modifier.fillMaxWidth(), colors = sliderColors)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Скругление", Modifier.width(95.dp))
+            Spacer(Modifier.width(3.dp))
+            Slider(sliderStateRounding, modifier = Modifier.weight(2f), colors = sliderColors)
+            Spacer(Modifier.width(3.dp))
+            Text(sliderValueRounding.value.roundToInt().toString(), modifier = Modifier.width(40.dp))
+        }
+        val sliderValueMaxWidth = remember { mutableFloatStateOf(settings.messageMaxWidth) }
+        val sliderStateMaxWidth = rememberSliderState(
+            value = settings.messageMaxWidth,
+            steps = 7,
+            valueRange = 0.3f..1f,
+            onValueChangeFinished = {
+                AppSettings.setMessageMaxWidth(sliderValueMaxWidth.value)
+            }
+        )
+        LaunchedEffect(sliderStateMaxWidth.value) {
+            sliderValueMaxWidth.value = sliderStateMaxWidth.value
+        }
+        LaunchedEffect(settings.messageMaxWidth) {
+            if (sliderStateMaxWidth.value != settings.messageMaxWidth) {
+                sliderStateMaxWidth.value = settings.messageMaxWidth
+                sliderValueMaxWidth.value = settings.messageMaxWidth
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Ширина", Modifier.width(95.dp))
+            Spacer(Modifier.width(3.dp))
+            Slider(sliderStateMaxWidth, modifier = Modifier.weight(2f), colors = sliderColors)
+            Spacer(Modifier.width(3.dp))
+            Text((sliderValueMaxWidth.value*100).roundToInt().toString()+"%", modifier = Modifier.width(40.dp))
+        }
 
+        SwitchButton(settings.displayTimeMarksChat, "Временные метки")
+            { AppSettings.setDisplayTimeMarksChat(it) }
         SwitchButton(settings.parseMarkdown, "Парсить Markdown")
             { AppSettings.setParseMarkdown(it) }
         SwitchButton(settings.messageUnifiedRounding, "Однородное скругление")

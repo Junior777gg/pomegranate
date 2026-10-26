@@ -329,7 +329,8 @@ private fun ProfileContent(viewModel: ProfileScreenController, email: String?, s
                                             ) {
                                                 ContactRow(
                                                     contact,
-                                                    modifier = Modifier.weight(2.0f)
+                                                    modifier = Modifier.weight(2.0f),
+                                                    useEmoji = AppSettings.state.value.emojiPfp
                                                 )
                                                 if (contact == ctx_chatDC!!.chatCreator) {
                                                     Spacer(Modifier.width(3.dp))
@@ -598,7 +599,7 @@ private fun MutualChatsList(email: String?, onMutualChatClick: (ChatDC)->Unit) {
                         ContactRow(chat.chatName, false, "", "", tripleColumn = false, isPinned = false,
                             modifier = Modifier.fillMaxWidth().height(64.dp)
                         ) {
-                            GeneratedProfileImage(chat.chatName)
+                            GeneratedProfileImage(chat.chatName, useEmoji = AppSettings.state.collectAsState().value.emojiPfp)
                         }
                     }
                 }

@@ -21,35 +21,31 @@ import kotlin.time.Clock
 
 @Serializable
 data class AppSettingsState(
-    val theme: ThemeMode = ThemeMode.SYSTEM,
-    val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
-    val messageColor: Int = AppSettings.DefaultMessageColor.toArgb(),
-    val primaryColor: Int = ColorTheme.AccentDark.toArgb(),
-    val hideSendBarWhenNoNetwork: Boolean = true,
-    val parseMarkdown: Boolean = true,
-    val messageUnifiedRounding: Boolean = false,
-    val messageRounding: Float = 16.0f,
-    val messageMaxWidth: Int = 280,
-    val chatTripleColumn: Boolean = false,
     val amoledUnlocked: Boolean = false,
-    val useAmoledOnDarkSystem: Boolean = false,
+    val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
+    val chatTripleColumn: Boolean = false,
     val desktopHomeSplit: Float = 1.0f,
+    val displayTimeMarksChat: Boolean = true,
+    val emojiPfp: Boolean = false,
+    val hideSendBarWhenNoNetwork: Boolean = true,
     val homeScreenSortingType: Int = SortingType.LAST_UPDATED_DESC,
-    val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
-    val pinnedChats: List<Long> = listOf(),
-    val shownPinWarning: Boolean = false,
     val lastHiddenEventId: String = "",
+    val messageColor: Int = AppSettings.DefaultMessageColor.toArgb(),
+    val messageMaxWidth: Float = 0.56f,
+    val messageRounding: Float = 16.0f,
+    val messageUnifiedRounding: Boolean = false,
+    val parseMarkdown: Boolean = true,
+    val pinnedChats: List<Long> = listOf(),
+    val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
+    val primaryColor: Int = ColorTheme.AccentDark.toArgb(),
+    val shownPinWarning: Boolean = false,
+    val theme: ThemeMode = ThemeMode.SYSTEM,
+    val useAmoledOnDarkSystem: Boolean = false,
 
     val developerMode: Boolean = false,
     val executeBackgroundService: Boolean = true,
 
-    val firebaseAddresses: List<FirebaseAddress> = listOf(
-        FirebaseAddress(
-            id = "default",
-            title = "Гранат",
-            url = Secrets.firebaseLink
-        )
-    ),
+    val firebaseAddresses: List<FirebaseAddress> = listOf(FirebaseAddress("default", "Гранат", Secrets.firebaseLink)),
     val selectedFirebaseAddressId: String = "default",
 
     val securityConfigKnown: SecurityConfig = SecurityConfig(),
@@ -144,6 +140,14 @@ object AppSettings {
         _state.value = _state.value.copy(executeBackgroundService = v)
     }
 
+    fun setEmojiPfp(v: Boolean) {
+        _state.value = _state.value.copy(emojiPfp = v)
+    }
+
+    fun setDisplayTimeMarksChat(v: Boolean) {
+        _state.value = _state.value.copy(displayTimeMarksChat = v)
+    }
+
     fun setUseAmoledOnDarkSystem(v: Boolean) {
         _state.value = _state.value.copy(useAmoledOnDarkSystem = v)
     }
@@ -178,6 +182,10 @@ object AppSettings {
 
     fun setMessageRounding(v: Float) {
         _state.value = _state.value.copy(messageRounding = v)
+    }
+
+    fun setMessageMaxWidth(v: Float) {
+        _state.value = _state.value.copy(messageMaxWidth = v)
     }
 
     fun setMessageUnifiedRounding(v: Boolean) {

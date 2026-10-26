@@ -500,7 +500,7 @@ fun ChatsList(
                     })
             ) {
                 ContactRow(chat, hasLast||hasDraft, if(hasDraft) draftMessage.value else message.first(),
-                    if(hasDraft) "" else message.last(), settings.chatTripleColumn, isPinned)
+                    if(hasDraft) "" else message.last(), settings.chatTripleColumn, isPinned, settings.emojiPfp)
                 DropdownMenu(
                     expanded = menuExpanded.value,
                     onDismissRequest = { menuExpanded.value = false },

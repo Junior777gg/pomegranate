@@ -60,6 +60,7 @@ import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.components.ScrollToBottomButton
 import org.unstabledev.pomegranate.components.chat.ChatHeader
 import org.unstabledev.pomegranate.components.chat.NewContactWidget
+import org.unstabledev.pomegranate.components.chat.TimeMark
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
@@ -102,26 +103,6 @@ fun ChatScreen(
     var showDeleteChatPopup by remember { mutableStateOf(false) }
     var showNicknameEditPopup by remember { mutableStateOf(false) }
     val areFilesBeingDraggedOver = remember { mutableStateOf(false) }
-
-    @Composable
-    fun TimeMark(time: String) {
-        Column(
-            Modifier.fillMaxWidth().height(37.dp).padding(vertical = 3.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Row(
-                Modifier.weight(1f)
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(Color.Black.copy(alpha = 0.2f))
-                    .padding(vertical = 5.dp, horizontal = 15.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(time, color = Color.White)
-            }
-        }
-    }
 
     LaunchedEffect(listState, messages.value.size) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
@@ -214,17 +195,20 @@ fun ChatScreen(
                             scope, snackBarHostState, settings.parseMarkdown
                         )
 
-                        val currentIndex = messages.value.indexOf(message)
-                        if (currentIndex == messages.value.size - 1) {
-                            TimeMark(msgTime.toTimeMark())
-                        } else {
-                            val nextMessage = messages.value[currentIndex + 1]
-                            val nextMsgTime = nextMessage.time.toLocalDateTime()
-
-                            if (msgTime.day != nextMsgTime.day ||
-                                msgTime.month != nextMsgTime.month ||
-                                msgTime.year != nextMsgTime.year) {
+                        if(settings.displayTimeMarksChat) {
+                            val currentIndex = messages.value.indexOf(message)
+                            if (currentIndex == messages.value.size - 1) {
                                 TimeMark(msgTime.toTimeMark())
+                            } else {
+                                val nextMessage = messages.value[currentIndex + 1]
+                                val nextMsgTime = nextMessage.time.toLocalDateTime()
+
+                                if (msgTime.day != nextMsgTime.day ||
+                                    msgTime.month != nextMsgTime.month ||
+                                    msgTime.year != nextMsgTime.year
+                                ) {
+                                    TimeMark(msgTime.toTimeMark())
+                                }
                             }
                         }
                     }

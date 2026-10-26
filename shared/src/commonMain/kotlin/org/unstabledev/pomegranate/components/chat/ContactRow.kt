@@ -41,7 +41,7 @@ import pomegranate.shared.generated.resources.welcome_mobile
 
 @Composable
 fun ContactRow(chat: ChatDC, hasLast: Boolean = false, message: String = "", messageTime: String = "",
-               tripleColumn: Boolean = false, isPinned: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
+               tripleColumn: Boolean = false, isPinned: Boolean = false, useEmoji: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
     val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
     val profile = personDC?.profile?.deserialize()
     val name = when (chat.chatType) {
@@ -54,12 +54,12 @@ fun ContactRow(chat: ChatDC, hasLast: Boolean = false, message: String = "", mes
         else -> ""
     }
     ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned, modifier) {
-        ProfileImage(chat)
+        ProfileImage(chat, useEmoji = useEmoji)
     }
 }
 @Composable
 fun ContactRow(email: String, hasLast: Boolean = false, message: String = "", messageTime: String = "",
-               tripleColumn: Boolean = false, isPinned: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
+               tripleColumn: Boolean = false, isPinned: Boolean = false, useEmoji: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
     val personDC = runBlocking { Repository.personsDao.getByEmail(email) }
     val profile = personDC?.profile?.deserialize()
     val name = personDC?.nickname ?: profile?.displayName ?: email
@@ -69,11 +69,11 @@ fun ContactRow(email: String, hasLast: Boolean = false, message: String = "", me
 }
 @Composable
 fun ContactRow(personDC: PersonDC, hasLast: Boolean = false, message: String = "", messageTime: String = "",
-               tripleColumn: Boolean = false, isPinned: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
+               tripleColumn: Boolean = false, isPinned: Boolean = false, useEmoji: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth().height(64.dp)) {
     val profile = personDC.profile?.deserialize()
     val name = personDC.nickname ?: profile?.displayName ?: ""
     ContactRow(name, hasLast, message, messageTime, tripleColumn, isPinned, modifier) {
-        ProfileImage(personDC, personDC.personEmail)
+        ProfileImage(personDC, personDC.personEmail, useEmoji = useEmoji)
     }
 }
 
