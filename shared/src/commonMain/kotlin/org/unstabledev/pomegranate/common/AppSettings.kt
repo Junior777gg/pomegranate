@@ -39,7 +39,9 @@ data class AppSettingsState(
     val pinnedChats: List<Long> = listOf(),
     val shownPinWarning: Boolean = false,
     val lastHiddenEventId: String = "",
+
     val developerMode: Boolean = false,
+    val executeBackgroundService: Boolean = true,
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(
         FirebaseAddress(
@@ -136,6 +138,10 @@ object AppSettings {
 
     fun setHideSendBarWhenNoNetwork(v: Boolean) {
         _state.value = _state.value.copy(hideSendBarWhenNoNetwork = v)
+    }
+
+    fun setExecuteBackgroundService(v: Boolean) {
+        _state.value = _state.value.copy(executeBackgroundService = v)
     }
 
     fun setUseAmoledOnDarkSystem(v: Boolean) {

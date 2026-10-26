@@ -1,5 +1,6 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -13,7 +14,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.database.DatabaseBuilder
@@ -30,7 +33,10 @@ import kotlin.random.Random
 fun main(args: Array<String>) {
     AppSettings.load()
     val isOpen = mutableStateOf(true)
-    val runBg = !args.contains("--no-bg-service")
+    var runBg = !args.contains("--no-bg-service")
+    runBlocking {
+        if(runBg) runBg = AppSettings.state.first().executeBackgroundService
+    }
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()
     }

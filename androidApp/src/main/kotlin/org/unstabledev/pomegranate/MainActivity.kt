@@ -14,6 +14,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.database.DatabaseBuilder
@@ -39,7 +41,11 @@ class MainActivity : ComponentActivity() {
             }
         initializeSelectors()
 
-        baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
+        var runBg = true
+        runBlocking {
+            runBg = runBg or AppSettings.state.first().executeBackgroundService
+        }
+        if(runBg) baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent {
             App()
         }

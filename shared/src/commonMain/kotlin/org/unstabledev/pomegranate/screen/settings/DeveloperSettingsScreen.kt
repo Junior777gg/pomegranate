@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,12 +24,19 @@ import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.api.event.StandardPublicEvents
 import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.AppTracer
+import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
 import org.unstabledev.pomegranate.components.ScrollablePage
+import org.unstabledev.pomegranate.components.SwitchButton
 
 @Composable
 fun DeveloperSettingsScreen(navController: NavHostController) {
     val settings=AppSettings.state.value
     ScrollablePage(navController, "Для разработчиков") {
+        Text("Поведение приложения", fontWeight = FontWeight.SemiBold)
+        SwitchButton(settings.executeBackgroundService, "Запускать фоновый сервис") {
+            AppSettings.setExecuteBackgroundService(it)
+        }
         Text("Публичные события", fontWeight = FontWeight.SemiBold)
         val updatedEvent=mutableStateOf(false)
         key(updatedEvent.value) {
@@ -56,6 +64,23 @@ fun DeveloperSettingsScreen(navController: NavHostController) {
             AppSettings.setLastHiddenEventId("")
         }) {
             Text("Сбросить скрытое событие")
+        }
+        Text("Публичные события", fontWeight = FontWeight.SemiBold)
+        key(AppTracer.isRunning()) {
+            Button({
+                if (AppTracer.isRunning()) AppTracer.stop() else AppTracer.start()
+            }) {
+                Text(if (AppTracer.isRunning()) "Завершить трассировку" else "Начать трассировку")
+            }
+        }
+        key(AppTracer.dump()) {
+            for (trace in AppTracer.dump()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(trace.origin, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.width(3.dp))
+                    Text(trace.time.toDatedHHMMTime())
+                }
+            }
         }
     }
 }

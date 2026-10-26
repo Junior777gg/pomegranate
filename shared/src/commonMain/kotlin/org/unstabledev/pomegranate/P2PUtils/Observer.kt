@@ -19,6 +19,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
+import org.unstabledev.pomegranate.common.AppTracer
 import org.unstabledev.pomegranate.common.SecurityConfig
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
@@ -183,6 +184,7 @@ class Observer(
                                     messageDC.isDelivered = true
                                     messagesDao.insert(messageDC)
                                     map.remove(key)
+                                    AppTracer.trace("recieve:$email")
                                 }
                             }
                             delay(100.milliseconds)
@@ -223,6 +225,8 @@ class Observer(
                 val dataFile = KMPFile(data.decodeToString())
                 channel.send(dataFile, code)
             }
+            AppTracer.trace("${if(message.chatType== ChatDC.Companion.ChatTypes.GROUP) "send_group" else "send"}:" +
+                    "${message.chatName}_${message.chatCreator}")
         }
     }
 
