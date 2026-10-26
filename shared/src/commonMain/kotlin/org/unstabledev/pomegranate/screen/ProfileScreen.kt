@@ -32,7 +32,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -146,12 +145,12 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
     }
     val onContactClick: (String)->Unit = remember {
         { email ->
-            navController.navigate(Routes.ProfileScreen(chatKey, email))
+            navController.navigate(Routes.Profile(chatKey, email))
         }
     }
     val onMutualChatClick: (ChatDC)->Unit = remember {
         { chat ->
-            navController.navigate(Routes.ChatScreen(chat.key))
+            navController.navigate(Routes.Chat(chat.key))
         }
     }
 

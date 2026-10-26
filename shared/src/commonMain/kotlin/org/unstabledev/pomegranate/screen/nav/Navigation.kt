@@ -30,7 +30,7 @@ import org.unstabledev.pomegranate.screen.ChatScreen
 import org.unstabledev.pomegranate.screen.ContactsScreen
 import org.unstabledev.pomegranate.screen.DesktopHomeScreen
 import org.unstabledev.pomegranate.screen.FirebaseAddressSelectScreen
-import org.unstabledev.pomegranate.screen.LoginScreen
+import org.unstabledev.pomegranate.screen.SwitchAccountScreen
 import org.unstabledev.pomegranate.screen.HomeScreen
 import org.unstabledev.pomegranate.screen.ProfileScreen
 import org.unstabledev.pomegranate.screen.settings.SettingsScreen
@@ -56,14 +56,14 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
     Repository.chatDao = chatDao
     Repository.personsDao = personsDao
     if (currentCall.value != null) {
-        navController.navigate(Routes.CallScreen())
+        navController.navigate(Routes.Call())
     }
     var startDestination: Routes
     val fistFilePath = remember { Repository.fistFilePath }
     if (KMPFile(fistFilePath).exists()) {
         KMPFile("$pomegranatePath${separator}temp").createNewFile()
-        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") Routes.HomeScreen()
-        else Routes.WelcomeScreen()
+        startDestination = if (KMPFile(fistFilePath).kmpReadText() != "") Routes.Home()
+        else Routes.Onboarding()
     } else {
         if (KMPFile(pomegranatePath).exists()) {
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
@@ -73,59 +73,59 @@ fun Navigation(navController: NavHostController, chatDao: ChatDao, messagesDao: 
             KMPFile("$pomegranatePath${separator}temp").createNewFile()
             KMPFile(fistFilePath).createNewFile()
         }
-        startDestination = Routes.WelcomeScreen()
+        startDestination = Routes.Onboarding()
     }
     NavHost(navController = navController, startDestination = startDestination) {
-        composable<Routes.WelcomeScreen>{
+        composable<Routes.Onboarding>{
             WelcomeScreen(navController)
         }
-        composable<Routes.LoginScreen> {
-            LoginScreen(navController)
+        composable<Routes.SwitchAccount> {
+            SwitchAccountScreen(navController)
         }
-        composable<Routes.HomeScreen> {
+        composable<Routes.Home> {
             if (isMobile) HomeScreen(navController)
             else DesktopHomeScreen(navController)
         }
-        composable<Routes.ContactsScreen>{
+        composable<Routes.Contacts>{
             ContactsScreen(navController)
         }
-        composable<Routes.SettingsScreen>{
+        composable<Routes.Settings>{
             SettingsScreen(navController)
         }
-        composable<Routes.SettingsStyleScreen>{
+        composable<Routes.SettingsStyle>{
             StyleSettingsScreen(navController)
         }
-        composable<Routes.SettingsNetworkScreen>{
+        composable<Routes.SettingsNetwork>{
             NetworkSettingsScreen(navController)
         }
-        composable<Routes.SettingsPowerSaveScreen>{
+        composable<Routes.SettingsPowerSave>{
             PowerSaveSettingsScreen(navController)
         }
-        composable<Routes.SettingsStorageScreen>{
+        composable<Routes.SettingsStorage>{
             StorageSettingsScreen(navController)
         }
-        composable<Routes.SettingsDeveloperScreen>{
+        composable<Routes.SettingsDeveloper>{
             DeveloperSettingsScreen(navController)
         }
-        composable<Routes.SettingsSelectFirebaseScreen>{
+        composable<Routes.SettingsSelectFirebase>{
             FirebaseAddressSelectScreen(navController)
         }
-        composable<Routes.ChatScreen>(
+        composable<Routes.Chat>(
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(400)) },
             exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
         ) {
-            val route = it.toRoute<Routes.ChatScreen>()
+            val route = it.toRoute<Routes.Chat>()
             ChatScreen(navController, route.chatId, onChatDelete = {
                 DraftManager.drafts.remove(route.chatId)
                 DraftManager.save()
                 AppSettings.removePinnedChat(route.chatId)
             })
         }
-        composable<Routes.ProfileScreen>{
-            val route = it.toRoute<Routes.ProfileScreen>()
+        composable<Routes.Profile>{
+            val route = it.toRoute<Routes.Profile>()
             ProfileScreen(navController, route.chatId, route.email)
         }
-        composable<Routes.CallScreen>{
+        composable<Routes.Call>{
             BetterCallSoulScreen(navController)
         }
         composable<Routes.ImagePreview>{

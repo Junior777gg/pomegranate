@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerValue
@@ -40,7 +40,6 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository.fistFilePath
-import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.platform.PlatformEvents
@@ -74,7 +73,7 @@ fun HomeScreen(navController: NavHostController) {
                         .background(MaterialTheme.colorScheme.primary)
                         .padding(16.dp)
                         .clickable(indication = null, interactionSource = null) {
-                            navController.navigate(Routes.ProfileScreen(null, Repository.myEmail))
+                            navController.navigate(Routes.Profile(null, Repository.myEmail))
                         }
                 ) {
                     Box(
@@ -111,7 +110,7 @@ fun HomeScreen(navController: NavHostController) {
                     label = { Text("Профиль", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        navController.navigate(Routes.ProfileScreen(null, Repository.myEmail))
+                        navController.navigate(Routes.Profile(null, Repository.myEmail))
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -121,24 +120,22 @@ fun HomeScreen(navController: NavHostController) {
                     label = { Text("Настройки", fontSize = 16.sp) },
                     selected = false,
                     onClick = {
-                        navController.navigate(Routes.SettingsScreen())
+                        navController.navigate(Routes.Settings())
                     },
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
 
                 NavigationDrawerItem(
-                    label = { Text("Выйти", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
+                    label = { Text("Сменить аккаунт", fontSize = 16.sp ) },
                     selected = false,
                     onClick = {
-                        KMPFile(fistFilePath).delete()
-                        navController.navigate(Routes.LoginScreen())
+                        navController.navigate(Routes.SwitchAccount())
                     },
                     icon = {
                         Icon(
-                            Icons.Default.ExitToApp,
-                            contentDescription = "Logout",
-                            tint = MaterialTheme.colorScheme.error
+                            Icons.Default.AccountCircle,
+                            contentDescription = "Switch account"
                         )
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -147,10 +144,10 @@ fun HomeScreen(navController: NavHostController) {
         }
     ) {
         SearchableChatsPanel(viewModel,
-            onChatClick = { navController.navigate(Routes.ChatScreen(it.key)) },
-            onChatAddClick = { navController.navigate(Routes.ContactsScreen()) },
+            onChatClick = { navController.navigate(Routes.Chat(it.key)) },
+            onChatAddClick = { navController.navigate(Routes.Contacts()) },
             onSidemenuClick = { scope.launch { drawerState.open() } },
-            onOpenProfileClick = { navController.navigate(Routes.ProfileScreen(it.key, it.personsEmails.first())) }
+            onOpenProfileClick = { navController.navigate(Routes.Profile(it.key, it.personsEmails.first())) }
         )
     }
 }

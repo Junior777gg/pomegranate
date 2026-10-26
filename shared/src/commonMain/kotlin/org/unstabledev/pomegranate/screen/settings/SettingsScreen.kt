@@ -13,10 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.BugReport
@@ -26,7 +24,6 @@ import androidx.compose.material.icons.filled.NetworkWifi
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.ShieldMoon
 import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
@@ -51,7 +47,6 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.ThemeMode
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
-import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.sendHaptic
 
@@ -143,22 +138,22 @@ fun SettingsScreen(navController: NavHostController) {
         }
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp)) {
             SettingsPageButton(Color(0.9f, 0.6f, 0.2f), Icons.Default.Palette, "Внешний вид")
-            { navController.navigate(Routes.SettingsStyleScreen()) }
+            { navController.navigate(Routes.SettingsStyle()) }
             Spacer(Modifier.height(8.dp))
             SettingsPageButton(Color(0.2f, 0.6f, 0.9f), Icons.Default.NetworkWifi, "Сеть")
-            { navController.navigate(Routes.SettingsNetworkScreen()) }
+            { navController.navigate(Routes.SettingsNetwork()) }
             if (isMobile) {
                 Spacer(Modifier.height(8.dp))
                 SettingsPageButton(Color(0.2f, 0.8f, 0.4f), Icons.Default.BatterySaver, "Энергосбережение")
-                { navController.navigate(Routes.SettingsPowerSaveScreen()) }
+                { navController.navigate(Routes.SettingsPowerSave()) }
             }
             Spacer(Modifier.height(8.dp))
             SettingsPageButton(Color(0.7f, 0.3f, 0.9f), Icons.Default.Storage, "Кэш и хранилище")
-            { navController.navigate(Routes.SettingsStorageScreen()) }
+            { navController.navigate(Routes.SettingsStorage()) }
             if (settings.developerMode) {
                 Spacer(Modifier.height(8.dp))
                 SettingsPageButton(Color(0.5f, 0.5f, 0.5f), Icons.Default.BugReport, "Для разработчиков")
-                { navController.navigate(Routes.SettingsDeveloperScreen()) }
+                { navController.navigate(Routes.SettingsDeveloper()) }
             }
         }
     }

@@ -65,7 +65,7 @@ fun DeveloperSettingsScreen(navController: NavHostController) {
         }) {
             Text("Сбросить скрытое событие")
         }
-        Text("Публичные события", fontWeight = FontWeight.SemiBold)
+        Text("События P2P", fontWeight = FontWeight.SemiBold)
         key(AppTracer.isRunning()) {
             Button({
                 if (AppTracer.isRunning()) AppTracer.stop() else AppTracer.start()

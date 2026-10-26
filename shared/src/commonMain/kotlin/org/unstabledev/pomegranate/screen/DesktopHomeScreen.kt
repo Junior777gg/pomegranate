@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
@@ -54,7 +55,6 @@ import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.Repository.fistFilePath
 import org.unstabledev.pomegranate.common.DraftManager
-import org.unstabledev.pomegranate.common.MessageDraft
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.common.Util
@@ -118,7 +118,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                                 panelSubScreen = PanelSubScreen.PROFILE_SETTINGS
                             },
                             onOpenProfileClick = {
-                                navController.navigate(route = Routes.ProfileScreen(it.key, it.personsEmails.first()))
+                                navController.navigate(route = Routes.Profile(it.key, it.personsEmails.first()))
                             })
                     }
                     PanelSubScreen.CONTACTS -> {
@@ -134,12 +134,11 @@ fun DesktopHomeScreen(navController: NavHostController) {
                         ProfileSettingsPanel(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
-                            navController.navigate(Routes.ProfileScreen(null, Repository.myEmail))
+                            navController.navigate(Routes.Profile(null, Repository.myEmail))
                         }, {
-                            navController.navigate(route = Routes.SettingsScreen())
+                            navController.navigate(route = Routes.Settings())
                         }, {
-                            KMPFile(fistFilePath).delete()
-                            navController.navigate(route = Routes.LoginScreen())
+                            navController.navigate(Routes.SwitchAccount())
                         })
                     }
                 }
@@ -193,7 +192,8 @@ fun DesktopHomeScreen(navController: NavHostController) {
 
 @Composable
 private fun ProfileSettingsPanel(userEmail: String, userName: String,
-                                 onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
+                                 onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit,
+                                 onSwitchAccount: ()->Unit, modifier: Modifier = Modifier
 ) {
     Row(
         modifier = Modifier
@@ -271,16 +271,15 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
     )
 
     NavigationDrawerItem(
-        label = { Text("Выйти", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
+        label = { Text("Сменить аккаунт", fontSize = 16.sp ) },
         selected = false,
         onClick = {
-            onLogOut()
+            onSwitchAccount()
         },
         icon = {
             Icon(
-                Icons.Default.ExitToApp,
-                contentDescription = "Logout",
-                tint = MaterialTheme.colorScheme.error
+                Icons.Default.AccountCircle,
+                contentDescription = "Switch account"
             )
         },
         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)

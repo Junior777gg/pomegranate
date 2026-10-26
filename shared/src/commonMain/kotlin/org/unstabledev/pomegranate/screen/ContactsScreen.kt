@@ -53,7 +53,7 @@ fun ContactsScreen(navController: NavHostController) {
     Column(applyScreenPadding()) {
         ContactsPanel(
             { navController.popBackStack() },
-            { navController.navigate(Routes.ChatScreen(it.key)) },
+            { navController.navigate(Routes.Chat(it.key)) },
         )
     }
 }
@@ -63,9 +63,7 @@ fun ContactsPanel(
     onBack: () -> Unit,
     onAdd: (chat: ChatDC) -> Unit
 ) {
-    val viewModel = viewModel {
-        ContactScreenController()
-    }
+    val viewModel = viewModel { ContactScreenController() }
     val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.AddContact()) }
     val error = remember { mutableStateOf("") }
     val pageHeader = remember { mutableStateOf("Создать чат") }
@@ -91,7 +89,7 @@ fun ContactsPanel(
                             error.value = "Название обязательно!"
                             return@Button
                         }
-                        val chat = viewModel.createGroups(name)
+                        val chat = viewModel.createGroup(name)
                         onAdd(chat)
                     }) {
                         Text("Создать группу")

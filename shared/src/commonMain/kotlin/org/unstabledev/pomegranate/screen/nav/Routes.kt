@@ -4,33 +4,33 @@ import kotlinx.serialization.Serializable
 
 sealed class Routes {
     @Serializable
-    class WelcomeScreen: Routes()
+    class Onboarding: Routes()
     @Serializable
-    class LoginScreen: Routes()
+    class SwitchAccount: Routes()
     @Serializable
-    class HomeScreen: Routes()
+    class Home: Routes()
     @Serializable
-    data class ChatScreen(val chatId : Long): Routes()
+    data class Chat(val chatId : Long): Routes()
     @Serializable
-    data class ProfileScreen(val chatId : Long?, val email: String?): Routes()
+    data class Profile(val chatId : Long?, val email: String?): Routes()
     @Serializable
-    class ContactsScreen: Routes()
+    class Contacts: Routes()
     @Serializable
-    class SettingsScreen: Routes()
+    class Settings: Routes()
     @Serializable
-    class SettingsStyleScreen: Routes()
+    class SettingsStyle: Routes()
     @Serializable
-    class SettingsNetworkScreen: Routes()
+    class SettingsNetwork: Routes()
     @Serializable
-    class SettingsPowerSaveScreen: Routes()
+    class SettingsPowerSave: Routes()
     @Serializable
-    class SettingsStorageScreen: Routes()
+    class SettingsStorage: Routes()
     @Serializable
-    class SettingsDeveloperScreen: Routes()
+    class SettingsDeveloper: Routes()
     @Serializable
-    class SettingsSelectFirebaseScreen: Routes()
+    class SettingsSelectFirebase: Routes()
     @Serializable
-    class CallScreen: Routes()
+    class Call: Routes()
     @Serializable
     data class ImagePreview(val messageId : Long): Routes()
 }

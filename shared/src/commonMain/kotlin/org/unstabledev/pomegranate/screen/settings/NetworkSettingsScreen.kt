@@ -35,7 +35,7 @@ fun NetworkSettingsScreen(navController: NavHostController) {
         }
         Spacer(modifier = Modifier.padding(vertical = 5.dp))
         Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).fillMaxWidth().clickable {
-            navController.navigate(Routes.SettingsSelectFirebaseScreen())
+            navController.navigate(Routes.SettingsSelectFirebase())
         }) {
             Row(
                 Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth().padding(16.dp),

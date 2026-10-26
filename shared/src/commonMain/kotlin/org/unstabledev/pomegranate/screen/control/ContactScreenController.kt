@@ -36,7 +36,7 @@ class ContactScreenController : ViewModel() {
         return savedChat
     }
 
-    fun createGroups(name: String): ChatDC {
+    fun createGroup(name: String): ChatDC {
         val chat = ChatDC(
             chatName = name,
             personsEmails = mutableListOf(Repository.myEmail),
