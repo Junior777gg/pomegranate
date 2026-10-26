@@ -26,6 +26,7 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.screen.Profile
+import kotlin.time.Clock
 
 
 class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : ViewModel() {
@@ -64,28 +65,31 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
         viewModelScope.launch(Dispatchers.IO) {
             val messagesList = mutableListOf<MessageDC>()
             val currentChat = getChat()
+
+            val totalItems = (if (message!=null) 1 else 0) + files.size
+            val bulkGroupId = if (totalItems>1) Clock.System.now().toEpochMilliseconds() else 0L
             if (message != null && type == MessageDC.TEXT) {
                 val messageDC =
-                    Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT)
+                    Repository.createMessage(currentChat, message = message, type = MessageDC.TEXT, bulkId = bulkGroupId)
                 messagesDao.insert(messageDC)
                 messagesList.add(messageDC)
             }
             if (message == null && type == MessageDC.INVITE) {
                 val messageDC =
                     Repository.createMessage(currentChat, type = MessageDC.INVITE,
-                        supData = Json.encodeToString(currentChat.personsEmails).encodeToByteArray())
+                        supData = Json.encodeToString(currentChat.personsEmails).encodeToByteArray(), bulkId = bulkGroupId)
                 messagesDao.insert(messageDC)
                 messagesList.add(messageDC)
             }
             if (message == null && type == MessageDC.BEGIN_CALL) {
-                val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL)
+                val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL, bulkId = bulkGroupId)
                 messagesDao.insert(messageDC)
                 messagesList.add(messageDC)
             }
             if (files.isNotEmpty()) {
                 files.forEach { file ->
                     val messageDC =
-                        Repository.createMessage(currentChat, file = file, type = MessageDC.FILE)
+                        Repository.createMessage(currentChat, file = file, type = MessageDC.FILE, bulkId = bulkGroupId)
                     messagesDao.insert(messageDC)
                     messagesList.add(messageDC)
                 }

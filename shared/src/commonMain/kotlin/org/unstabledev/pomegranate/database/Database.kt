@@ -19,7 +19,7 @@ expect object ChatDatabaseConstructor : RoomDatabaseConstructor<ChatDatabase> {
     override fun initialize(): ChatDatabase
 }
 
-@Database(entities = [MessageDC::class], version = 22)
+@Database(entities = [MessageDC::class], version = 23)
 @ConstructedBy(MessagesDatabaseConstructor::class)
 abstract class MessagesDatabase: RoomDatabase() {
     abstract fun get(): MessagesDao

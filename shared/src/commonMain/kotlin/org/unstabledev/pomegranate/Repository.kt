@@ -134,7 +134,8 @@ object Repository {
         message: String? = null,
         file: KMPFile? = null,
         supData: ByteArray = byteArrayOf(),
-        type: String
+        type: String,
+        bulkId: Long = 0
     ): MessageDC {
         var currentMessage: MessageDC? = null
         val time = now().toEpochMilliseconds()
@@ -150,6 +151,7 @@ object Repository {
                     chatType = chatDC.chatType,
                     chatCreator = chatDC.chatCreator,
                     supData = supData,
+                    bulkId = bulkId,
                 )
                 currentMessage = messageDC
             }
@@ -165,6 +167,7 @@ object Repository {
                     chatType = chatDC.chatType,
                     chatCreator = chatDC.chatCreator,
                     supData = supData,
+                    bulkId = bulkId,
                 )
                 currentMessage = messageDC
             }
@@ -182,6 +185,7 @@ object Repository {
                     chatType = chatDC.chatType,
                     chatCreator = chatDC.chatCreator,
                     supData = supData,
+                    bulkId = bulkId,
                 )
                 currentMessage = messageDC
             }
@@ -204,6 +208,7 @@ object Repository {
                         chatType = chatDC.chatType,
                         chatCreator = chatDC.chatCreator,
                         supData = supData,
+                        bulkId = bulkId,
                     )
                     currentMessage = messageDC
                 }

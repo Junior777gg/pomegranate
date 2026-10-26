@@ -18,6 +18,7 @@ data class MessageDC(
     val time: Long = 0,
     var isMine: Boolean = false,
     var instructions: String = "",
+    var bulkId: Long = 0,
     @PrimaryKey(autoGenerate = true)
     val key: Long = 0,
 ){
