@@ -22,13 +22,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.screen.nav.Routes
 
 @Composable
 fun NetworkSettingsScreen(navController: NavHostController) {
-    val settings=AppSettings.state.value
+    val settings=collectAppSettings()
     ScrollablePage(navController, "Сеть") {
         SwitchButton(settings.hideSendBarWhenNoNetwork, "Отключать отправку без интернета") {
             AppSettings.setHideSendBarWhenNoNetwork(it)

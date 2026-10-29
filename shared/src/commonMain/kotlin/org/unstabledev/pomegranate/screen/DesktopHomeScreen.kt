@@ -58,6 +58,8 @@ import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.common.Util
+import org.unstabledev.pomegranate.common.collectAppSettings
+import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.platform.kmpReadText
@@ -71,7 +73,7 @@ private enum class PanelSubScreen {
 @Composable
 fun DesktopHomeScreen(navController: NavHostController) {
     var panelSubScreen by remember { mutableStateOf(PanelSubScreen.CHATS) }
-    val settings by AppSettings.state.collectAsState()
+    val settings = collectAppSettings()
     val viewModel = viewModel { HomeScreenController() }
     val scope = rememberCoroutineScope()
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
@@ -195,6 +197,7 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
                                  onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit,
                                  onSwitchAccount: ()->Unit, modifier: Modifier = Modifier
 ) {
+    val settings = collectAppSettings()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -220,20 +223,7 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
                 onProfileClick()
             }
     ) {
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .clip(CircleShape)
-                .background(Util.randomColor(userEmail.hashCode())),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = userName.take(1).uppercase(),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        GeneratedProfileImage(userName, useEmoji = settings.emojiPfp, size = 70.dp, fontSize = 22.sp)
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = userName,

@@ -45,6 +45,7 @@ import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.ThemeMode
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.platform.isMobile
@@ -52,7 +53,7 @@ import org.unstabledev.pomegranate.platform.sendHaptic
 
 @Composable
 fun SettingsScreen(navController: NavHostController) {
-    val settings by AppSettings.state.collectAsState()
+    val settings = collectAppSettings()
 
     ScrollablePage(navController, "Настройки", paddingH = 0.dp) {
         val amoledClicks = remember { mutableStateOf(0) }

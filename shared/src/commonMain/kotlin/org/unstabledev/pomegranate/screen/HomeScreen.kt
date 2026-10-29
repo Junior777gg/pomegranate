@@ -25,6 +25,7 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,8 +41,11 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.screen.control.HomeScreenController
 import org.unstabledev.pomegranate.Repository.fistFilePath
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.Util
+import org.unstabledev.pomegranate.common.collectAppSettings
+import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.kmpReadText
@@ -51,6 +55,7 @@ fun HomeScreen(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val viewModel = viewModel { HomeScreenController() }
     val scope = rememberCoroutineScope()
+    val settings = collectAppSettings()
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
@@ -76,20 +81,7 @@ fun HomeScreen(navController: NavHostController) {
                             navController.navigate(Routes.Profile(null, Repository.myEmail))
                         }
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .background(Util.randomColor(userEmail.hashCode())),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = userName.take(1).uppercase(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    GeneratedProfileImage(userName, useEmoji = settings.emojiPfp, size = 60.dp, fontSize = 22.sp)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = userName,

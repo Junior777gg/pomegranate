@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,9 +38,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import org.jetbrains.compose.resources.painterResource
+import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.components.MuteChatAlert
 import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
+import pomegranate.shared.generated.resources.Res
+import pomegranate.shared.generated.resources.mute
+import pomegranate.shared.generated.resources.unmute
 
 @Composable
 fun ChatHeader(
@@ -53,6 +61,9 @@ fun ChatHeader(
     onDeleteChatClick: () -> Unit,
 ) {
     val menuExpanded = remember { mutableStateOf(false) }
+    val settings = AppSettings.state.collectAsState().value
+    val isMuted=AppSettings.isMuted(viewModel.chatKey)
+    val showMuteChatPopup = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -73,12 +84,11 @@ fun ChatHeader(
                 )
             }
 
-
         Row(
             Modifier.clickable(indication = null, interactionSource = null) { onProfileClick() }.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ProfileImage(viewModel.getChat())
+            ProfileImage(viewModel.getChat(), useEmoji = settings.emojiPfp)
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -171,6 +181,24 @@ fun ChatHeader(
 
                 DropdownMenuItem(
                     text = {
+                        Text(if(isMuted) "Включить уведомления" else "Отключить уведомления", color = MaterialTheme.colorScheme.onBackground)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = if(isMuted) painterResource(Res.drawable.unmute) else painterResource(Res.drawable.mute),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    onClick = {
+                        if (isMuted) AppSettings.unmuteChat(viewModel.chatKey)
+                        else showMuteChatPopup.value=true
+                        menuExpanded.value = false
+                    }
+                )
+
+                /*DropdownMenuItem(
+                    text = {
                         Text("Очистить историю", color = MaterialTheme.colorScheme.onBackground)
                     },
                     leadingIcon = {
@@ -183,7 +211,7 @@ fun ChatHeader(
                         menuExpanded.value = false
                         onClearHistoryClick()
                     }
-                )
+                )*/
 
                 HorizontalDivider()
 
@@ -207,6 +235,10 @@ fun ChatHeader(
                     }
                 )
             }
+        }
+
+        if (showMuteChatPopup.value) {
+            MuteChatAlert(showMuteChatPopup, viewModel.chatKey)
         }
     }
 }

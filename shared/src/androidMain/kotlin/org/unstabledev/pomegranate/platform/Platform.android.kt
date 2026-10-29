@@ -17,10 +17,16 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
@@ -30,6 +36,7 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.jvm.java
 import androidx.core.net.toUri
+import org.unstabledev.pomegranate.components.ColorTheme
 
 actual val isMobile: Boolean
     get() = true
@@ -212,4 +219,14 @@ actual fun openUrlInBrowser(url: String) {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     androidContext?.startActivity(intent)
+}
+
+actual fun getSystemMaterialColor(dark: Boolean): Color? {
+    return when {
+        Build.VERSION.SDK_INT>=Build.VERSION_CODES.S->{
+            (if (dark) dynamicDarkColorScheme(androidContext!!)
+            else dynamicLightColorScheme(androidContext!!)).primary
+        }
+        else->null
+    }
 }

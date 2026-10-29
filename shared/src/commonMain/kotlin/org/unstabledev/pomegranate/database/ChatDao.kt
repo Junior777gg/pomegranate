@@ -28,6 +28,9 @@ interface ChatDao {
     @Query("SELECT * FROM chat WHERE chatCreator = :chatCreator")
     fun getAllOwnedChats(chatCreator: String): Flow<List<ChatDC>>
 
+    @Query("SELECT * FROM chat WHERE chatCreator = :chatCreator AND chatName = :chatName")
+    fun tryGet(chatName: String, chatCreator: String): Flow<ChatDC?>
+
     @Query("SELECT * FROM chat WHERE personsEmails LIKE '%' || :email || '%'")
     fun getAllChatsWith(email: String): Flow<List<ChatDC>>
 

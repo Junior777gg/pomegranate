@@ -79,6 +79,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.altClickable
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.components.LabeledTextField
@@ -228,6 +229,7 @@ private fun ProfileContent(viewModel: ProfileScreenController, email: String?, s
     val profile = person?.profile?.deserialize()
     val showGroupAddPrompt = remember { mutableStateOf(false) }
     val redrawIndex = remember { mutableStateOf(false) }
+    val settings = collectAppSettings()
     key(redrawIndex.value) {
         LazyColumn(Modifier.padding(top = if (isMobile) 50.dp else 0.dp)) {
             item {
@@ -238,9 +240,9 @@ private fun ProfileContent(viewModel: ProfileScreenController, email: String?, s
                         .padding(top = 24.dp, bottom = 24.dp)
                 ) {
                     if (email == null) {
-                        if (ctx_chatDC != null) ProfileImage(ctx_chatDC!!, 96.dp)
-                        else ProfileImage(null, "null", 96.dp)
-                    } else ProfileImage(person, email, 96.dp)
+                        if (ctx_chatDC != null) ProfileImage(ctx_chatDC!!, 96.dp, useEmoji = settings.emojiPfp)
+                        else ProfileImage(null, "null", 96.dp, useEmoji = settings.emojiPfp)
+                    } else ProfileImage(person, email, 96.dp, useEmoji = settings.emojiPfp)
 
                     Spacer(Modifier.height(12.dp))
 
@@ -329,7 +331,7 @@ private fun ProfileContent(viewModel: ProfileScreenController, email: String?, s
                                                 ContactRow(
                                                     contact,
                                                     modifier = Modifier.weight(2.0f),
-                                                    useEmoji = AppSettings.state.value.emojiPfp
+                                                    useEmoji = settings.emojiPfp
                                                 )
                                                 if (contact == ctx_chatDC!!.chatCreator) {
                                                     Spacer(Modifier.width(3.dp))
@@ -586,6 +588,7 @@ private fun MutualChatsList(email: String?, onMutualChatClick: (ChatDC)->Unit) {
         return
     }
     val mutualChats = Repository.chatDao.getAllChatsWith(email).collectAsStateWithLifecycle(listOf())
+    val settings = collectAppSettings()
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
@@ -595,10 +598,10 @@ private fun MutualChatsList(email: String?, onMutualChatClick: (ChatDC)->Unit) {
             Column {
                 for (chat in mutualChats.value) {
                     Row(Modifier.clickable { onMutualChatClick(chat) }, verticalAlignment = Alignment.CenterVertically) {
-                        ContactRow(chat.chatName, false, "", "", tripleColumn = false, isPinned = false,
+                        ContactRow(chat.chatName, false, "", "", tripleRow = false, isPinned = false,
                             modifier = Modifier.fillMaxWidth().height(64.dp)
                         ) {
-                            GeneratedProfileImage(chat.chatName, useEmoji = AppSettings.state.collectAsState().value.emojiPfp)
+                            GeneratedProfileImage(chat.chatName, useEmoji = settings.emojiPfp)
                         }
                     }
                 }

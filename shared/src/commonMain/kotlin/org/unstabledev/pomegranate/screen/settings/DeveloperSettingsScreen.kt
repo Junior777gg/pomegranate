@@ -26,12 +26,13 @@ import org.unstabledev.pomegranate.api.event.StandardPublicEvents
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.AppTracer
 import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
 
 @Composable
 fun DeveloperSettingsScreen(navController: NavHostController) {
-    val settings=AppSettings.state.value
+    val settings=collectAppSettings()
     ScrollablePage(navController, "Для разработчиков") {
         Text("Поведение приложения", fontWeight = FontWeight.SemiBold)
         SwitchButton(settings.executeBackgroundService, "Запускать фоновый сервис") {

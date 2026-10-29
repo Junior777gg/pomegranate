@@ -38,7 +38,8 @@ fun App() {
     var color: Color? = null
     if (settings.primaryColor!=ColorTheme.AccentDark.toArgb()) color=Color(settings.primaryColor)
 
-    theme.AppTheme(theme = settings.theme, useAmoledOnDarkSystem = settings.useAmoledOnDarkSystem, primaryColor = color) {
+    theme.AppTheme(theme = settings.theme, useAmoledOnDarkSystem = settings.useAmoledOnDarkSystem,
+        primaryColor = color, useMDColorPrinciple = settings.useMDColorPrinciple, useMDSystemColor = settings.useMDSystemColor) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize())
         Scaffold(Modifier.fillMaxSize()) {
             val navController = rememberNavController()

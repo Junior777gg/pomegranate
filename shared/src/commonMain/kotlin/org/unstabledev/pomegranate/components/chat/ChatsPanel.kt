@@ -40,7 +40,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +57,6 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,7 +66,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
@@ -81,13 +78,11 @@ import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.api.event.StandardPublicEvents
 import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.common.SortingType
-import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
 import org.unstabledev.pomegranate.common.altClickable
-import org.unstabledev.pomegranate.components.CircleWithCutoutShape
-import org.unstabledev.pomegranate.components.GeneratedProfileImage
 import org.unstabledev.pomegranate.components.LabeledTextField
+import org.unstabledev.pomegranate.components.MuteChatAlert
 import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.components.event.Event_NewYearTimer
 import org.unstabledev.pomegranate.database.ChatDC
@@ -106,7 +101,9 @@ import pomegranate.shared.generated.resources.def06
 import pomegranate.shared.generated.resources.def07
 import pomegranate.shared.generated.resources.def08
 import pomegranate.shared.generated.resources.menu
+import pomegranate.shared.generated.resources.mute
 import pomegranate.shared.generated.resources.pin
+import pomegranate.shared.generated.resources.unmute
 import pomegranate.shared.generated.resources.unpin
 
 @Composable
@@ -234,7 +231,7 @@ fun SearchableChatsPanel(
                         ContactRow(
                             PublicEventHandler.currentEvent.title, true,
                             PublicEventHandler.currentEvent.description, "",
-                            tripleColumn = true, isPinned = false,
+                            tripleRow = true, isPinned = false,
                             Modifier.fillMaxWidth().height(64.dp)
                         ) {
                             Box(
@@ -275,7 +272,7 @@ fun SearchableChatsPanel(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        if (allChats.isEmpty()) "Вы еще ни с кем не общались! Заведите новый чат."
+                        if (allChats.isEmpty()) "Вы еще ни с кем не общались!\nЗаведите новый чат."
                         else "Ничего не найдено",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
@@ -409,6 +406,7 @@ fun ChatsList(
     val selectedChat = remember { mutableStateOf<ChatDC?>(null) }
     val showNameEditPopup = remember { mutableStateOf(false) }
     val showAggressivePiningWarningPopup = remember { mutableStateOf(false) }
+    val showMuteChatPopup = remember { mutableStateOf(false) }
     val settings by AppSettings.state.collectAsState()
     val pinnedChats = settings.pinnedChats
 
@@ -487,6 +485,7 @@ fun ChatsList(
             val draftMessage=mutableStateOf("")
             if (hasDraft) draftMessage.value="Черновик: ${DraftManager.drafts[chat.key]?.message?:""}"
             val isPinned=pinnedChats.contains(chat.key)
+            val isMuted=AppSettings.isMuted(chat.key)
 
             Row(
                 modifier = Modifier
@@ -500,7 +499,7 @@ fun ChatsList(
                     })
             ) {
                 ContactRow(chat, hasLast||hasDraft, if(hasDraft) draftMessage.value else message.first(),
-                    if(hasDraft) "" else message.last(), settings.chatTripleColumn, isPinned, settings.emojiPfp)
+                    if(hasDraft) "" else message.last(), settings.chatTripleRow, isPinned, settings.emojiPfp)
                 DropdownMenu(
                     expanded = menuExpanded.value,
                     onDismissRequest = { menuExpanded.value = false },
@@ -557,6 +556,27 @@ fun ChatsList(
                             } else {
                                 if (isPinned) AppSettings.removePinnedChat(chat.key)
                                 else AppSettings.addPinnedChat(chat.key)
+                            }
+                            menuExpanded.value = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(if(isMuted) "Включить уведомления" else "Отключить уведомления", color = MaterialTheme.colorScheme.onBackground)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = if(isMuted) painterResource(Res.drawable.unmute) else painterResource(Res.drawable.mute),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        onClick = {
+                            if (isMuted) AppSettings.unmuteChat(chat.key)
+                            else {
+                                showMuteChatPopup.value=true
+                                selectedChat.value=chat
                             }
                             menuExpanded.value = false
                         }
@@ -646,5 +666,8 @@ fun ChatsList(
                 })
             }
         )
+    }
+    if (showMuteChatPopup.value && selectedChat.value != null) {
+        MuteChatAlert(showMuteChatPopup, selectedChat.value!!.key)
     }
 }

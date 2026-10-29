@@ -7,6 +7,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import org.unstabledev.pomegranate.common.ThemeMode
+import org.unstabledev.pomegranate.common.Util.Companion.mix
+import org.unstabledev.pomegranate.platform.getSystemMaterialColor
 
 class ColorTheme {
     companion object {
@@ -24,45 +26,45 @@ class ColorTheme {
         val Warning = Color(0xFFFF2929)
         val TextDark = Color(0xFFF9FBFF)
         val TextLight = Color(0xFF151617)
-
-        val MyMessageBubble = Color(0xFF8BFF1A)
         val MessageAccent = Color(0xFF3390EC)
+
+        val DarkColorScheme = darkColorScheme(
+            primary = AccentDark,
+            onPrimary = TextDark,
+            background = BackgroundDark,
+            onBackground = TextDark,
+            surface = SurfaceDark,
+            onSurface = OnSurfaceDark,
+            error = Warning
+        )
+
+        val AmoledColorScheme = darkColorScheme(
+            primary = AccentLight,
+            onPrimary = TextDark,
+            background = BackgroundAmoled,
+            onBackground = TextDark,
+            surface = SurfaceAmoled,
+            onSurface = OnSurfaceAmoled,
+            error = Warning
+        )
+
+        val LightColorScheme = lightColorScheme(
+            primary = AccentLight,
+            onPrimary = TextLight,
+            background = BackgroundLight,
+            onBackground = TextLight,
+            surface = SurfaceLight,
+            onSurface = OnSurfaceLight,
+            error = Warning
+        )
     }
-
-    private val DarkColorScheme = darkColorScheme(
-        primary = AccentDark,
-        onPrimary = TextDark,
-        background = BackgroundDark,
-        onBackground = TextDark,
-        surface = SurfaceDark,
-        onSurface = OnSurfaceDark,
-        error = Warning
-    )
-
-    private val AmoledColorScheme = darkColorScheme(
-        primary = AccentLight,
-        onPrimary = TextDark,
-        background = BackgroundAmoled,
-        onBackground = TextDark,
-        surface = SurfaceAmoled,
-        onSurface = OnSurfaceAmoled,
-        error = Warning
-    )
-
-    private val LightColorScheme = lightColorScheme(
-        primary = AccentLight,
-        onPrimary = TextLight,
-        background = BackgroundLight,
-        onBackground = TextLight,
-        surface = SurfaceLight,
-        onSurface = OnSurfaceLight,
-        error = Warning
-    )
 
     @Composable
     fun AppTheme(
         theme: ThemeMode = ThemeMode.SYSTEM,
         useAmoledOnDarkSystem: Boolean = false,
+        useMDColorPrinciple: Boolean = false,
+        useMDSystemColor: Boolean = false,
         primaryColor: Color? = null,
         content: @Composable () -> Unit
     ) {
@@ -76,7 +78,17 @@ class ColorTheme {
             if (theme==ThemeMode.AMOLED || (useAmoledOnDarkSystem && theme==ThemeMode.SYSTEM && darkTheme)) AmoledColorScheme
             else if (darkTheme) DarkColorScheme
             else LightColorScheme
-        if(primaryColor!=null) colorScheme=colorScheme.copy(primary = primaryColor)
+
+        val mdCol=getSystemMaterialColor(darkTheme)
+        if (useMDSystemColor && mdCol!=null) colorScheme=colorScheme.copy(primary = mdCol)
+        if (primaryColor!=null) colorScheme=colorScheme.copy(primary = primaryColor)
+        if (useMDColorPrinciple)
+            colorScheme=colorScheme.copy(
+                onPrimary = colorScheme.onPrimary.mix(colorScheme.primary, 0.15f),
+                background = colorScheme.background.mix(colorScheme.primary, 0.15f),
+                surface = colorScheme.surface.mix(colorScheme.primary, 0.3f),
+                onSurface = colorScheme.onSurface.mix(colorScheme.primary, 0.45f),
+            )
 
         MaterialTheme(
             colorScheme = colorScheme,

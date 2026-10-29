@@ -16,14 +16,13 @@ import org.unstabledev.pomegranate.platform.Battery
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.kmpReadText
 import org.unstabledev.pomegranate.platform.kmpWriteText
-import kotlin.random.Random
 import kotlin.time.Clock
 
 @Serializable
 data class AppSettingsState(
     val amoledUnlocked: Boolean = false,
     val chatBackgroundId: Int = ChatBackgroundIds.DEFAULT_PRIMARY,
-    val chatTripleColumn: Boolean = false,
+    val chatTripleRow: Boolean = false,
     val desktopHomeSplit: Float = 1.0f,
     val displayTimeMarksChat: Boolean = true,
     val emojiPfp: Boolean = false,
@@ -34,6 +33,7 @@ data class AppSettingsState(
     val messageMaxWidth: Float = 0.56f,
     val messageRounding: Float = 16.0f,
     val messageUnifiedRounding: Boolean = false,
+    val mutedChats: Map<Long, Long> = mutableMapOf(),
     val parseMarkdown: Boolean = true,
     val pinnedChats: List<Long> = listOf(),
     val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
@@ -41,6 +41,8 @@ data class AppSettingsState(
     val shownPinWarning: Boolean = false,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val useAmoledOnDarkSystem: Boolean = false,
+    val useMDColorPrinciple: Boolean = false,
+    val useMDSystemColor: Boolean = false,
 
     val developerMode: Boolean = false,
     val executeBackgroundService: Boolean = true,
@@ -144,6 +146,35 @@ object AppSettings {
         _state.value = _state.value.copy(emojiPfp = v)
     }
 
+    fun setUseMDColorPrinciple(v: Boolean) {
+        _state.value = _state.value.copy(useMDColorPrinciple = v)
+    }
+
+    fun setUseMDSystemColor(v: Boolean) {
+        _state.value = _state.value.copy(useMDSystemColor = v)
+    }
+
+    fun muteChat(chatKey: Long, duration: Long) {
+        val muted=_state.value.mutedChats.toMutableMap()
+        muted[chatKey]=duration
+        _state.value = _state.value.copy(mutedChats = muted)
+    }
+
+    fun unmuteChat(chatKey: Long) {
+        val muted=_state.value.mutedChats.toMutableMap()
+        muted.remove(chatKey)
+        _state.value = _state.value.copy(mutedChats = muted)
+    }
+
+    fun isMuted(chatKey: Long?): Boolean {
+        if (chatKey==null) return false
+        if (!_state.value.mutedChats.contains(chatKey)) return false
+        val v= _state.value.mutedChats[chatKey]
+        if (Clock.System.now().toEpochMilliseconds()<=v!!) return true
+        unmuteChat(chatKey)
+        return false
+    }
+
     fun setDisplayTimeMarksChat(v: Boolean) {
         _state.value = _state.value.copy(displayTimeMarksChat = v)
     }
@@ -161,7 +192,7 @@ object AppSettings {
     }
 
     fun setChatTripleColumn(v: Boolean) {
-        _state.value = _state.value.copy(chatTripleColumn = v)
+        _state.value = _state.value.copy(chatTripleRow = v)
     }
 
     fun setDesktopHomeSplit(v: Float) {

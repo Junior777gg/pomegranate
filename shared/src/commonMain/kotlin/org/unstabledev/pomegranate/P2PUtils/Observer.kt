@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
@@ -19,6 +20,7 @@ import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.Repository.currentCall
 import org.unstabledev.pomegranate.Repository.currentCallState
 import org.unstabledev.pomegranate.Repository.pomegranatePath
+import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.AppTracer
 import org.unstabledev.pomegranate.common.SecurityConfig
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
@@ -140,7 +142,9 @@ class Observer(
                                     }
                                     sendCode(key)
                                     val personDC = Repository.personsDao.getByEmail(email)
-                                    if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()) {
+                                    val chatDC=Repository.chatDao.tryGet(messageDC.chatName, messageDC.chatCreator).first()
+                                    if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()
+                                        && !AppSettings.isMuted(chatDC?.key)) {
                                         Notifications().push(
                                             (personDC?.nickname ?: personDC?.personEmail ?:""),
                                             when (messageDC.type) {
@@ -148,8 +152,7 @@ class Observer(
                                                     .stripMarkdown()
 
                                                 MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "📞 Звонок"
-                                                MessageDC.IMAGE -> "🖼 Изображение"
-                                                MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
+                                                MessageDC.IMAGE, MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
                                                 MessageDC.AUDIO -> "🎵 Аудио"
                                                 MessageDC.FILE -> "📁 Файл"
                                                 else -> "Неизвестно"

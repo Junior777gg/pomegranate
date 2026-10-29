@@ -54,12 +54,13 @@ import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.common.ChatBackgroundIds
 import org.unstabledev.pomegranate.common.SortingType
-import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.components.HSVColorPicker
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
+import org.unstabledev.pomegranate.components.chat.ContactRow
 import org.unstabledev.pomegranate.components.chat.MessageBubble
 import org.unstabledev.pomegranate.components.chat.TimeMark
 import org.unstabledev.pomegranate.components.chat.addChatBackground
@@ -68,19 +69,149 @@ import org.unstabledev.pomegranate.components.chat.addChatBackground_defPrimary
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.getSystemMaterialColor
 import org.unstabledev.pomegranate.platform.kmpCopyTo
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import kotlin.math.roundToInt
-import kotlin.time.Clock
 import kotlin.time.Clock.System.now
 
 @Composable
 fun StyleSettingsScreen(navController: NavHostController) {
-    val settings=AppSettings.state.value
+    val settings=collectAppSettings()
     val scope=rememberCoroutineScope()
     ScrollablePage(navController, "Внешний вид") {
+        Text("Контакты", fontWeight = FontWeight.SemiBold)
         Column {
-            Text("Обои", Modifier.padding(bottom = 3.dp), fontWeight = FontWeight.SemiBold)
+            ContactRow("Друг", hasLast = true, "Вы: привет",
+                isPinned = true, useEmoji = settings.emojiPfp, tripleRow = settings.chatTripleRow, messageTime = "12:01")
+            ContactRow("Тот самый чел", hasLast = true, "БРО ДА ТЫ... ЕЩЁ РАЗ НАПИШЕШЬ И Я ТЕБЯ ЗАБЛОКИРУЮ НАВСЕГДА, ПОНЯЛ?",
+                isPinned = false, useEmoji = settings.emojiPfp, tripleRow = settings.chatTripleRow, messageTime = "09:34")
+        }
+        SwitchButton(settings.chatTripleRow, "Три линии предпросмотра чата")
+            { AppSettings.setChatTripleColumn(it) }
+        SwitchButton(settings.emojiPfp, "Аватарки-emoji")
+            { AppSettings.setEmojiPfp(it) }
+        Text("Сортировка чатов")
+        Spacer(Modifier.height(5.dp))
+        Column(Modifier.background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(10.dp)).padding(all = 3.dp)) {
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.LAST_UPDATED_DESC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_UPDATED_DESC) }) { Text("По последнему изменению") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.LAST_UPDATED_ASC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_UPDATED_ASC) }) { Text("По отсутствию изменений") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.LAST_CREATED) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_CREATED) }) { Text("По дате создания") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.ALPHABETICALLY_ASC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.ALPHABETICALLY_ASC) }) { Text("По алфавиту (А-Я)") }
+            Box(Modifier.fillMaxWidth().background(
+                if (settings.homeScreenSortingType==SortingType.ALPHABETICALLY_DESC) MaterialTheme.colorScheme.background
+                else Color.Transparent
+            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
+            .clickable { AppSettings.setHomeScreenSortingType(SortingType.ALPHABETICALLY_DESC) }) { Text("По алфавиту (Я-А)") }
+        }
+        Spacer(Modifier.height(5.dp))
+        Text("Внутри чата", fontWeight = FontWeight.SemiBold)
+        Column(addChatBackground(Modifier.fillMaxWidth().padding(10.dp))
+            .padding(vertical = 10.dp)) {
+            if(settings.displayTimeMarksChat) TimeMark("Сегодня")
+            MessageBubble(
+                MessageDC(
+                    messageCreator = "unknown",
+                    data = "Расскажи что-то интересное".encodeToByteArray(),
+                    type = MessageDC.TEXT,
+                    time = now().toEpochMilliseconds(),
+                    isMine = false,
+                    chatName = "Судьба",
+                    chatType = ChatDC.Companion.ChatTypes.SELFCHAT,
+                    chatCreator = Repository.myEmail,
+                    supData = byteArrayOf(),
+                ),
+                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
+            )
+            Spacer(Modifier.height(5.dp))
+            MessageBubble(
+                Repository.createMessage(ChatDC("Вы",ChatDC.Companion.ChatTypes.SELFCHAT,
+                    Repository.myEmail,mutableListOf(),0),
+                    "В разлуке есть высокое значенье:\nКак ни люби, хоть день один, хоть век,\nЛюбовь есть сон, а сон – одно мгновенье,\n" +
+                            "И рано ль, поздно ль пробужденье,\nА должен наконец проснуться человек...\n\n" +
+                            "- Федор Тютчев", type = MessageDC.TEXT),
+                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
+            )
+        }
+        val sliderValueRounding = remember { mutableFloatStateOf(settings.messageRounding) }
+        val sliderColors = SliderDefaults.colors().copy(
+            activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
+            disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent
+        )
+        val sliderStateRounding = rememberSliderState(
+            value = settings.messageRounding,
+            steps = 32,
+            valueRange = 0f..32f,
+            onValueChangeFinished = {
+                AppSettings.setMessageRounding(sliderValueRounding.value)
+            }
+        )
+        LaunchedEffect(sliderStateRounding.value) {
+            sliderValueRounding.value = sliderStateRounding.value
+        }
+        LaunchedEffect(settings.messageRounding) {
+            if (sliderStateRounding.value != settings.messageRounding) {
+                sliderStateRounding.value = settings.messageRounding
+                sliderValueRounding.value = settings.messageRounding
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Скругление", Modifier.width(95.dp))
+            Spacer(Modifier.width(3.dp))
+            Slider(sliderStateRounding, modifier = Modifier.weight(2f), colors = sliderColors)
+            Spacer(Modifier.width(3.dp))
+            Text(sliderValueRounding.value.roundToInt().toString(), modifier = Modifier.width(45.dp))
+        }
+        val sliderValueMaxWidth = remember { mutableFloatStateOf(settings.messageMaxWidth) }
+        val sliderStateMaxWidth = rememberSliderState(
+            value = settings.messageMaxWidth,
+            steps = 7,
+            valueRange = 0.3f..1f,
+            onValueChangeFinished = {
+                AppSettings.setMessageMaxWidth(sliderValueMaxWidth.value)
+            }
+        )
+        LaunchedEffect(sliderStateMaxWidth.value) {
+            sliderValueMaxWidth.value = sliderStateMaxWidth.value
+        }
+        LaunchedEffect(settings.messageMaxWidth) {
+            if (sliderStateMaxWidth.value != settings.messageMaxWidth) {
+                sliderStateMaxWidth.value = settings.messageMaxWidth
+                sliderValueMaxWidth.value = settings.messageMaxWidth
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Ширина", Modifier.width(95.dp))
+            Spacer(Modifier.width(3.dp))
+            Slider(sliderStateMaxWidth, modifier = Modifier.weight(2f), colors = sliderColors)
+            Spacer(Modifier.width(3.dp))
+            Text((sliderValueMaxWidth.value*100).roundToInt().toString()+"%", modifier = Modifier.width(45.dp))
+        }
+
+        SwitchButton(settings.displayTimeMarksChat, "Временные метки")
+            { AppSettings.setDisplayTimeMarksChat(it) }
+        SwitchButton(settings.parseMarkdown, "Парсить Markdown")
+            { AppSettings.setParseMarkdown(it) }
+        SwitchButton(settings.messageUnifiedRounding, "Однородное скругление")
+            { AppSettings.setMessageUnifiedRounding(it) }
+        Column {
+            Text("Обои", Modifier.padding(bottom = 3.dp))
             LazyRow(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -200,127 +331,15 @@ fun StyleSettingsScreen(navController: NavHostController) {
                 )
             }
         }
-        SwitchButton(settings.chatTripleColumn, "Три линии предпросмотра чата")
-            { AppSettings.setChatTripleColumn(it) }
-        Text("Сортировка чатов", fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(5.dp))
-        Column(Modifier.background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(10.dp)).padding(all = 3.dp)) {
-            Box(Modifier.fillMaxWidth().background(
-                if (settings.homeScreenSortingType==SortingType.LAST_UPDATED_DESC) MaterialTheme.colorScheme.background
-                else Color.Transparent
-            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
-            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_UPDATED_DESC) }) { Text("По последнему изменению") }
-            Box(Modifier.fillMaxWidth().background(
-                if (settings.homeScreenSortingType==SortingType.LAST_UPDATED_ASC) MaterialTheme.colorScheme.background
-                else Color.Transparent
-            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
-            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_UPDATED_ASC) }) { Text("По отсутствию изменений") }
-            Box(Modifier.fillMaxWidth().background(
-                if (settings.homeScreenSortingType==SortingType.LAST_CREATED) MaterialTheme.colorScheme.background
-                else Color.Transparent
-            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
-            .clickable { AppSettings.setHomeScreenSortingType(SortingType.LAST_CREATED) }) { Text("По дате создания") }
-            Box(Modifier.fillMaxWidth().background(
-                if (settings.homeScreenSortingType==SortingType.ALPHABETICALLY_ASC) MaterialTheme.colorScheme.background
-                else Color.Transparent
-            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
-            .clickable { AppSettings.setHomeScreenSortingType(SortingType.ALPHABETICALLY_ASC) }) { Text("По алфавиту (А-Я)") }
-            Box(Modifier.fillMaxWidth().background(
-                if (settings.homeScreenSortingType==SortingType.ALPHABETICALLY_DESC) MaterialTheme.colorScheme.background
-                else Color.Transparent
-            , shape = RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 5.dp)
-            .clickable { AppSettings.setHomeScreenSortingType(SortingType.ALPHABETICALLY_DESC) }) { Text("По алфавиту (Я-А)") }
-        }
-        Spacer(Modifier.height(5.dp))
-        Text("Сообщение", fontWeight = FontWeight.SemiBold)
-        Column(addChatBackground(Modifier.fillMaxWidth().padding(10.dp)).clip(RoundedCornerShape(10.dp)).padding(10.dp)) {
-            if(settings.displayTimeMarksChat) TimeMark("Сегодня")
-            MessageBubble(
-                MessageDC(
-                    messageCreator = "unknown",
-                    data = "Расскажи что-то интересное".encodeToByteArray(),
-                    type = MessageDC.TEXT,
-                    time = now().toEpochMilliseconds(),
-                    isMine = false,
-                    chatName = "Судьба",
-                    chatType = ChatDC.Companion.ChatTypes.SELFCHAT,
-                    chatCreator = Repository.myEmail,
-                    supData = byteArrayOf(),
-                ),
-                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
-            )
-            Spacer(Modifier.height(5.dp))
-            MessageBubble(
-                Repository.createMessage(ChatDC("Вы",ChatDC.Companion.ChatTypes.SELFCHAT,
-                    Repository.myEmail,mutableListOf(),0),
-                    "Я сразу смазал карту будня,\nплеснувши краску из стакана;\nя показал на блюде студня\nкосые скулы океана.\n" +
-                            "На чешуе жестяной рыбы\nпрочёл я зовы новых губ.\nА вы\n**ноктюрн** сыграть\nмогли бы\nна *флейте водосточных труб*?\n\n" +
-                            "- Владимир Маяковский", type = MessageDC.TEXT),
-                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
-            )
-        }
-        val sliderValueRounding = remember { mutableFloatStateOf(settings.messageRounding) }
-        val sliderColors = SliderDefaults.colors().copy(
-            activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
-            disabledActiveTickColor = Color.Transparent, disabledInactiveTickColor = Color.Transparent
-        )
-        val sliderStateRounding = rememberSliderState(
-            value = settings.messageRounding,
-            steps = 32,
-            valueRange = 0f..32f,
-            onValueChangeFinished = {
-                AppSettings.setMessageRounding(sliderValueRounding.value)
-            }
-        )
-        LaunchedEffect(sliderStateRounding.value) {
-            sliderValueRounding.value = sliderStateRounding.value
-        }
-        LaunchedEffect(settings.messageRounding) {
-            if (sliderStateRounding.value != settings.messageRounding) {
-                sliderStateRounding.value = settings.messageRounding
-                sliderValueRounding.value = settings.messageRounding
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Скругление", Modifier.width(95.dp))
-            Spacer(Modifier.width(3.dp))
-            Slider(sliderStateRounding, modifier = Modifier.weight(2f), colors = sliderColors)
-            Spacer(Modifier.width(3.dp))
-            Text(sliderValueRounding.value.roundToInt().toString(), modifier = Modifier.width(40.dp))
-        }
-        val sliderValueMaxWidth = remember { mutableFloatStateOf(settings.messageMaxWidth) }
-        val sliderStateMaxWidth = rememberSliderState(
-            value = settings.messageMaxWidth,
-            steps = 7,
-            valueRange = 0.3f..1f,
-            onValueChangeFinished = {
-                AppSettings.setMessageMaxWidth(sliderValueMaxWidth.value)
-            }
-        )
-        LaunchedEffect(sliderStateMaxWidth.value) {
-            sliderValueMaxWidth.value = sliderStateMaxWidth.value
-        }
-        LaunchedEffect(settings.messageMaxWidth) {
-            if (sliderStateMaxWidth.value != settings.messageMaxWidth) {
-                sliderStateMaxWidth.value = settings.messageMaxWidth
-                sliderValueMaxWidth.value = settings.messageMaxWidth
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Ширина", Modifier.width(95.dp))
-            Spacer(Modifier.width(3.dp))
-            Slider(sliderStateMaxWidth, modifier = Modifier.weight(2f), colors = sliderColors)
-            Spacer(Modifier.width(3.dp))
-            Text((sliderValueMaxWidth.value*100).roundToInt().toString()+"%", modifier = Modifier.width(40.dp))
-        }
 
-        SwitchButton(settings.displayTimeMarksChat, "Временные метки")
-            { AppSettings.setDisplayTimeMarksChat(it) }
-        SwitchButton(settings.parseMarkdown, "Парсить Markdown")
-            { AppSettings.setParseMarkdown(it) }
-        SwitchButton(settings.messageUnifiedRounding, "Однородное скругление")
-            { AppSettings.setMessageUnifiedRounding(it) }
         Text("Цвета", fontWeight = FontWeight.SemiBold)
+        val supportsMD = getSystemMaterialColor(false)!=null
+        SwitchButton(settings.useMDColorPrinciple, "Перекраска темы")
+            { AppSettings.setUseMDColorPrinciple(it) }
+        if (supportsMD) {
+            SwitchButton(settings.useMDSystemColor, "Системный основной цвет")
+                { AppSettings.setUseMDSystemColor(it) }
+        }
         val category = remember { mutableStateOf(0) }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Row(Modifier.weight(1.0f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {

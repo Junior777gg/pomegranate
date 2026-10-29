@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -239,6 +240,19 @@ class Util {
             else return localDateTime.toFullDate()
         }
 
+        fun mixColors(c1: Color, c2: Color, v: Float): Color {
+            return Color(
+                c1.red*(1-v)+c2.red*v,
+                c1.green*(1-v)+c2.green*v,
+                c1.blue*(1-v)+c2.blue*v,
+                c1.alpha*(1-v)+c2.alpha*v
+            )
+        }
+
+        fun Color.mix(other: Color, v: Float): Color {
+            return mixColors(this, other, v)
+        }
+
         val countryFlags = mapOf(
             "Russia" to "🇷🇺",
             "Ukraine" to "🇺🇦",
@@ -284,6 +298,9 @@ class Util {
         )
     }
 }
+
+@Composable
+fun collectAppSettings(): AppSettingsState = AppSettings.state.collectAsState().value
 
 @Composable
 fun Modifier.altClickable(onPrimary: ()->Unit, onSecondary: ()->Unit): Modifier {

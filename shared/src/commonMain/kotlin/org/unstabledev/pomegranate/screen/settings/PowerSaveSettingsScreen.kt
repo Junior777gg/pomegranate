@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
 import org.unstabledev.pomegranate.platform.HAPTIC_EFFECT_TICK
@@ -44,7 +45,7 @@ import kotlin.math.floor
 
 @Composable
 fun PowerSaveSettingsScreen(navController: NavHostController) {
-    val settings=AppSettings.state.value
+    val settings=collectAppSettings()
     ScrollablePage(navController, "Энергосбережение") {
         Row {
             AnimatedVisibility(!AppSettings.isInPowerSaveMode()) {

@@ -45,6 +45,7 @@ import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.common.Util.Companion.toLocalDateTime
 import org.unstabledev.pomegranate.common.Util.Companion.toTimeMark
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.components.chat.MessageBubble
@@ -79,7 +80,7 @@ fun ChatScreen(
     val inputState = rememberTextFieldState(if (DraftManager.drafts.contains(chatKey)) DraftManager.drafts[chatKey]?.message?:"" else "")
     val listState = rememberLazyListState()
     val messages = viewModel.messages.collectAsState()
-    val settings by AppSettings.state.collectAsState()
+    val settings = collectAppSettings()
 
     val isOnline by produceState(initialValue = true) {
         while (isActive) {

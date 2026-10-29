@@ -47,11 +47,12 @@ import androidx.navigation.NavHostController
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.Firebase
 import org.unstabledev.pomegranate.common.FirebaseAddress
+import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
 @Composable
 fun FirebaseAddressSelectScreen(navController: NavHostController) {
-    val settings by AppSettings.state.collectAsState()
+    val settings = collectAppSettings()
 
     Column(applyScreenPadding()) {
         Row(

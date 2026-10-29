@@ -1,6 +1,11 @@
 package org.unstabledev.pomegranate.platform
 
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import org.unstabledev.pomegranate.components.ColorTheme
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -136,3 +141,5 @@ actual fun openUrlInBrowser(url: String) {
     if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
         Desktop.getDesktop().browse(URI(url))
 }
+
+actual fun getSystemMaterialColor(dark: Boolean): Color? = null
