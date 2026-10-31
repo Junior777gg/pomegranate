@@ -481,9 +481,13 @@ fun ChatsList(
             val message by getLastMessageTextFlow(chat)
                 .collectAsStateWithLifecycle(initialValue = listOf("",""))
             val hasLast = message.isNotEmpty()
-            val hasDraft = DraftManager.drafts.contains(chat.key)
+            var hasDraft = DraftManager.drafts.contains(chat.key)
             val draftMessage=mutableStateOf("")
-            if (hasDraft) draftMessage.value="Черновик: ${DraftManager.drafts[chat.key]?.message?:""}"
+            if (hasDraft) {
+                val draft=DraftManager.drafts[chat.key]?.message?:""
+                if(draft.isNotBlank()) draftMessage.value="Черновик: $draft"
+                else hasDraft=false
+            }
             val isPinned=pinnedChats.contains(chat.key)
             val isMuted=AppSettings.isMuted(chat.key)
 
