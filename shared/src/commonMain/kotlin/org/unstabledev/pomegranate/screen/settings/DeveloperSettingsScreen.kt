@@ -35,9 +35,10 @@ fun DeveloperSettingsScreen(navController: NavHostController) {
     val settings=collectAppSettings()
     ScrollablePage(navController, "Для разработчиков") {
         Text("Поведение приложения", fontWeight = FontWeight.SemiBold)
-        SwitchButton(settings.executeBackgroundService, "Запускать фоновый сервис") {
-            AppSettings.setExecuteBackgroundService(it)
-        }
+        SwitchButton(settings.dev_executeBackgroundService, "Запускать фоновый сервис")
+            { AppSettings.dev_setExecuteBackgroundService(it) }
+        SwitchButton(settings.dev_displayAccountSwitching, "Отображать смену аккаунтов")
+            { AppSettings.dev_setDisplayAccountSwitching(it) }
         Text("Публичные события", fontWeight = FontWeight.SemiBold)
         val updatedEvent=mutableStateOf(false)
         key(updatedEvent.value) {

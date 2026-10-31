@@ -76,7 +76,8 @@ fun ContactRow(personDC: PersonDC, hasLast: Boolean = false, message: String = "
 fun ContactRow(name: String, hasLast: Boolean, message: String,
                messageTime: String, tripleRow: Boolean, isPinned: Boolean,
                modifier: Modifier, pfp: @Composable (ColumnScope.() -> Unit)) {
-    Row(modifier = modifier.fillMaxWidth().heightIn(min = 64.dp), verticalAlignment = Alignment.Top) {
+    Row(modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
+        verticalAlignment = if(messageTime.isNotBlank()) Alignment.Top else Alignment.CenterVertically) {
         Column(
             modifier = Modifier.width(64.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.Center,

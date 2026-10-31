@@ -45,7 +45,8 @@ data class AppSettingsState(
     val useMDSystemColor: Boolean = false,
 
     val developerMode: Boolean = false,
-    val executeBackgroundService: Boolean = true,
+    val dev_displayAccountSwitching: Boolean = false,
+    val dev_executeBackgroundService: Boolean = true,
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(FirebaseAddress("default", "Гранат", Secrets.firebaseLink)),
     val selectedFirebaseAddressId: String = "default",
@@ -136,10 +137,6 @@ object AppSettings {
 
     fun setHideSendBarWhenNoNetwork(v: Boolean) {
         _state.value = _state.value.copy(hideSendBarWhenNoNetwork = v)
-    }
-
-    fun setExecuteBackgroundService(v: Boolean) {
-        _state.value = _state.value.copy(executeBackgroundService = v)
     }
 
     fun setEmojiPfp(v: Boolean) {
@@ -261,6 +258,14 @@ object AppSettings {
 
     fun setDeveloperMode(v: Boolean) {
         _state.value = _state.value.copy(developerMode = v)
+    }
+
+    fun dev_setExecuteBackgroundService(v: Boolean) {
+        _state.value = _state.value.copy(dev_executeBackgroundService = v)
+    }
+
+    fun dev_setDisplayAccountSwitching(v: Boolean) {
+        _state.value = _state.value.copy(dev_displayAccountSwitching = v)
     }
 
     fun isInPowerSaveMode(): Boolean =

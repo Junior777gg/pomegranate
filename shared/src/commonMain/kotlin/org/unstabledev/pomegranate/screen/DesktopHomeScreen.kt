@@ -142,6 +142,9 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             navController.navigate(route = Routes.Settings())
                         }, {
                             navController.navigate(Routes.SwitchAccount())
+                        }, {
+                            KMPFile(fistFilePath).delete()
+                            navController.navigate(route = Routes.Onboarding())
                         })
                     }
                 }
@@ -196,7 +199,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
 @Composable
 private fun ProfileSettingsPanel(userEmail: String, userName: String,
                                  onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit,
-                                 onSwitchAccount: ()->Unit, modifier: Modifier = Modifier
+                                 onSwitchAccount: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
 ) {
     val settings = collectAppSettings()
     Row(
@@ -261,18 +264,36 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
     )
 
-    NavigationDrawerItem(
-        label = { Text("Сменить аккаунт", fontSize = 16.sp ) },
-        selected = false,
-        onClick = {
-            onSwitchAccount()
-        },
-        icon = {
-            Icon(
-                Icons.Default.AccountCircle,
-                contentDescription = "Switch account"
-            )
-        },
-        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-    )
+    if (settings.dev_displayAccountSwitching) {
+        NavigationDrawerItem(
+            label = { Text("Сменить аккаунт", fontSize = 16.sp) },
+            selected = false,
+            onClick = {
+                onSwitchAccount()
+            },
+            icon = {
+                Icon(
+                    Icons.Default.AccountCircle,
+                    contentDescription = "Switch account"
+                )
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        )
+    } else {
+        NavigationDrawerItem(
+            label = { Text("Выйти", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
+            selected = false,
+            onClick = {
+                onLogOut()
+            },
+            icon = {
+                Icon(
+                    Icons.Default.ExitToApp,
+                    contentDescription = "Logout",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        )
+    }
 }

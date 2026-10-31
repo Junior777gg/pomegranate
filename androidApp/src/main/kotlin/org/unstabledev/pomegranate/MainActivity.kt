@@ -18,12 +18,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
-import org.unstabledev.pomegranate.database.DatabaseBuilder
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.platform.androidContext
 import java.io.File
-import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -43,7 +41,7 @@ class MainActivity : ComponentActivity() {
 
         var runBg = true
         runBlocking {
-            runBg = runBg or AppSettings.state.first().executeBackgroundService
+            runBg = runBg or AppSettings.state.first().dev_executeBackgroundService
         }
         if(runBg) baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent {

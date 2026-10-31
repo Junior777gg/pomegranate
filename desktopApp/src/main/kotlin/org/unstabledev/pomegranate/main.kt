@@ -1,6 +1,5 @@
 package org.unstabledev.pomegranate
 
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
-import org.unstabledev.pomegranate.database.DatabaseBuilder
 import org.unstabledev.pomegranate.platform.MediaSelector
 import org.unstabledev.pomegranate.platform.Notifications
 import org.unstabledev.pomegranate.platform.PlatformEvents
@@ -28,14 +26,13 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import java.io.FilenameFilter
-import kotlin.random.Random
 
 fun main(args: Array<String>) {
     AppSettings.load()
     val isOpen = mutableStateOf(true)
     var runBg = !args.contains("--no-bg-service")
     runBlocking {
-        if(runBg) runBg = AppSettings.state.first().executeBackgroundService
+        if(runBg) runBg = AppSettings.state.first().dev_executeBackgroundService
     }
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()

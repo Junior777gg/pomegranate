@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerValue
@@ -118,20 +119,39 @@ fun HomeScreen(navController: NavHostController) {
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
 
-                NavigationDrawerItem(
-                    label = { Text("Сменить аккаунт", fontSize = 16.sp ) },
-                    selected = false,
-                    onClick = {
-                        navController.navigate(Routes.SwitchAccount())
-                    },
-                    icon = {
-                        Icon(
-                            Icons.Default.AccountCircle,
-                            contentDescription = "Switch account"
-                        )
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
+                if (settings.dev_displayAccountSwitching) {
+                    NavigationDrawerItem(
+                        label = { Text("Сменить аккаунт", fontSize = 16.sp) },
+                        selected = false,
+                        onClick = {
+                            navController.navigate(Routes.SwitchAccount())
+                        },
+                        icon = {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = "Switch account"
+                            )
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                } else {
+                    NavigationDrawerItem(
+                        label = { Text("Выйти", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
+                        selected = false,
+                        onClick = {
+                            KMPFile(fistFilePath).delete()
+                            navController.navigate(Routes.Onboarding())
+                        },
+                        icon = {
+                            Icon(
+                                Icons.Default.ExitToApp,
+                                contentDescription = "Logout",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                }
             }
         }
     ) {
