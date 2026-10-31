@@ -58,6 +58,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -80,18 +81,16 @@ import org.unstabledev.pomegranate.common.Util.Companion.toHHMMTime
 import org.unstabledev.pomegranate.common.altClickable
 import org.unstabledev.pomegranate.api.ext.OpenGraphDescriptor
 import org.unstabledev.pomegranate.api.ext.OpenGraphParser
+import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.Util.Companion.toLocalDateTime
 import org.unstabledev.pomegranate.common.Util.Companion.toTimeMark
 import org.unstabledev.pomegranate.components.AnimatedGifImage
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.GifDecoder
+import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
-import org.unstabledev.pomegranate.database.MessageDC.Companion.ACCEPT_CALL
-import org.unstabledev.pomegranate.database.MessageDC.Companion.BEGIN_CALL
-import org.unstabledev.pomegranate.database.MessageDC.Companion.BUTTON
-import org.unstabledev.pomegranate.database.MessageDC.Companion.END_CALL
-import org.unstabledev.pomegranate.database.MessageDC.Companion.INVITE
+import org.unstabledev.pomegranate.database.MessageDC.Companion.canDisplaySender
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
@@ -105,7 +104,8 @@ fun MessageBubble(
     setImagePreview: (MessageDC) -> Unit,
     scope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
-    renderMarkdown: Boolean
+    renderMarkdown: Boolean,
+    sameSender: Boolean
 ) {
     if (!message.isDisplayable()) return
 
@@ -118,8 +118,9 @@ fun MessageBubble(
     val menuOpen = remember { mutableStateOf(false) }
     val msgColor = if (message.isMine) Color(settings.messageColor).copy(alpha = 1.0f) else MaterialTheme.colorScheme.surface
     val needPadding = message.type != MessageDC.IMAGE
-    val noNeedForBubble = message.type==BEGIN_CALL || message.type==ACCEPT_CALL || message.type==END_CALL ||
-            message.type==INVITE || message.type==BUTTON
+    val noNeedForBubble = message.type==MessageDC.BEGIN_CALL || message.type==MessageDC.ACCEPT_CALL ||
+            message.type==MessageDC.END_CALL || message.type==MessageDC.INVITE || message.type==MessageDC.BUTTON
+    val overflowing = remember { mutableStateOf(false) }
 
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier, width: Dp): Modifier {
@@ -129,8 +130,8 @@ fun MessageBubble(
                     RoundedCornerShape(
                         topStart = settings.messageRounding.dp,
                         topEnd = settings.messageRounding.dp,
-                        bottomStart = if (message.isMine||settings.messageUnifiedRounding) settings.messageRounding.dp else 0.dp,
-                        bottomEnd = if (!message.isMine||settings.messageUnifiedRounding) settings.messageRounding.dp else 0.dp
+                        bottomStart = if (message.isMine || settings.messageUnifiedRounding) settings.messageRounding.dp else 0.dp,
+                        bottomEnd = if (!message.isMine || settings.messageUnifiedRounding) settings.messageRounding.dp else 0.dp
                     )
                 )
                 .background(msgColor)
@@ -159,6 +160,23 @@ fun MessageBubble(
             }
         }
     }
+    @Composable
+    fun MessageTime() {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = message.time.toHHMMTime(),
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 11.sp
+            )
+            Spacer(Modifier.width(2.dp))
+            Icon(
+                modifier = Modifier.size(15.dp),
+                imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
+    }
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
@@ -177,486 +195,475 @@ fun MessageBubble(
                     .pointerHoverIcon(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) PointerIcon.Hand else PointerIcon.Default),
                     maxMessageWidth)
             ) {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    when (message.type) {
-                        MessageDC.TEXT -> {
-                            val decodedText = remember(message.data) { message.data.decodeToString() }
-                            Column(Modifier.weight(1f, fill = false)) {
-                                if (renderMarkdown) {
-                                    Markdown(
-                                        annotator = markdownAnnotator(
-                                            config = markdownAnnotatorConfig(
-                                                eolAsNewLine = true
-                                            )
-                                        ),
-                                        typography = markdownTypography(
-                                            h1 = TextStyle(fontSize = 25.sp),
-                                            h2 = TextStyle(fontSize = 23.sp),
-                                            h3 = TextStyle(fontSize = 21.5.sp),
-                                            h4 = TextStyle(fontSize = 19.sp),
-                                            h5 = TextStyle(fontSize = 17.5.sp),
-                                            text = TextStyle(fontSize = 15.sp),
-                                            inlineCode = TextStyle(fontSize = 15.sp),
-                                            code = TextStyle(fontSize = 15.sp),
-                                            textLink = TextLinkStyles(
-                                                style = SpanStyle(
-                                                    fontSize = 15.sp,
-                                                    color = ColorTheme.MessageAccent,
-                                                    textDecoration = TextDecoration.Underline
+                Column {
+                    if(!message.isMine && message.canDisplaySender() && message.chatType!=ChatDC.Companion.ChatTypes.CHAT && !sameSender) {
+                        Text(message.messageCreator, fontWeight = FontWeight.Bold, color = Util.randomColor(message.messageCreator.hashCode()))
+                    }
+                    Row(verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        when (message.type) {
+                            MessageDC.TEXT -> {
+                                val decodedText = remember(message.data) { message.data.decodeToString() }
+                                Column(Modifier.weight(1f, fill = false)) {
+                                    if (renderMarkdown) {
+                                        Markdown(
+                                            annotator = markdownAnnotator(
+                                                config = markdownAnnotatorConfig(
+                                                    eolAsNewLine = true
                                                 )
-                                            )
-                                        ),
-                                        content = decodedText,
-                                        modifier = Modifier
-                                    )
-                                } else {
-                                    Text(
-                                        text = decodedText,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        fontSize = 15.sp,
-                                    )
-                                }
-                                val previewableUrl =
-                                    remember { Regex("https?://\\S+").find(decodedText)?.value }
-                                val descriptor by produceState<OpenGraphDescriptor?>(null) {
-                                    if (previewableUrl != null) {
-                                        try {
-                                            value = OpenGraphParser.parse(previewableUrl)
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                            value = null
-                                        }
-                                    } else value = null
-                                }
-                                if (descriptor != null) {
-                                    Spacer(Modifier.height(3.dp))
-                                    Box(Modifier.clip(RoundedCornerShape(12.dp)).fillMaxWidth()) {
-                                        Column(
-                                            Modifier.background(Color.Gray.copy(0.2f)).padding(4.dp)
-                                                .fillMaxWidth()
-                                        ) {
-                                            Row {
-                                                Column(Modifier.weight(2.0f)) {
-                                                    Text(
-                                                        descriptor!!.url ?: previewableUrl!!,
-                                                        color = MaterialTheme.colorScheme.onBackground.copy(
-                                                            alpha = 0.7f
-                                                        ),
-                                                        fontSize = 10.sp
+                                            ),
+                                            typography = markdownTypography(
+                                                h1 = TextStyle(fontSize = 25.sp),
+                                                h2 = TextStyle(fontSize = 23.sp),
+                                                h3 = TextStyle(fontSize = 21.5.sp),
+                                                h4 = TextStyle(fontSize = 19.sp),
+                                                h5 = TextStyle(fontSize = 17.5.sp),
+                                                text = TextStyle(fontSize = 15.sp),
+                                                inlineCode = TextStyle(fontSize = 15.sp),
+                                                code = TextStyle(fontSize = 15.sp),
+                                                textLink = TextLinkStyles(
+                                                    style = SpanStyle(
+                                                        fontSize = 15.sp,
+                                                        color = ColorTheme.MessageAccent,
+                                                        textDecoration = TextDecoration.Underline
                                                     )
-                                                    Text(
-                                                        descriptor!!.title!!,
-                                                        lineHeight = 16.sp,
-                                                        fontSize = 16.sp,
-                                                        color = MaterialTheme.colorScheme.onBackground
-                                                    )
-                                                    if (descriptor!!.description != null) {
+                                                )
+                                            ),
+                                            content = decodedText,
+                                            modifier = Modifier
+                                        )
+                                    } else {
+                                        Text(
+                                            text = decodedText,
+                                            onTextLayout = { overflowing.value = it.didOverflowWidth || decodedText.contains("\n") },
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            fontSize = 15.sp,
+                                        )
+                                    }
+                                    val previewableUrl =
+                                        remember { Regex("https?://\\S+").find(decodedText)?.value }
+                                    val descriptor by produceState<OpenGraphDescriptor?>(null) {
+                                        if (previewableUrl != null) {
+                                            try {
+                                                value = OpenGraphParser.parse(previewableUrl)
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                                value = null
+                                            }
+                                        } else value = null
+                                    }
+                                    if (descriptor != null) {
+                                        Spacer(Modifier.height(3.dp))
+                                        Box(Modifier.clip(RoundedCornerShape(12.dp)).fillMaxWidth()) {
+                                            Column(
+                                                Modifier.background(Color.Gray.copy(0.2f)).padding(4.dp)
+                                                    .fillMaxWidth()
+                                            ) {
+                                                Row {
+                                                    Column(Modifier.weight(2.0f)) {
                                                         Text(
-                                                            descriptor!!.description!!,
-                                                            fontSize = 12.sp,
-                                                            lineHeight = 12.sp,
+                                                            descriptor!!.url ?: previewableUrl!!,
                                                             color = MaterialTheme.colorScheme.onBackground.copy(
-                                                                alpha = 0.8f
+                                                                alpha = 0.7f
                                                             ),
-                                                            overflow = TextOverflow.Ellipsis,
-                                                            maxLines = 3
+                                                            fontSize = 10.sp
+                                                        )
+                                                        Text(
+                                                            descriptor!!.title!!,
+                                                            lineHeight = 16.sp,
+                                                            fontSize = 16.sp,
+                                                            color = MaterialTheme.colorScheme.onBackground
+                                                        )
+                                                        if (descriptor!!.description != null) {
+                                                            Text(
+                                                                descriptor!!.description!!,
+                                                                fontSize = 12.sp,
+                                                                lineHeight = 12.sp,
+                                                                color = MaterialTheme.colorScheme.onBackground.copy(
+                                                                    alpha = 0.8f
+                                                                ),
+                                                                overflow = TextOverflow.Ellipsis,
+                                                                maxLines = 3
+                                                            )
+                                                        }
+                                                    }
+                                                    if (descriptor!!.imageUrl != null) {
+                                                        AsyncImage(
+                                                            modifier = Modifier.weight(1.0f),
+                                                            model = descriptor!!.imageUrl!!,
+                                                            contentDescription = null
                                                         )
                                                     }
                                                 }
-                                                if (descriptor!!.imageUrl != null) {
-                                                    AsyncImage(
-                                                        modifier = Modifier.weight(1.0f),
-                                                        model = descriptor!!.imageUrl!!,
-                                                        contentDescription = null
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            MessageDC.IMAGE -> {
+                                if (AppSettings.isInPowerSaveMode() && !settings.powerSaveSettings.decodeImages) {
+                                    CantDecodeImagePlaceholder()
+                                } else {
+                                    var bitmap by remember(message.key) {
+                                        mutableStateOf<ImageBitmap?>(null)
+                                    }
+                                    var ratio by remember(message.key) {
+                                        mutableStateOf<Float?>(null)
+                                    }
+
+                                    LaunchedEffect(message.key) {
+                                        val bmp = withContext(Dispatchers.Default) {
+                                            getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
+                                        }
+                                        bitmap = bmp
+                                        ratio = bmp.width.toFloat() / bmp.height.toFloat()
+                                    }
+
+                                    val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .widthIn(min = 120.dp, max = 260.dp)
+                                            .aspectRatio(clampedRatio)
+                                            .animateContentSize()
+                                    ) {
+                                        if (bitmap != null) {
+                                            Image(
+                                                bitmap = bitmap!!,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .background(Color.Gray.copy(alpha = 0.2f)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(4.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    message.time.toHHMMTime(),
+                                                    color = Color.White,
+                                                    fontSize = 11.sp
+                                                )
+                                                Spacer(Modifier.width(2.dp))
+                                                Icon(
+                                                    modifier = Modifier.size(14.dp),
+                                                    imageVector = if (message.isDelivered || !message.isMine)
+                                                        Icons.Default.Check
+                                                    else Icons.Default.ArrowOutward,
+                                                    contentDescription = null,
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            MessageDC.ANIMATED_IMAGE -> {
+                                if (AppSettings.isInPowerSaveMode() && !settings.powerSaveSettings.decodeImages) {
+                                    CantDecodeImagePlaceholder()
+                                } else {
+                                    var gifBytes by remember(message.key) {
+                                        mutableStateOf<ByteArray?>(null)
+                                    }
+                                    var ratio by remember(message.key) {
+                                        mutableStateOf<Float?>(null)
+                                    }
+                                    var isLoading by remember(message.key) {
+                                        mutableStateOf(true)
+                                    }
+
+                                    LaunchedEffect(message.key) {
+                                        isLoading = true
+                                        try {
+                                            val bytes = withContext(Dispatchers.IO) {
+                                                KMPFile(message.data.decodeToString()).kmpReadBytes()
+                                            }
+
+                                            withContext(Dispatchers.Default) {
+                                                val frames = try {
+                                                    GifDecoder.decode(bytes)
+                                                } catch (_: Exception) {
+                                                    emptyList()
+                                                }
+
+                                                if (frames.isNotEmpty()) {
+                                                    val firstFrame = frames[0].bitmap
+                                                    ratio =
+                                                        firstFrame.width.toFloat() / firstFrame.height.toFloat()
+                                                    gifBytes = bytes
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
+
+                                    val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .widthIn(min = 120.dp, max = 260.dp)
+                                            .aspectRatio(clampedRatio)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { setImagePreview(message) }
+                                            .animateContentSize()
+                                    ) {
+                                        when {
+                                            isLoading -> {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .background(Color.Gray.copy(alpha = 0.2f)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    CircularProgressIndicator(
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(32.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            gifBytes != null -> {
+                                                AnimatedGifImage(
+                                                    bytes = gifBytes!!,
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentScale = ContentScale.Crop,
+                                                    animate = !(AppSettings.isInPowerSaveMode() && !settings.powerSaveSettings.animateGifs)
+                                                )
+                                            }
+
+                                            else -> {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .background(Color.Gray.copy(alpha = 0.2f)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.BrokenImage,
+                                                        contentDescription = "Failed to load GIF",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(48.dp)
                                                     )
                                                 }
                                             }
                                         }
-                                    }
-                                }
-                            }
-                        }
 
-                        MessageDC.IMAGE -> {
-                            if (AppSettings.isInPowerSaveMode() && !settings.powerSaveSettings.decodeImages) {
-                                CantDecodeImagePlaceholder()
-                            } else {
-                                var bitmap by remember(message.key) {
-                                    mutableStateOf<ImageBitmap?>(null)
-                                }
-                                var ratio by remember(message.key) {
-                                    mutableStateOf<Float?>(null)
-                                }
-
-                                LaunchedEffect(message.key) {
-                                    val bmp = withContext(Dispatchers.Default) {
-                                        getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
-                                    }
-                                    bitmap = bmp
-                                    ratio = bmp.width.toFloat() / bmp.height.toFloat()
-                                }
-
-                                val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
-
-                                Box(
-                                    modifier = Modifier
-                                        .widthIn(min = 120.dp, max = 260.dp)
-                                        .aspectRatio(clampedRatio)
-                                        .animateContentSize()
-                                ) {
-                                    if (bitmap != null) {
-                                        Image(
-                                            bitmap = bitmap!!,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    } else {
                                         Box(
                                             modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(Color.Gray.copy(alpha = 0.2f)),
-                                            contentAlignment = Alignment.Center
+                                                .align(Alignment.BottomEnd)
+                                                .padding(4.dp)
+                                                .clip(RoundedCornerShape(12.dp))
                                         ) {
-                                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                        }
-                                    }
-
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(4.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier
-                                                .background(Color.Black.copy(alpha = 0.4f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                message.time.toHHMMTime(),
-                                                color = Color.White,
-                                                fontSize = 11.sp
-                                            )
-                                            Spacer(Modifier.width(2.dp))
-                                            Icon(
-                                                modifier = Modifier.size(14.dp),
-                                                imageVector = if (message.isDelivered || !message.isMine)
-                                                    Icons.Default.Check
-                                                else Icons.Default.ArrowOutward,
-                                                contentDescription = null,
-                                                tint = Color.White
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        MessageDC.ANIMATED_IMAGE -> {
-                            if (AppSettings.isInPowerSaveMode() && !settings.powerSaveSettings.decodeImages) {
-                                CantDecodeImagePlaceholder()
-                            } else {
-                                var gifBytes by remember(message.key) {
-                                    mutableStateOf<ByteArray?>(null)
-                                }
-                                var ratio by remember(message.key) {
-                                    mutableStateOf<Float?>(null)
-                                }
-                                var isLoading by remember(message.key) {
-                                    mutableStateOf(true)
-                                }
-
-                                LaunchedEffect(message.key) {
-                                    isLoading = true
-                                    try {
-                                        val bytes = withContext(Dispatchers.IO) {
-                                            KMPFile(message.data.decodeToString()).kmpReadBytes()
-                                        }
-
-                                        withContext(Dispatchers.Default) {
-                                            val frames = try {
-                                                GifDecoder.decode(bytes)
-                                            } catch (_: Exception) {
-                                                emptyList()
-                                            }
-
-                                            if (frames.isNotEmpty()) {
-                                                val firstFrame = frames[0].bitmap
-                                                ratio =
-                                                    firstFrame.width.toFloat() / firstFrame.height.toFloat()
-                                                gifBytes = bytes
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    } finally {
-                                        isLoading = false
-                                    }
-                                }
-
-                                val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
-
-                                Box(
-                                    modifier = Modifier
-                                        .widthIn(min = 120.dp, max = 260.dp)
-                                        .aspectRatio(clampedRatio)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable { setImagePreview(message) }
-                                        .animateContentSize()
-                                ) {
-                                    when {
-                                        isLoading -> {
-                                            Box(
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
                                                 modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .background(Color.Gray.copy(alpha = 0.2f)),
-                                                contentAlignment = Alignment.Center
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
-                                                CircularProgressIndicator(
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(32.dp)
+                                                Text(
+                                                    message.time.toHHMMTime(),
+                                                    color = Color.White,
+                                                    fontSize = 11.sp
                                                 )
-                                            }
-                                        }
-
-                                        gifBytes != null -> {
-                                            AnimatedGifImage(
-                                                bytes = gifBytes!!,
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentScale = ContentScale.Crop,
-                                                animate = !(AppSettings.isInPowerSaveMode() && !settings.powerSaveSettings.animateGifs)
-                                            )
-                                        }
-
-                                        else -> {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .background(Color.Gray.copy(alpha = 0.2f)),
-                                                contentAlignment = Alignment.Center
-                                            ) {
+                                                Spacer(Modifier.width(2.dp))
                                                 Icon(
-                                                    imageVector = Icons.Default.BrokenImage,
-                                                    contentDescription = "Failed to load GIF",
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(14.dp),
+                                                    imageVector = if (message.isDelivered || !message.isMine)
+                                                        Icons.Default.Check
+                                                    else Icons.Default.ArrowOutward,
+                                                    contentDescription = null,
+                                                    tint = Color.White
                                                 )
                                             }
                                         }
                                     }
-
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(4.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier
-                                                .background(Color.Black.copy(alpha = 0.4f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                message.time.toHHMMTime(),
-                                                color = Color.White,
-                                                fontSize = 11.sp
-                                            )
-                                            Spacer(Modifier.width(2.dp))
-                                            Icon(
-                                                modifier = Modifier.size(14.dp),
-                                                imageVector = if (message.isDelivered || !message.isMine)
-                                                    Icons.Default.Check
-                                                else Icons.Default.ArrowOutward,
-                                                contentDescription = null,
-                                                tint = Color.White
-                                            )
-                                        }
-                                    }
                                 }
                             }
-                        }
 
-                        MessageDC.FILE -> {
-                            val savedAlready = remember { mutableStateOf(false) }
-                            val path = remember { message.data.decodeToString() }
-                            val fileName = path.substringAfterLast('/').substringAfterLast('\\')
-                            Box(
-                                Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        scope.launch {
-                                            FileSaver.save(message.data.decodeToString())
-                                            snackBarHostState.showSnackbar("Файл сохранён")
-                                            savedAlready.value = true
-                                        }
-                                    }
-                            ) {
-                                Row(
+                            MessageDC.FILE -> {
+                                val savedAlready = remember { mutableStateOf(false) }
+                                val path = remember { message.data.decodeToString() }
+                                val fileName = path.substringAfterLast('/').substringAfterLast('\\')
+                                Box(
                                     Modifier
-                                        .background(Color.Gray.copy(alpha = 0.2f))
-                                        .padding(vertical = 8.dp, horizontal = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            scope.launch {
+                                                FileSaver.save(message.data.decodeToString())
+                                                snackBarHostState.showSnackbar("Файл сохранён")
+                                                savedAlready.value = true
+                                            }
+                                        }
                                 ) {
-                                    Icon(
-                                        modifier = Modifier.size(20.dp),
-                                        imageVector = if (savedAlready.value) Icons.Default.Check else Icons.Default.FileDownload,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(fileName, color = MaterialTheme.colorScheme.onBackground)
-                                    Spacer(Modifier.width(2.dp))
+                                    Row(
+                                        Modifier
+                                            .background(Color.Gray.copy(alpha = 0.2f))
+                                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            modifier = Modifier.size(20.dp),
+                                            imageVector = if (savedAlready.value) Icons.Default.Check else Icons.Default.FileDownload,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(fileName, color = MaterialTheme.colorScheme.onBackground)
+                                        Spacer(Modifier.width(2.dp))
+                                    }
                                 }
                             }
-                        }
 
-                        MessageDC.AUDIO -> {
-                            Column {
-                                AudioPlayerWidget(
-                                    message.data.decodeToString(), Modifier.fillMaxWidth()
+                            MessageDC.AUDIO -> {
+                                Column {
+                                    AudioPlayerWidget(
+                                        message.data.decodeToString(), Modifier.fillMaxWidth()
+                                    )
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Text(
+                                            text = message.time.toHHMMTime(),
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            fontSize = 11.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(
+                                            modifier = Modifier.size(15.dp),
+                                            imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
+                                }
+                            }
+
+                            MessageDC.BEGIN_CALL -> {
+                                fun getCallText(): String {
+                                    return if (message.isMine) "Вы начали звонок"
+                                    else "$opponentName начал(а) звонок"
+                                }
+                                Column(
+                                    Modifier.fillMaxWidth().height(30.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Row(
+                                        Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                            .background(Color.Black.copy(alpha = 0.2f))
+                                            .padding(vertical = 5.dp, horizontal = 15.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(getCallText(), color = Color.White)
+                                    }
+                                }
+                            }
+
+                            MessageDC.ACCEPT_CALL -> {
+                                fun getCallText(): String {
+                                    return if (message.isMine) "Вы приняли звонок"
+                                    else "$opponentName принял(а) звонок"
+                                }
+                                Column(
+                                    Modifier.fillMaxWidth().height(30.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Row(
+                                        Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                            .background(Color.Black.copy(alpha = 0.2f))
+                                            .padding(vertical = 5.dp, horizontal = 15.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(getCallText(), color = Color.White)
+                                    }
+                                }
+                            }
+
+                            MessageDC.INVITE -> {
+                                fun getText(): String {
+                                    return if (message.isMine) "Вы пригласили ${message.data.decodeToString()}"
+                                    else "$opponentName пригласил(а) ${message.data.decodeToString()}"
+                                }
+                                Column(
+                                    Modifier.fillMaxWidth().height(30.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Row(
+                                        Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                            .background(Color.Black.copy(alpha = 0.2f))
+                                            .padding(vertical = 5.dp, horizontal = 15.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(getText(), color = Color.White)
+                                    }
+                                }
+                            }
+
+                            MessageDC.BUTTON -> {
+                                val decodedText = remember(message.data) { message.data.decodeToString() }
+                                if (decodedText.contains("|^|")) return@Box
+                                Column(
+                                    Modifier.fillMaxWidth().height(30.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Row(
+                                        Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .padding(vertical = 5.dp, horizontal = 15.dp).clickable {
+                                                openUrlInBrowser(decodedText.split("|^|")[1])
+                                            },
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(decodedText.split("|^|")[0], color = Color.White)
+                                    }
+                                }
+                            }
+
+                            else -> {
+                                Text(
+                                    "Неизвестный тип сообщения: ${message.type}",
+                                    color = ColorTheme.Warning,
+                                    fontStyle = FontStyle.Italic
                                 )
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    Text(
-                                        text = message.time.toHHMMTime(),
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        fontSize = 11.sp
-                                    )
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        modifier = Modifier.size(15.dp),
-                                        imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onBackground
-                                    )
-                                }
                             }
                         }
-
-                        MessageDC.BEGIN_CALL -> {
-                            fun getCallText(): String {
-                                return if (message.isMine) "Вы начали звонок"
-                                else "$opponentName начал(а) звонок"
-                            }
-                            Column(
-                                Modifier.fillMaxWidth().height(30.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Row(
-                                    Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
-                                        .background(Color.Black.copy(alpha = 0.2f))
-                                        .padding(vertical = 5.dp, horizontal = 15.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(getCallText(), color = Color.White)
-                                }
-                            }
-                        }
-
-                        MessageDC.ACCEPT_CALL -> {
-                            fun getCallText(): String {
-                                return if (message.isMine) "Вы приняли звонок"
-                                else "$opponentName принял(а) звонок"
-                            }
-                            Column(
-                                Modifier.fillMaxWidth().height(30.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Row(
-                                    Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
-                                        .background(Color.Black.copy(alpha = 0.2f))
-                                        .padding(vertical = 5.dp, horizontal = 15.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(getCallText(), color = Color.White)
-                                }
-                            }
-                        }
-
-                        MessageDC.INVITE -> {
-                            fun getText(): String {
-                                return if (message.isMine) "Вы пригласили ${message.data.decodeToString()}"
-                                else "$opponentName пригласил(а) ${message.data.decodeToString()}"
-                            }
-                            Column(
-                                Modifier.fillMaxWidth().height(30.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Row(
-                                    Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
-                                        .background(Color.Black.copy(alpha = 0.2f))
-                                        .padding(vertical = 5.dp, horizontal = 15.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(getText(), color = Color.White)
-                                }
-                            }
-                        }
-
-                        MessageDC.BUTTON -> {
-                            val decodedText = remember(message.data) { message.data.decodeToString() }
-                            if (decodedText.contains("|^|")) return@Box
-                            Column(
-                                Modifier.fillMaxWidth().height(30.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Row(
-                                    Modifier.weight(1f).clip(RoundedCornerShape(30.dp))
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .padding(vertical = 5.dp, horizontal = 15.dp).clickable {
-                                            openUrlInBrowser(decodedText.split("|^|")[1])
-                                        },
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(decodedText.split("|^|")[0], color = Color.White)
-                                }
-                            }
-                        }
-
-                        else -> {
-                            Text(
-                                "Неизвестный тип сообщения: ${message.type}",
-                                color = ColorTheme.Warning,
-                                fontStyle = FontStyle.Italic
-                            )
-                        }
+                        if (message.type==MessageDC.TEXT && !overflowing.value)
+                            MessageTime()
                     }
-
-                    if (message.type == MessageDC.TEXT || message.type == MessageDC.FILE) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = message.time.toHHMMTime(),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = 11.sp
-                            )
-                            Spacer(Modifier.width(2.dp))
-                            Icon(
-                                modifier = Modifier.size(15.dp),
-                                imageVector = if (message.isDelivered || !message.isMine) Icons.Default.Check else Icons.Default.ArrowOutward,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    }
+                    if(message.type==MessageDC.FILE || (overflowing.value && message.type==MessageDC.TEXT))
+                        MessageTime()
                 }
                 if (menuOpen.value) {
                     DropdownMenu(

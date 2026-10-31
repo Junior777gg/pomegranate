@@ -91,7 +91,8 @@ fun DesktopHomeScreen(navController: NavHostController) {
         } else {
             scope.launch {
                 DraftManager.save()
-                viewModel.deleteChatIfEmpty(selectedChat.value!!)
+                if (selectedChat.value!=null)
+                    viewModel.deleteChatIfEmpty(selectedChat.value!!)
                 selectedChat.value=null
             }
         }

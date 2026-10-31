@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
@@ -179,19 +180,21 @@ fun ChatScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(messages.value, key = { message -> message.key }) { message ->
+                    itemsIndexed(messages.value, key = { _, message -> message.key }) { index, message ->
+                        val sameSender = index + 1 < messages.value.size &&
+                                messages.value[index + 1].messageCreator == message.messageCreator
+
                         val msgTime = message.time.toLocalDateTime()
                         MessageBubble(
                             message, { navController.navigate(Routes.ImagePreview(message.key)) },
-                            scope, snackBarHostState, settings.parseMarkdown
-                        )
+                            scope, snackBarHostState, settings.parseMarkdown,
+                            sameSender)
 
                         if(settings.displayTimeMarksChat) {
-                            val currentIndex = messages.value.indexOf(message)
-                            if (currentIndex == messages.value.size - 1) {
+                            if (index == messages.value.size - 1) {
                                 TimeMark(msgTime.toTimeMark())
                             } else {
-                                val nextMessage = messages.value[currentIndex + 1]
+                                val nextMessage = messages.value[index + 1]
                                 val nextMsgTime = nextMessage.time.toLocalDateTime()
 
                                 if (msgTime.day != nextMsgTime.day ||

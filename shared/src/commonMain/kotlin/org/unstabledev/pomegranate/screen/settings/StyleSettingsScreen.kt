@@ -137,7 +137,7 @@ fun StyleSettingsScreen(navController: NavHostController) {
                     chatCreator = Repository.myEmail,
                     supData = byteArrayOf(),
                 ),
-                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
+                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, false
             )
             Spacer(Modifier.height(5.dp))
             MessageBubble(
@@ -146,7 +146,7 @@ fun StyleSettingsScreen(navController: NavHostController) {
                     "В разлуке есть высокое значенье:\nКак ни люби, хоть день один, хоть век,\nЛюбовь есть сон, а сон – одно мгновенье,\n" +
                             "И рано ль, поздно ль пробужденье,\nА должен наконец проснуться человек...\n\n" +
                             "- Федор Тютчев", type = MessageDC.TEXT),
-                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown
+                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, false
             )
         }
         val sliderValueRounding = remember { mutableFloatStateOf(settings.messageRounding) }

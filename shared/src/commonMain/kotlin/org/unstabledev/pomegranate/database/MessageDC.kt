@@ -38,6 +38,9 @@ data class MessageDC(
         fun MessageDC.isDisplayable(): Boolean {
             return type!=SECURITY_CONFIG
         }
+        fun MessageDC.canDisplaySender(): Boolean {
+            return type!=INVITE || type!=BEGIN_CALL || type!=ACCEPT_CALL || type!=END_CALL || type!=SECURITY_CONFIG
+        }
 
         fun truncatedMessageDCType(type: String): String? {
             return when (type) {
