@@ -38,6 +38,7 @@ data class AppSettingsState(
     val pinnedChats: List<Long> = listOf(),
     val powerSaveSettings: PowerSaveSettings = PowerSaveSettings(),
     val primaryColor: Int = ColorTheme.AccentDark.toArgb(),
+    val profileNearMessage: Boolean = false,
     val shownPinWarning: Boolean = false,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val useAmoledOnDarkSystem: Boolean = false,
@@ -170,6 +171,10 @@ object AppSettings {
         if (Clock.System.now().toEpochMilliseconds()<=v!!) return true
         unmuteChat(chatKey)
         return false
+    }
+
+    fun setProfileNearMessage(v: Boolean) {
+        _state.value = _state.value.copy(profileNearMessage = v)
     }
 
     fun setDisplayTimeMarksChat(v: Boolean) {

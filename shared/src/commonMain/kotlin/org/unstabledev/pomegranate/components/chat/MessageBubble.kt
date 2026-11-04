@@ -88,6 +88,7 @@ import org.unstabledev.pomegranate.components.AnimatedGifImage
 import org.unstabledev.pomegranate.components.AudioPlayerWidget
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.GifDecoder
+import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.canDisplaySender
@@ -181,6 +182,7 @@ fun MessageBubble(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
     ) {
+        if(!message.isMine && settings.profileNearMessage) ProfileImage(person, message.messageCreator)
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val maxMessageWidth = maxWidth * settings.messageMaxWidth
             Box(

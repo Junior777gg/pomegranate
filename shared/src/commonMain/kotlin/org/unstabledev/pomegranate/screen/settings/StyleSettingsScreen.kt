@@ -210,6 +210,8 @@ fun StyleSettingsScreen(navController: NavHostController) {
             { AppSettings.setParseMarkdown(it) }
         SwitchButton(settings.messageUnifiedRounding, "Однородное скругление")
             { AppSettings.setMessageUnifiedRounding(it) }
+        SwitchButton(settings.profileNearMessage, "Картинки профиля")
+            { AppSettings.setProfileNearMessage(it) }
         Column {
             Text("Обои", Modifier.padding(bottom = 3.dp))
             LazyRow(
