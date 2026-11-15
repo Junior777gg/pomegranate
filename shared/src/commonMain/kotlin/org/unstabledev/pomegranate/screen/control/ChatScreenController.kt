@@ -49,7 +49,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
     @OptIn(ExperimentalCoroutinesApi::class)
     val messages: StateFlow<List<MessageDC>> = _pageSize
         .flatMapLatest { limit ->
-            messagesDao.getPaged(getChat().chatName, getChat().chatCreator, getChat().chatType, limit)
+            messagesDao.getPaged(getChat().chatCreator, getChat().chatType, limit)
         }
         .stateIn(
             scope = viewModelScope,

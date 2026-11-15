@@ -28,8 +28,8 @@ interface ChatDao {
     @Query("SELECT * FROM chat WHERE chatCreator = :chatCreator")
     fun getAllOwnedChats(chatCreator: String): Flow<List<ChatDC>>
 
-    @Query("SELECT * FROM chat WHERE chatCreator = :chatCreator AND chatName = :chatName")
-    fun tryGet(chatName: String, chatCreator: String): Flow<ChatDC?>
+    @Query("SELECT * FROM chat WHERE chatCreator = :chatCreator AND chatType = :chatType")
+    fun tryGet(chatType: String, chatCreator: String): Flow<ChatDC?>
 
     @Query("SELECT * FROM chat WHERE personsEmails LIKE '%' || :email || '%'")
     fun getAllChatsWith(email: String): Flow<List<ChatDC>>
@@ -42,9 +42,6 @@ interface ChatDao {
 
     @Query("SELECT * FROM chat WHERE `key` = :key LIMIT 1")
     fun getByKey(key: Long): Flow<ChatDC>
-
-    @Query("SELECT * FROM chat WHERE chatName = :chatName LIMIT 1")
-    fun tryGetByName(chatName: String): Flow<ChatDC?>
 
     @Query("SELECT EXISTS(SELECT 1 FROM chat WHERE chatName = :chatName AND chatCreator = :chatCreator AND chatType = :chatType LIMIT 1)")
     suspend fun exists(chatName: String, chatCreator: String, chatType: String): Boolean

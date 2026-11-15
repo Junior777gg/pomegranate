@@ -1,6 +1,8 @@
 package org.unstabledev.pomegranate
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -11,11 +13,14 @@ import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
+import jdk.internal.joptsimple.internal.Messages.message
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.platform.MediaSelector
@@ -32,7 +37,7 @@ fun main(args: Array<String>) {
     val isOpen = mutableStateOf(true)
     var runBg = !args.contains("--no-bg-service")
     runBlocking {
-        if(runBg) runBg = AppSettings.state.first().dev_executeBackgroundService
+        if (runBg) runBg = AppSettings.state.first().dev_executeBackgroundService
     }
     CoroutineScope(Dispatchers.IO).launch {
         ConnectionReceiver.start()
@@ -56,7 +61,7 @@ fun main(args: Array<String>) {
         dialog.isMultipleMode = true
         dialog.filenameFilter = object : FilenameFilter {
             override fun accept(dir: File?, name: String?): Boolean {
-                val lowercaseName = name?.lowercase()?:""
+                val lowercaseName = name?.lowercase() ?: ""
                 return lowercaseName.endsWith(".jpg") ||
                         lowercaseName.endsWith(".jpeg") ||
                         lowercaseName.endsWith(".png")
@@ -70,7 +75,7 @@ fun main(args: Array<String>) {
         val dialog = FileDialog(null as Frame?, "Выберите изображение", FileDialog.LOAD)
         dialog.isMultipleMode = false
         dialog.filenameFilter = FilenameFilter { dir, name ->
-            val lowercaseName = name?.lowercase()?:""
+            val lowercaseName = name?.lowercase() ?: ""
             lowercaseName.endsWith(".jpg") ||
                     lowercaseName.endsWith(".jpeg") ||
                     lowercaseName.endsWith(".png")
@@ -82,19 +87,24 @@ fun main(args: Array<String>) {
     BackgroundStorage.ensureBackgroundDir()
     application {
         val trayState = rememberTrayState()
-        Notifications.currentPush = { title, message ->
-            trayState.sendNotification(Notification(title, message))
-        }
-        if (runBg) {
-            Tray(
-                state = trayState,
-                icon = painterResource("pomegranate.png"),
-                menu = {
-                    Item("Открыть", onClick = { isOpen.value = true })
-                    Item("Выйти", onClick = { exitApplication() })
+        val scope = rememberCoroutineScope()
+        LaunchedEffect(trayState) {
+            Notifications.currentPush = { title, message ->
+                scope.launch(Dispatchers.Main) {
+                    trayState.sendNotification(Notification(title, message))
+                    cancel()
                 }
-            )
+            }
         }
+
+        Tray(
+            state = trayState,
+            icon = painterResource("pomegranate.png"),
+            menu = {
+                Item("Открыть", onClick = { isOpen.value = true })
+                Item("Выйти", onClick = { exitApplication() })
+            }
+        )
 
         if (isOpen.value) {
             Window(
@@ -105,7 +115,7 @@ fun main(args: Array<String>) {
                     if (!runBg) shutdownJavaFx()
                 },
                 onKeyEvent = {
-                    if (it.key==Key.Escape && it.type==KeyEventType.KeyDown) {
+                    if (it.key == Key.Escape && it.type == KeyEventType.KeyDown) {
                         PlatformEvents.Instance?.onBack()
                     }
                     return@Window false

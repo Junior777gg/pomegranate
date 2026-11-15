@@ -31,8 +31,8 @@ interface MessagesDao {
     suspend fun deleteAll(name: String, creator: String, chatType: String)
 
     @Query("SELECT * FROM messages " +
-            "WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT :limit")
-    fun getPaged(name: String, creator: String, chatType: String, limit: Int): Flow<List<MessageDC>>
+            "WHERE chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT :limit")
+    fun getPaged(creator: String, chatType: String, limit: Int): Flow<List<MessageDC>>
 
     @Query("SELECT COUNT(*) FROM messages " +
             "WHERE chatName = :chatName AND chatCreator = :chatCreator AND chatType = :chatType " +

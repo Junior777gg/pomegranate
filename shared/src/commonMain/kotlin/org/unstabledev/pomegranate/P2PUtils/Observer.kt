@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Call
@@ -27,7 +28,9 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessageDC.Companion.truncatedMessageDCType
+import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.platform.kmpCopyTo
+import org.unstabledev.pomegranate.screen.Profile
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
@@ -35,10 +38,11 @@ import kotlin.time.Duration.Companion.milliseconds
 class Observer(
     private val manager: P2PManager,
     private val channel: P2PChannel,
-    val email: String,
+    val personEmail: String,
 ) {
     val messagesDao = Repository.messagesDao
     val chatDao = Repository.chatDao
+    val personDao = Repository.personsDao
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val timeOutMillis = 300000L
     var lastAction = now().toEpochMilliseconds()
@@ -54,7 +58,7 @@ class Observer(
                 scope.cancel()
                 manager.breakConnection()
             } finally {
-                Repository.availablePersons.getOrPut(email) { MutableSharedFlow(1) }.emit(null)
+                Repository.availablePersons.getOrPut(personEmail) { MutableSharedFlow(1) }.emit(null)
             }
         }
     }
@@ -65,7 +69,7 @@ class Observer(
                 lastAction = now().toEpochMilliseconds()
                 try {
                     if (it.size == 1 && it[0] is Text && deliverMap[(it[0] as Text).text] != null) {
-                        val messageDC = messagesDao.getByTime((it[0] as Text).text.toLong())
+                        val messageDC = messagesDao.getByTime(deliverMap[(it[0] as Text).text]!!)
                         messageDC.isDelivered = true
                         messagesDao.upsert(messageDC)
                     } else {
@@ -86,15 +90,19 @@ class Observer(
                                 messageDC.data = nameFile.getAbsolutePath().encodeToByteArray()
                             }
                         }
+
                         sendCode((it[2] as Text).text)
-                        val personDC = Repository.personsDao.getByEmail(email)
-                        val chatDC =
-                            Repository.chatDao.tryGet(messageDC.chatName, messageDC.chatCreator).first()
+
+                        val chatDC = getChat(personEmail, messageDC)
+                        messageDC.apply {
+                            chatName = chatDC.chatName
+                            chatCreator = chatDC.chatCreator
+                        }
                         if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()
-                            && !AppSettings.isMuted(chatDC?.key)
+                            && !AppSettings.isMuted(chatDC.key)
                         ) {
                             Notifications().push(
-                                (personDC?.nickname ?: personDC?.personEmail ?: ""),
+                                (chatDC.chatName),
                                 when (messageDC.type) {
                                     MessageDC.TEXT -> messageDC.data.decodeToString()
                                         .stripMarkdown()
@@ -107,47 +115,23 @@ class Observer(
                                 }
                             )
                         }
-                        if (messageDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                            messageDC.chatCreator = personDC?.personEmail ?: "null"
-                            val name = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
-                            if (name == null) {
-                                val newChat = ChatDC(
-                                    chatName = email,
-                                    chatCreator = email,
-                                    chatType = messageDC.chatType,
-                                    personsEmails = mutableListOf(email)
-                                )
-                                chatDao.upsert(newChat)
-                                messageDC.chatName = newChat.chatName
-                            }
-                        }
                         val isCall = messageDC.type == MessageDC.BEGIN_CALL
                         if (isCall) {
                             val videoManager = manager.fork()
                             val audioManager = manager.fork()
                             currentCallState.value = CallState.Calling
                             currentCall.value =
-                                Call(personDC?.personEmail!!, videoManager!!, audioManager!!, false)
-                        }
-                        if (messageDC.type == MessageDC.INVITE) {
-                            Repository.chatDao.upsert(
-                                ChatDC(
-                                    chatName = messageDC.chatName,
-                                    chatCreator = messageDC.chatCreator,
-                                    chatType = messageDC.chatType,
-                                    personsEmails = Json.decodeFromString(messageDC.supData.decodeToString())
-                                )
-                            )
+                                Call(personEmail, videoManager!!, audioManager!!, false)
                         }
                         if (messageDC.type == MessageDC.SECURITY_CONFIG) {
                             val cfg = SecurityConfig().fromByteArray(messageDC.data)
-                            personDC?.securityConfig = cfg.toString()
-                            if (personDC != null) Repository.personsDao.upsert(personDC)
+                            /*personDC?.securityConfig = cfg.toString()
+                            if (personDC != null) Repository.personsDao.upsert(personDC)*/
                         }
                         messageDC.isMine = false
                         messageDC.isDelivered = true
                         messagesDao.insert(messageDC)
-                        AppTracer.trace("recieve:$email")
+                        AppTracer.trace("recieve:$personEmail")
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -168,7 +152,7 @@ class Observer(
                     val videoManager = manager.fork()
                     val audioManager = manager.fork()
                     currentCallState.value = CallState.AcceptedCall
-                    currentCall.value = Call(email, videoManager!!, audioManager!!)
+                    currentCall.value = Call(personEmail, videoManager!!, audioManager!!)
                 }
             }
             deliverMap[code] = msg.time
@@ -193,5 +177,35 @@ class Observer(
         scope.launch {
             channel.send(code)
         }
+    }
+
+    suspend fun getChat(emil: String, message: MessageDC): ChatDC {
+        var chat = chatDao.tryGet(message.chatType, emil).first()
+        if (chat != null) {
+            return chat
+        }
+        val person = getPerson(emil)
+        chat = ChatDC(
+            chatCreator = emil,
+            chatType = message.chatType,
+            chatName = person.nickname ?: try {
+                Json.decodeFromString<Profile?>(person.profile!!)?.displayName!!
+            } catch (_: Exception) {
+                emil
+            },
+            personsEmails = mutableListOf(emil)
+        )
+        chatDao.upsert(chat)
+        return chat
+    }
+
+    suspend fun getPerson(email: String): PersonDC {
+        var person = personDao.tryGetByEmail(email).first()
+        if (person != null) {
+            return person
+        }
+        person = PersonDC(email)
+        personDao.insert(person)
+        return person
     }
 }
