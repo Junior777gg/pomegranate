@@ -50,7 +50,7 @@ interface ChatDao {
     suspend fun exists(chatName: String, chatCreator: String, chatType: String): Boolean
 
     @Query("SELECT chatName FROM chat WHERE chatCreator = :chatCreator AND chatType = :chatType LIMIT 1")
-    suspend fun getName(chatCreator: String, chatType: String): String
+    suspend fun getName(chatCreator: String, chatType: String): String?
 
     @Query("DELETE FROM chat")
     suspend fun deleteAll()

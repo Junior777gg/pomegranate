@@ -11,10 +11,10 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.unstabledev.pomegranate.P2PUtils.Bytes
 import org.unstabledev.pomegranate.platform.CallAudioPlayer
 import org.unstabledev.pomegranate.platform.CallAudioRecorder
 import org.unstabledev.pomegranate.platform.Camera
-import org.unstabledev.pomegranate.P2PUtils.Data
 import org.unstabledev.pomegranate.Repository
 
 class BetterCallSoulScreenController(
@@ -38,9 +38,8 @@ class BetterCallSoulScreenController(
                 delay(100)
             }
             launch {
-                while (true) {
-                    val data = audioManager.channel!!.receive()
-                    player.playChunk((data as Data.Bytes).bytes)
+                audioManager.channel!!.receiver.collect {
+                    player.playChunk((it[0] as Bytes).bytes)
                 }
             }
             launch {
@@ -52,11 +51,10 @@ class BetterCallSoulScreenController(
                 }
             }
             launch {
-                while (true) {
-                    val data = videoManager.channel!!.receive()
+                videoManager.channel!!.receiver.collect {
                     val bitmap = try {
-                        val copy = (data as Data.Bytes).bytes.copyOf()
-                        copy.decodeToImageBitmap()
+                        val copy = (it[0] as Bytes).bytes.decodeToImageBitmap()
+                        copy
                     } catch (e: Exception) {
                         e.printStackTrace()
                         null

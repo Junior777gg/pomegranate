@@ -43,6 +43,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.ktor.client.cio)
             implementation(files("libs/HideP2P.jar"))
+            implementation("com.google.crypto.tink:tink:1.17.0")
             implementation("tech.kwik:kwik:0.11")
             implementation("tech.kwik:flupke:0.9.4")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
@@ -54,6 +55,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(files("libs/HideP2P.jar"))
+            implementation("com.google.crypto.tink:tink-android:1.17.0")
             implementation("tech.kwik:kwik:0.11")
             implementation("tech.kwik:flupke:0.9.4")
             implementation(libs.ktor.client.okhttp)
@@ -67,7 +69,6 @@ kotlin {
             implementation("androidx.camera:camera-video:${camerax_version}")
             implementation("androidx.camera:camera-view:${camerax_version}")
             implementation("androidx.camera:camera-extensions:${camerax_version}")
-            implementation("com.google.crypto.tink:tink:1.21.0")
             implementation("androidx.media:media:1.7.0")
         }
         commonMain.dependencies {

@@ -23,6 +23,9 @@ interface MessagesDao {
             "WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType ORDER BY `time` DESC LIMIT 1")
     fun tryGetLast(name: String, creator: String, chatType: String): Flow<MessageDC?>
 
+    @Query("SELECT * FROM messages WHERE time = :time")
+    suspend fun getByTime(time: Long): MessageDC
+
     @Query("DELETE FROM messages " +
             "WHERE chatName = :name AND chatCreator = :creator AND chatType = :chatType")
     suspend fun deleteAll(name: String, creator: String, chatType: String)

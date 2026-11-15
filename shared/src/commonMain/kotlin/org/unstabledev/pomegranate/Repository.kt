@@ -1,7 +1,6 @@
 package org.unstabledev.pomegranate
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.viewModelScope
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +12,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.P2PUtils.Observer
-import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
+import org.unstabledev.pomegranate.P2PUtils.P2PManager
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.ChatDao
@@ -30,8 +29,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 data class Call(
     val email: String,
-    val videoManager: P2PManagerImpl,
-    val audioManager: P2PManagerImpl,
+    val videoManager: P2PManager,
+    val audioManager: P2PManager,
     val isMyCall: Boolean = true
 )
 
@@ -74,7 +73,6 @@ object Repository {
     lateinit var messagesDao: MessagesDao
     lateinit var chatDao: ChatDao
     lateinit var personsDao: PersonDao
-    var lastEmail = ""
 
     val availablePersons = mutableMapOf<String, MutableSharedFlow<Observer?>>()
 
@@ -90,7 +88,6 @@ object Repository {
                             manager,
                             manager.channel!!,
                             email,
-                            messagesDao
                         )
                         availablePersons.getOrPut(email, { MutableSharedFlow(1) }).emit(observer)
                         messages.forEach { message ->
@@ -113,7 +110,6 @@ object Repository {
                     manager,
                     manager.channel!!,
                     email,
-                    messagesDao
                 )
                 availablePersons.getOrPut(email) { MutableSharedFlow(1) }.emit(observer)
                 messages.forEach {

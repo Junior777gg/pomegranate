@@ -9,7 +9,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Call
@@ -28,22 +27,22 @@ import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessageDC.Companion.truncatedMessageDCType
-import org.unstabledev.pomegranate.database.MessagesDao
 import org.unstabledev.pomegranate.platform.kmpCopyTo
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
 
 class Observer(
-    private val manager: P2PManagerImpl,
-    private val channel: P2PChannelImpl,
+    private val manager: P2PManager,
+    private val channel: P2PChannel,
     val email: String,
-    val messagesDao: MessagesDao
 ) {
+    val messagesDao = Repository.messagesDao
+    val chatDao = Repository.chatDao
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val timeOutMillis = 300000L
     var lastAction = now().toEpochMilliseconds()
-    val deliverMap = mutableMapOf<Byte, ByteArray>()
+    val deliverMap = mutableMapOf<String, Long>()
 
     init {
         receive()
@@ -62,140 +61,97 @@ class Observer(
 
     private fun receive() {
         scope.launch {
-            try {
-                val flow = MutableSharedFlow<Data>(100)
-                launch {
-                    while (true) {
-                        val data = channel.receive()
-                        lastAction = now().toEpochMilliseconds()
-                        flow.emit(data)
-                    }
-                }
-                launch {
-                    val map = mutableMapOf<Byte, MutableList<Data>>()
-                    launch {
-                        flow.collect {
-                            if (it is Data.Bytes && it.bytes.size == 1 && deliverMap[it.bytes[0]] != null) {
-                                val buffer = it.bytes
-                                val message = messagesDao.getByData(deliverMap[buffer[0]]!!)
-                                if (message != null) {
-                                    message.isDelivered = true
-                                    messagesDao.upsert(message)
-                                }
-                                deliverMap.remove(buffer[0])
-                            } else {
-                                when (it) {
-                                    is Data.Bytes -> map.getOrPut(it.code) { mutableListOf() }
-                                        .add(it)
+            channel.receiver.collect {
+                lastAction = now().toEpochMilliseconds()
+                try {
+                    if (it.size == 1 && it[0] is Text && deliverMap[(it[0] as Text).text] != null) {
+                        val messageDC = messagesDao.getByTime((it[0] as Text).text.toLong())
+                        messageDC.isDelivered = true
+                        messagesDao.upsert(messageDC)
+                    } else {
+                        val messageDC = Json.decodeFromString<MessageDC>((it[0] as Text).text)
+                        val data = it[1]
+                        when (data) {
+                            is Bytes -> {
+                                messageDC.data = data.bytes
+                            }
 
-                                    is Data.Files -> map.getOrPut(it.code) { mutableListOf() }
-                                        .add(it)
-                                }
+                            is Files -> {
+                                val subDir = truncatedMessageDCType(messageDC.type)
+                                val targetDir = "${pomegranatePath}temp${if (subDir == null) "" else "/$subDir"}"
+                                val nameFile = KMPFile(targetDir, messageDC.data.decodeToString())
+                                nameFile.getParentFile()?.mkdirs()
+                                data.file.kmpCopyTo(nameFile)
+                                data.file.delete()
+                                messageDC.data = nameFile.getAbsolutePath().encodeToByteArray()
                             }
                         }
-                    }
-                    launch {
-                        while (true) {
-                            map.keys.toList().forEach { key ->
-                                if (map[key]!!.size == 2) {
-                                    val list = map[key]!!
-                                    val messageDC = try {
-                                        if (list[0] is Data.Bytes && list[1] is Data.Files) {
-                                            val json =
-                                                Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
-                                            val file = (list[1] as Data.Files).file
+                        sendCode((it[2] as Text).text)
+                        val personDC = Repository.personsDao.getByEmail(email)
+                        val chatDC =
+                            Repository.chatDao.tryGet(messageDC.chatName, messageDC.chatCreator).first()
+                        if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()
+                            && !AppSettings.isMuted(chatDC?.key)
+                        ) {
+                            Notifications().push(
+                                (personDC?.nickname ?: personDC?.personEmail ?: ""),
+                                when (messageDC.type) {
+                                    MessageDC.TEXT -> messageDC.data.decodeToString()
+                                        .stripMarkdown()
 
-                                            val subDir = truncatedMessageDCType(json.type)
-                                            val targetDir = "${pomegranatePath}temp${if (subDir==null) "" else "/$subDir"}"
-                                            val nameFile = KMPFile(targetDir, json.data.decodeToString())
-                                            nameFile.getParentFile()?.mkdirs()
-
-                                            file.kmpCopyTo(nameFile)
-                                            file.delete()
-                                            json.data = nameFile.getAbsolutePath().encodeToByteArray()
-                                            json
-                                        } else if (list[1] is Data.Bytes && list[0] is Data.Files) {
-                                            val json =
-                                                Json.decodeFromString<MessageDC>((list[1] as Data.Bytes).bytes.decodeToString())
-                                            val file = (list[0] as Data.Files).file
-
-                                            val subDir = truncatedMessageDCType(json.type)
-                                            val targetDir = "${pomegranatePath}temp${if (subDir==null) "" else "/$subDir"}"
-                                            val nameFile = KMPFile(targetDir, json.data.decodeToString())
-                                            nameFile.getParentFile()?.mkdirs()
-
-                                            file.kmpCopyTo(nameFile)
-                                            file.delete()
-                                            json.data = nameFile.getAbsolutePath().encodeToByteArray()
-                                            json
-                                        } else {
-                                            val json =
-                                                Json.decodeFromString<MessageDC>((list[0] as Data.Bytes).bytes.decodeToString())
-                                            json.data = (list[1] as Data.Bytes).bytes
-                                            json
-                                        }
-                                    } catch (_: SerializationException) {
-                                        val json =
-                                            Json.decodeFromString<MessageDC>((list[1] as Data.Bytes).bytes.decodeToString())
-                                        json.data = (list[0] as Data.Bytes).bytes
-                                        json
-                                    }
-                                    sendCode(key)
-                                    val personDC = Repository.personsDao.getByEmail(email)
-                                    val chatDC=Repository.chatDao.tryGet(messageDC.chatName, messageDC.chatCreator).first()
-                                    if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()
-                                        && !AppSettings.isMuted(chatDC?.key)) {
-                                        Notifications().push(
-                                            (personDC?.nickname ?: personDC?.personEmail ?:""),
-                                            when (messageDC.type) {
-                                                MessageDC.TEXT -> messageDC.data.decodeToString()
-                                                    .stripMarkdown()
-
-                                                MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "📞 Звонок"
-                                                MessageDC.IMAGE, MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
-                                                MessageDC.AUDIO -> "🎵 Аудио"
-                                                MessageDC.FILE -> "📁 Файл"
-                                                else -> "Неизвестно"
-                                            }
-                                        )
-                                    }
-                                    if(messageDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
-                                        messageDC.chatCreator = personDC?.personEmail?:"null"
-                                        messageDC.chatName = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
-                                    }
-                                    val isCall = messageDC.type==MessageDC.BEGIN_CALL
-                                    if (isCall) {
-                                        val videoManager = manager.fork()
-                                        val audioManager = manager.fork()
-                                        currentCallState.value = CallState.Calling
-                                        currentCall.value = Call(personDC?.personEmail!!, videoManager,audioManager, false)
-                                    }
-                                    if (messageDC.type == MessageDC.INVITE){
-                                        Repository.chatDao.upsert(ChatDC(
-                                            chatName = messageDC.chatName,
-                                            chatCreator = messageDC.chatCreator,
-                                            chatType = messageDC.chatType,
-                                            personsEmails = Json.decodeFromString(messageDC.supData.decodeToString())
-                                        ))
-                                    }
-                                    if (messageDC.type == MessageDC.SECURITY_CONFIG) {
-                                        val cfg = SecurityConfig().fromByteArray(messageDC.data)
-                                        personDC?.securityConfig = cfg.toString()
-                                        if(personDC!=null) Repository.personsDao.upsert(personDC)
-                                    }
-                                    messageDC.isMine = false
-                                    messageDC.isDelivered = true
-                                    messagesDao.insert(messageDC)
-                                    map.remove(key)
-                                    AppTracer.trace("recieve:$email")
+                                    MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "📞 Звонок"
+                                    MessageDC.IMAGE, MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
+                                    MessageDC.AUDIO -> "🎵 Аудио"
+                                    MessageDC.FILE -> "📁 Файл"
+                                    else -> "Неизвестно"
                                 }
-                            }
-                            delay(100.milliseconds)
+                            )
                         }
+                        if (messageDC.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+                            messageDC.chatCreator = personDC?.personEmail ?: "null"
+                            val name = Repository.chatDao.getName(messageDC.chatCreator, messageDC.chatType)
+                            if (name == null) {
+                                val newChat = ChatDC(
+                                    chatName = email,
+                                    chatCreator = email,
+                                    chatType = messageDC.chatType,
+                                    personsEmails = mutableListOf(email)
+                                )
+                                chatDao.upsert(newChat)
+                                messageDC.chatName = newChat.chatName
+                            }
+                        }
+                        val isCall = messageDC.type == MessageDC.BEGIN_CALL
+                        if (isCall) {
+                            val videoManager = manager.fork()
+                            val audioManager = manager.fork()
+                            currentCallState.value = CallState.Calling
+                            currentCall.value =
+                                Call(personDC?.personEmail!!, videoManager!!, audioManager!!, false)
+                        }
+                        if (messageDC.type == MessageDC.INVITE) {
+                            Repository.chatDao.upsert(
+                                ChatDC(
+                                    chatName = messageDC.chatName,
+                                    chatCreator = messageDC.chatCreator,
+                                    chatType = messageDC.chatType,
+                                    personsEmails = Json.decodeFromString(messageDC.supData.decodeToString())
+                                )
+                            )
+                        }
+                        if (messageDC.type == MessageDC.SECURITY_CONFIG) {
+                            val cfg = SecurityConfig().fromByteArray(messageDC.data)
+                            personDC?.securityConfig = cfg.toString()
+                            if (personDC != null) Repository.personsDao.upsert(personDC)
+                        }
+                        messageDC.isMine = false
+                        messageDC.isDelivered = true
+                        messagesDao.insert(messageDC)
+                        AppTracer.trace("recieve:$email")
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }
@@ -205,37 +161,37 @@ class Observer(
         scope.launch {
             val data = message.data
             val msg = message.copy()
-            val code = Random.nextInt(1, 255).toByte()
-            val isCall = message.type==MessageDC.BEGIN_CALL
+            val code = Random.nextInt(1, 65000).toString()
+            val isCall = message.type == MessageDC.BEGIN_CALL
             if (isCall) {
                 launch {
                     val videoManager = manager.fork()
                     val audioManager = manager.fork()
                     currentCallState.value = CallState.AcceptedCall
-                    currentCall.value = Call(email, videoManager,audioManager)
+                    currentCall.value = Call(email, videoManager!!, audioManager!!)
                 }
             }
-            deliverMap[code] = data
+            deliverMap[code] = msg.time
             if (message.type != MessageDC.TEXT && !isCall) {
                 msg.data = KMPFile(msg.data.decodeToString()).getName().encodeToByteArray()
             }
-            val json = Json.encodeToString(msg).encodeToByteArray()
-            channel.send(json, code)
+            val json = Json.encodeToString(msg)
             if (message.type == MessageDC.TEXT || isCall || message.type == MessageDC.INVITE) {
-                println(data.size)
-                channel.send(data, code)
+                channel.send(json, data, code)
             } else {
                 val dataFile = KMPFile(data.decodeToString())
-                channel.send(dataFile, code)
+                channel.send(json, dataFile, code)
             }
-            AppTracer.trace("${if(message.chatType== ChatDC.Companion.ChatTypes.GROUP) "send_group" else "send"}:" +
-                    "${message.chatName}_${message.chatCreator}")
+            AppTracer.trace(
+                "${if (message.chatType == ChatDC.Companion.ChatTypes.GROUP) "send_group" else "send"}:" +
+                        "${message.chatName}_${message.chatCreator}"
+            )
         }
     }
 
-    fun sendCode(code: Byte) {
+    fun sendCode(code: String) {
         scope.launch {
-            channel.send(byteArrayOf(code))
+            channel.send(code)
         }
     }
 }

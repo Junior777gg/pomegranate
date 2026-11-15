@@ -11,7 +11,7 @@ object ConnectionReceiver {
         while (true) {
             val opponent = BaseP2P.receiveConnections()
             val email = opponent.first
-            val observer = Observer(opponent.second, opponent.second.channel!!,email, Repository.messagesDao)
+            val observer = Observer(opponent.second, opponent.second.channel!!,email)
             availablePersons.getOrPut(email){MutableSharedFlow(1)}.emit(observer)
         }
     }

@@ -3,7 +3,7 @@ package org.unstabledev.pomegranate
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
-import org.unstabledev.pomegranate.P2PUtils.P2PManagerImpl
+import org.unstabledev.pomegranate.P2PUtils.P2PManager
 import org.unstabledev.pomegranate.database.sha256
 import org.unstabledev.pomegranate.platform.KMPFile
 import kotlin.time.Duration.Companion.milliseconds
@@ -17,7 +17,7 @@ class BaseP2P {
 
     companion object {
         val myEmail by lazy { Repository.myEmail.sha256() }
-        suspend fun receiveConnections(): Pair<String, P2PManagerImpl> {
+        suspend fun receiveConnections(): Pair<String, P2PManager> {
             var email = ""
             while (email == "") {
                 try {
@@ -28,7 +28,7 @@ class BaseP2P {
             }
             println("New connection: $email")
             Firebase.delete("p2p/${myEmail}")
-            val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
+            val manager = P2PManager("${Repository.pomegranatePath}temp")
             Firebase.put(
                 "p2p/${myEmail}/${email.sha256()}/offer",
                 manager.getICECandidates()
@@ -40,12 +40,12 @@ class BaseP2P {
                 } catch (_: Exception) { }
                 delay(100.milliseconds)
             }
-            manager.createConnection(answer)
+            manager.createConnection(P2PManager.getICEFromString(answer))
             return email to manager
         }
     }
 
-    suspend fun createConnection(email: String): P2PManagerImpl {
+    suspend fun createConnection(email: String): P2PManager{
         Firebase.delete("p2p/${email.sha256()}")
         try {
             Firebase.put("p2p/${email.sha256()}", myEmail)
@@ -63,11 +63,11 @@ class BaseP2P {
         } finally {
             Firebase.delete("p2p/${email.sha256()}")
         }
-        val manager = P2PManagerImpl("${Repository.pomegranatePath}temp")
+        val manager = P2PManager("${Repository.pomegranatePath}temp")
         try {
             Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", manager.getICECandidates())
         } catch (_: Exception) { }
-        manager.createConnection(offer)
+        manager.createConnection(P2PManager.getICEFromString(offer))
         return manager
     }
 }
