@@ -32,6 +32,7 @@ expect class ICECandidates {
 expect class P2PManager(tempDir: String) {
     val tempDir: String
     var channel: P2PChannel?
+    val disconnect : MutableSharedFlow<Boolean>
 
     fun getICECandidates(): String
     suspend fun createConnection(iceCandidates: ICECandidates): P2PChannel

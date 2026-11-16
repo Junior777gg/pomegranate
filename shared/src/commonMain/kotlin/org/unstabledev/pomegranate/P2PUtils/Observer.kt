@@ -36,7 +36,7 @@ import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
 
 class Observer(
-    private val manager: P2PManager,
+    val manager: P2PManager,
     private val channel: P2PChannel,
     val personEmail: String,
 ) {
@@ -51,6 +51,7 @@ class Observer(
     init {
         receive()
         CoroutineScope(Dispatchers.IO).launch {
+            launch {
             while ((timeOutMillis + lastAction > now().toEpochMilliseconds()) || currentCall.value != null) {
                 delay(5000.milliseconds)
             }
@@ -59,6 +60,12 @@ class Observer(
                 manager.breakConnection()
             } finally {
                 Repository.availablePersons.getOrPut(personEmail) { MutableSharedFlow(1) }.emit(null)
+            }}
+            launch {
+                manager.disconnect.collect {
+                    println("disconnect")
+                    manager.breakConnection()
+                }
             }
         }
     }

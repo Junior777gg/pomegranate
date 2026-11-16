@@ -28,6 +28,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -85,20 +86,19 @@ fun DesktopHomeScreen(navController: NavHostController) {
     val minLeftWidth = 0.5f
     val maxLeftWidth = 2.0f
 
-    PlatformEvents.Instance?.onBackCallback = {
-        if(panelSubScreen != PanelSubScreen.CHATS) {
-            panelSubScreen = PanelSubScreen.CHATS
-        } else {
-            scope.launch {
-                DraftManager.save()
-                if (selectedChat.value!=null)
-                    viewModel.deleteChatIfEmpty(selectedChat.value!!)
-                selectedChat.value=null
+    LaunchedEffect(Unit) {
+        PlatformEvents.Instance?.onBackCallback = {
+            if (panelSubScreen != PanelSubScreen.CHATS) {
+                panelSubScreen = PanelSubScreen.CHATS
+            } else {
+                scope.launch {
+                    DraftManager.save()
+                    if (selectedChat.value != null)
+                        viewModel.deleteChatIfEmpty(selectedChat.value!!)
+                    selectedChat.value = null
+                }
             }
         }
-    }
-    PlatformEvents.Instance?.onAppCloseCallback = {
-        viewModel.deleteEmptyChats()
     }
 
     Box(
@@ -124,6 +124,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                                 navController.navigate(route = Routes.Profile(it.key, it.personsEmails.first()))
                             })
                     }
+
                     PanelSubScreen.CONTACTS -> {
                         ContactsPanel({
                             panelSubScreen = PanelSubScreen.CHATS
@@ -133,6 +134,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             selectedChat.value = it
                         })
                     }
+
                     PanelSubScreen.PROFILE_SETTINGS -> {
                         ProfileSettingsPanel(userEmail, userName, {
                             panelSubScreen = PanelSubScreen.CHATS
@@ -161,7 +163,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                             onDragCancel = { }
                         ) { change, dragAmount ->
                             change.consume()
-                            val newPosition = (splitPosition*500 + dragAmount)/500
+                            val newPosition = (splitPosition * 500 + dragAmount) / 500
                             splitPosition = newPosition.coerceIn(minLeftWidth, maxLeftWidth)
                         }
                     }
@@ -169,14 +171,14 @@ fun DesktopHomeScreen(navController: NavHostController) {
             )
             Column(Modifier.weight(1.5f)) {
                 var chat = selectedChat.value
-                if(chat != null) {
+                if (chat != null) {
                     key(chat) {
                         ChatScreen(
                             navController,
                             chat!!.key,
                             canBack = false,
                             {
-                                if(selectedChat.value!=null) {
+                                if (selectedChat.value != null) {
                                     AppSettings.removePinnedChat(selectedChat.value!!.key)
                                     DraftManager.drafts.remove(selectedChat.value!!.key)
                                     DraftManager.save()
@@ -197,9 +199,10 @@ fun DesktopHomeScreen(navController: NavHostController) {
 }
 
 @Composable
-private fun ProfileSettingsPanel(userEmail: String, userName: String,
-                                 onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit,
-                                 onSwitchAccount: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
+private fun ProfileSettingsPanel(
+    userEmail: String, userName: String,
+    onBack: () -> Unit, onProfileClick: () -> Unit, onSettingsClick: () -> Unit,
+    onSwitchAccount: () -> Unit, onLogOut: () -> Unit, modifier: Modifier = Modifier
 ) {
     val settings = collectAppSettings()
     Row(
@@ -207,7 +210,7 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
             .height(54.dp)
-            .padding(horizontal=4.dp).padding(top=16.dp),
+            .padding(horizontal = 4.dp).padding(top = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { onBack() }) {
@@ -222,7 +225,7 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
-            .padding(start=16.dp, end=16.dp, bottom=16.dp, top=0.dp)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 0.dp)
             .clickable(indication = null, interactionSource = null) {
                 onProfileClick()
             }

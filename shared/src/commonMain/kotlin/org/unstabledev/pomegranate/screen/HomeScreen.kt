@@ -26,6 +26,7 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -60,11 +61,6 @@ fun HomeScreen(navController: NavHostController) {
 
     val userEmail = "Гранат"
     val userName = KMPFile(fistFilePath).kmpReadText()
-
-    PlatformEvents.Instance?.onAppCloseCallback = {
-        viewModel.deleteEmptyChats()
-    }
-
     ModalNavigationDrawer(
         modifier = applyScreenPadding(),
         drawerState = drawerState,
@@ -155,7 +151,8 @@ fun HomeScreen(navController: NavHostController) {
             }
         }
     ) {
-        SearchableChatsPanel(viewModel,
+        SearchableChatsPanel(
+            viewModel,
             onChatClick = { navController.navigate(Routes.Chat(it.key)) },
             onChatAddClick = { navController.navigate(Routes.Contacts()) },
             onSidemenuClick = { scope.launch { drawerState.open() } },

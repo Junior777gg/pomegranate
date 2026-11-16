@@ -1,11 +1,13 @@
 package org.unstabledev.pomegranate.screen.control
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filter
@@ -25,7 +27,20 @@ class HomeScreenController : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            chatDao.getAll().collect { _chats.value = it }
+            launch(Dispatchers.IO) {
+                PlatformEvents.Instance?.onAppCloseCallback = {
+                    Repository.availablePersons.forEach {
+                        launch {
+                            it.value.first()?.manager?.breakConnection()
+                            cancel()
+                        }
+                    }
+                    deleteEmptyChats()
+                }
+            }
+            launch(Dispatchers.Default){
+                chatDao.getAll().collect { _chats.value = it }
+            }
         }
     }
 
@@ -70,11 +85,12 @@ class HomeScreenController : ViewModel() {
 
     fun deleteEmptyChats() {
         viewModelScope.launch(Dispatchers.Default) {
-            for(chat in chatDao.getAll().first()) {
+            for (chat in chatDao.getAll().first()) {
                 deleteChatIfEmpty(chat)
             }
         }
     }
+
     fun deleteChatIfEmpty(chat: ChatDC) {
         viewModelScope.launch(Dispatchers.Default) {
             if (chat.chatType != ChatDC.Companion.ChatTypes.GROUP) {
