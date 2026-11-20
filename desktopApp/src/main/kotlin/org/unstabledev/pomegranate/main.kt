@@ -13,14 +13,12 @@ import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
-import jdk.internal.joptsimple.internal.Messages.message
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.BackgroundStorage
 import org.unstabledev.pomegranate.platform.MediaSelector
@@ -37,10 +35,10 @@ fun main(args: Array<String>) {
     val isOpen = mutableStateOf(true)
     var runBg = !args.contains("--no-bg-service")
     runBlocking {
-        if (runBg) runBg = AppSettings.state.first().dev_executeBackgroundService
+        if (runBg) runBg = AppSettings.state.first().dev_persistBackgroundService
     }
     CoroutineScope(Dispatchers.IO).launch {
-        ConnectionReceiver.start()
+        if (AppSettings.state.first().dev_executeConnectionReciever) ConnectionReceiver.start()
     }
     MediaSelector.multipleFilesChoose = { onResult ->
         val dialog = FileDialog(null as Frame?, "Выберите файлы", FileDialog.LOAD)
@@ -125,7 +123,7 @@ fun main(args: Array<String>) {
             ) {
                 App()
             }
-        }
+        } else if (!runBg) exitApplication()
     }
 }
 

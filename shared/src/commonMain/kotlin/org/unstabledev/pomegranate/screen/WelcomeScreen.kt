@@ -28,11 +28,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.platform.isMobile
 import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.Repository
+import org.unstabledev.pomegranate.api.ext.Gravatar
 import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.LabeledTextField
+import org.unstabledev.pomegranate.database.PersonDC
+import org.unstabledev.pomegranate.database.serialize
+import org.unstabledev.pomegranate.database.sha256
 import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.kmpWriteText
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -120,6 +125,15 @@ fun WelcomeScreen(navController: NavHostController) {
                         KMPFile(fistFilePath).apply {
                             createNewFile()
                             kmpWriteText(email)
+                        }
+                        runBlocking {
+                            if (Repository.personsDao.getByEmail(Repository.myEmail)==null) {
+                                var profile: Profile? = null
+                                Gravatar.getProfile(email.sha256()).also {
+                                    profile = it?:Profile()
+                                }
+                                Repository.personsDao.upsert(PersonDC(email,null,profile?.serialize(),null,true))
+                            }
                         }
                         navController.navigate(Routes.Home())
                     }){ Text("Войти") }

@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.AppSettings
@@ -60,8 +61,10 @@ import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.GeneratedProfileImage
+import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 private enum class PanelSubScreen {
@@ -134,7 +137,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
                         })
                     }
                     PanelSubScreen.PROFILE_SETTINGS -> {
-                        ProfileSettingsPanel(userEmail, userName, {
+                        ProfileSettingsPanel(scope, {
                             panelSubScreen = PanelSubScreen.CHATS
                         }, {
                             navController.navigate(Routes.Profile(null, Repository.myEmail))
@@ -197,7 +200,7 @@ fun DesktopHomeScreen(navController: NavHostController) {
 }
 
 @Composable
-private fun ProfileSettingsPanel(userEmail: String, userName: String,
+private fun ProfileSettingsPanel(scope: CoroutineScope,
                                  onBack: ()->Unit, onProfileClick: ()->Unit, onSettingsClick: ()->Unit,
                                  onSwitchAccount: ()->Unit, onLogOut: ()->Unit, modifier: Modifier = Modifier
 ) {
@@ -227,19 +230,25 @@ private fun ProfileSettingsPanel(userEmail: String, userName: String,
                 onProfileClick()
             }
     ) {
-        GeneratedProfileImage(userName, useEmoji = settings.emojiPfp, size = 70.dp, fontSize = 22.sp)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = userName,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = userEmail,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            fontSize = 14.sp
-        )
+        val person = mutableStateOf<PersonDC?>(null)
+        scope.launch {
+            person.value = Repository.personsDao.getByEmail(Repository.myEmail)
+        }
+        key(person.value) {
+            ProfileImage(person.value, Repository.myEmail, useEmoji = settings.emojiPfp, size = 60.dp, fontSize = 22.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = person.value?.personEmail?:Repository.myEmail,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Гранат",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                fontSize = 14.sp
+            )
+        }
     }
 
     Spacer(modifier = Modifier.height(8.dp))

@@ -27,6 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +49,8 @@ import org.unstabledev.pomegranate.screen.nav.Routes
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.GeneratedProfileImage
+import org.unstabledev.pomegranate.components.ProfileImage
+import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.platform.PlatformEvents
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 import org.unstabledev.pomegranate.platform.kmpReadText
@@ -57,9 +61,6 @@ fun HomeScreen(navController: NavHostController) {
     val viewModel = viewModel { HomeScreenController() }
     val scope = rememberCoroutineScope()
     val settings = collectAppSettings()
-
-    val userEmail = "Гранат"
-    val userName = KMPFile(fistFilePath).kmpReadText()
 
     PlatformEvents.Instance?.onAppCloseCallback = {
         viewModel.deleteEmptyChats()
@@ -82,19 +83,25 @@ fun HomeScreen(navController: NavHostController) {
                             navController.navigate(Routes.Profile(null, Repository.myEmail))
                         }
                 ) {
-                    GeneratedProfileImage(userName, useEmoji = settings.emojiPfp, size = 60.dp, fontSize = 22.sp)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = userName,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = userEmail,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        fontSize = 14.sp
-                    )
+                    val person = mutableStateOf<PersonDC?>(null)
+                    scope.launch {
+                        person.value = Repository.personsDao.getByEmail(Repository.myEmail)
+                    }
+                    key(person.value) {
+                        ProfileImage(person.value, Repository.myEmail, useEmoji = settings.emojiPfp, size = 60.dp, fontSize = 22.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = person.value?.personEmail?:Repository.myEmail,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Гранат",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
