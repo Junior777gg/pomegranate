@@ -23,6 +23,16 @@ class ChatConverters {
     fun toStringList(value: String): MutableList<String> {
         return if (value.isEmpty()) mutableListOf() else json.decodeFromString(value)
     }
+
+    @TypeConverter
+    fun fromLongList(value: MutableList<Long>): String {
+        return json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toLongList(value: String): MutableList<Long> {
+        return if (value.isEmpty()) mutableListOf() else json.decodeFromString(value)
+    }
 }
 
 @Serializable
@@ -33,6 +43,7 @@ data class ChatDC(
     val chatType: String,
     val chatCreator: String,
     val personsEmails: MutableList<String>,
+    val pinnedMessages: MutableList<Long>,
     @PrimaryKey(autoGenerate = true)
     val key: Long = 0,
 ) {

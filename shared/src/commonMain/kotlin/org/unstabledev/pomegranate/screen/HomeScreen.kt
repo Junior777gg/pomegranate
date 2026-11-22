@@ -63,8 +63,6 @@ fun HomeScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     val settings = collectAppSettings()
 
-    val userEmail = "Гранат"
-    val userName = KMPFile(fistFilePath).kmpReadText()
     ModalNavigationDrawer(
         modifier = applyScreenPadding(),
         drawerState = drawerState,

@@ -71,9 +71,15 @@ class Observer(
                 lastAction = now().toEpochMilliseconds()
                 try {
                     if (it.size == 1 && it[0] is Text && deliverMap[(it[0] as Text).text] != null) {
-                        val messageDC = messagesDao.getByTime(deliverMap[(it[0] as Text).text]!!)
-                        messageDC.isDelivered = true
-                        messagesDao.upsert(messageDC)
+                        val ackCode = (it[0] as Text).text
+                        val targetTime = deliverMap.remove(ackCode)
+                        if (targetTime != null) {
+                            val messageDC = messagesDao.getByTime(targetTime)
+                            if (messageDC != null) {
+                                messageDC.isDelivered = true
+                                messagesDao.upsert(messageDC)
+                            }
+                        }
                     } else {
                         val messageDC = Json.decodeFromString<MessageDC>((it[0] as Text).text)
                         val data = it[1]
@@ -96,18 +102,12 @@ class Observer(
                         sendCode((it[2] as Text).text)
 
                         val chatDC = getChat(personEmail, messageDC)
+                        var canInsertMessage = true
                         messageDC.apply {
                             chatName = chatDC.chatName
                             chatCreator = chatDC.chatCreator
                         }
-                        if (messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()
-                            && !AppSettings.isMuted(chatDC.key)
-                        ) {
-                            Notifications().push(
-                                (chatDC.chatName),
-                                messageDC.description()
-                            )
-                        }
+
                         val isCall = messageDC.type == MessageDC.BEGIN_CALL
                         if (isCall) {
                             val videoManager = manager.fork(false)
@@ -120,11 +120,42 @@ class Observer(
                             val cfg = SecurityConfig().fromByteArray(messageDC.data)
                             /*personDC?.securityConfig = cfg.toString()
                             if (personDC != null) Repository.personsDao.upsert(personDC)*/
+                            canInsertMessage = false
                         }
+                        if (messageDC.type == MessageDC.MSG_DELETE) {
+                            try {
+                                val targetTime = messageDC.data.decodeToString().toLong()
+                                val msg = Repository.messagesDao.getByTime(targetTime)
+                                if (msg != null) Repository.messagesDao.delete(msg)
+                            } catch (_: Exception) { }
+                            canInsertMessage = false
+                        }
+                        if (messageDC.type == MessageDC.MSG_PIN) {
+                            try {
+                                val cont = messageDC.data.decodeToString().split(":")
+                                val targetTime = cont[1].toLong()
+                                val pin = cont[0].toBoolean()
+                                val msg = Repository.messagesDao.getByTime(targetTime)
+                                if (msg != null) {
+                                    val copy=chatDC.pinnedMessages.toMutableList()
+                                    chatDC.pinnedMessages.add(msg.key)
+                                    if(pin) copy.add(msg.key)
+                                    else copy.remove(msg.key)
+                                    scope.launch { Repository.chatDao.upsert(chatDC.copy(pinnedMessages = copy)) }
+                                }
+                            } catch (_: Exception) { }
+                            canInsertMessage = false
+                        }
+
+                        if (canInsertMessage && messageDC.type != MessageDC.ACCEPT_CALL && messageDC.isDisplayable()
+                            && !AppSettings.isMuted(chatDC.key)) {
+                            Notifications().push(chatDC.chatName, messageDC.description())
+                        }
+
                         messageDC.isMine = false
                         messageDC.isDelivered = true
-                        messagesDao.insert(messageDC)
-                        AppTracer.trace("recieve:$personEmail")
+                        if (canInsertMessage) messagesDao.insert(messageDC)
+                        AppTracer.trace("receive:$personEmail")
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -149,11 +180,17 @@ class Observer(
                 }
             }
             deliverMap[code] = msg.time
-            if (message.type != MessageDC.TEXT && !isCall) {
+            val isRawData = message.type == MessageDC.TEXT ||
+                    message.type == MessageDC.MSG_DELETE ||
+                    message.type == MessageDC.MSG_PIN ||
+                    message.type == MessageDC.INVITE ||
+                    message.type == MessageDC.SECURITY_CONFIG ||
+                    isCall
+            if (!isRawData) {
                 msg.data = KMPFile(msg.data.decodeToString()).getName().encodeToByteArray()
             }
             val json = Json.encodeToString(msg)
-            if (message.type == MessageDC.TEXT || isCall || message.type == MessageDC.INVITE) {
+            if (isRawData) {
                 channel.send(json, data, code)
             } else {
                 val dataFile = KMPFile(data.decodeToString())
@@ -187,7 +224,8 @@ class Observer(
                 } catch (_: Exception) {
                     emil
                 },
-                personsEmails = mutableListOf(emil)
+                personsEmails = mutableListOf(emil),
+                pinnedMessages = mutableListOf()
             )
             chatDao.upsert(chat)
             return chat
@@ -196,7 +234,8 @@ class Observer(
                 chatName = message.chatName,
                 chatCreator = message.chatCreator,
                 chatType = message.chatType,
-                personsEmails = Json.decodeFromString(message.supData.decodeToString())
+                personsEmails = Json.decodeFromString(message.supData.decodeToString()),
+                pinnedMessages = mutableListOf()
             )
         }
     }

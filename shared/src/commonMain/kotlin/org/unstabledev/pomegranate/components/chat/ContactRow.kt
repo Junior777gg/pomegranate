@@ -37,17 +37,7 @@ import pomegranate.shared.generated.resources.pin
 @Composable
 fun ContactRow(chat: ChatDC, hasLast: Boolean = false, message: String = "", messageTime: String = "",
                tripleRow: Boolean = false, isPinned: Boolean = false, useEmoji: Boolean = false, modifier: Modifier = Modifier) {
-    val personDC = runBlocking { Repository.personsDao.getByEmail(chat.personsEmails[0]) }
-    val profile = personDC?.profile?.deserialize()
-    val name = when (chat.chatType) {
-        ChatDC.Companion.ChatTypes.CHAT -> {
-            personDC?.nickname ?: profile?.displayName ?: chat.personsEmails[0]
-        }
-        ChatDC.Companion.ChatTypes.GROUP -> {
-            chat.chatName
-        }
-        else -> ""
-    }
+    val name = chat.chatName
     ContactRow(name, hasLast, message, messageTime, tripleRow, isPinned, modifier) {
         ProfileImage(chat, useEmoji = useEmoji)
     }

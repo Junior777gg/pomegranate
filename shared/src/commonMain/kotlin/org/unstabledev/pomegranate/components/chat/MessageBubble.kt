@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -71,6 +74,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.painterResource
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
@@ -98,11 +102,16 @@ import org.unstabledev.pomegranate.platform.getBitmapFromBytes
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.platform.openUrlInBrowser
 import org.unstabledev.pomegranate.platform.sendHaptic
+import pomegranate.shared.generated.resources.Res
+import pomegranate.shared.generated.resources.pin
 
 @Composable
 fun MessageBubble(
     message: MessageDC,
     setImagePreview: (MessageDC) -> Unit,
+    deleteMessage: (Long) -> Unit,
+    pinMessage: (MessageDC, Boolean) -> Unit,
+    editMessage: (MessageDC) -> Unit,
     scope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
     renderMarkdown: Boolean,
@@ -122,6 +131,9 @@ fun MessageBubble(
     val noNeedForBubble = message.type==MessageDC.BEGIN_CALL || message.type==MessageDC.ACCEPT_CALL ||
             message.type==MessageDC.END_CALL || message.type==MessageDC.INVITE || message.type==MessageDC.BUTTON
     val overflowing = remember { mutableStateOf(false) }
+    val deleteAlertOpen = remember { mutableStateOf(false) }
+    val pinAlertOpen = remember { mutableStateOf(false) }
+    val editingMode = remember { mutableStateOf(false) }
 
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier, width: Dp): Modifier {
@@ -235,6 +247,7 @@ fun MessageBubble(
                                             content = decodedText,
                                             modifier = Modifier
                                         )
+                                        overflowing.value = decodedText.length>16 || decodedText.contains("\n")
                                     } else {
                                         Text(
                                             text = decodedText,
@@ -672,11 +685,14 @@ fun MessageBubble(
                                 )
                             }
                         }
-                        if (message.type==MessageDC.TEXT && !overflowing.value)
+                        if (message.type==MessageDC.TEXT && !overflowing.value && settings.messageDisplayTime)
                             MessageTime()
                     }
-                    if(message.type==MessageDC.FILE || (overflowing.value && message.type==MessageDC.TEXT))
-                        MessageTime()
+                    if((message.type==MessageDC.FILE || (overflowing.value && message.type==MessageDC.TEXT)) && settings.messageDisplayTime) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            MessageTime()
+                        }
+                    }
                 }
                 if (menuOpen.value) {
                     DropdownMenu(
@@ -760,6 +776,21 @@ fun MessageBubble(
                             )
                         }
                         DropdownMenuItem(
+                            text = { Text("Закрепить/открепить", color = MaterialTheme.colorScheme.onBackground) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(Res.drawable.pin),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp).rotate(45.0f)
+                                )
+                            },
+                            onClick = {
+                                pinAlertOpen.value = true
+                                menuOpen.value = false
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Удалить", color = MaterialTheme.colorScheme.error) },
                             leadingIcon = {
                                 Icon(
@@ -769,9 +800,7 @@ fun MessageBubble(
                                 )
                             },
                             onClick = {
-                                scope.launch {
-                                    Repository.messagesDao.delete(message)
-                                }
+                                deleteAlertOpen.value = true
                                 menuOpen.value = false
                             }
                         )
@@ -780,5 +809,62 @@ fun MessageBubble(
                 }
             }
         }
+    }
+    if (deleteAlertOpen.value) {
+        val forEveryone = mutableStateOf(true)
+        AlertDialog(
+            onDismissRequest = { deleteAlertOpen.value = false },
+            title = {
+                Text(
+                    "Удалить сообщения",
+                    color = MaterialTheme.colorScheme.onBackground
+                ) },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(forEveryone.value, {forEveryone.value=it})
+                    Text("Удалить для всех")
+                }
+            },
+            confirmButton = {
+                Text("Подтвердить", Modifier.clickable {
+                    scope.launch {
+                        if(!forEveryone.value) Repository.messagesDao.delete(message)
+                    }
+                    if(forEveryone.value) deleteMessage(message.time)
+                    deleteAlertOpen.value = false
+                }) },
+            dismissButton = {
+                Text("Отмена", Modifier.clickable {
+                    deleteAlertOpen.value = false
+                })
+            }
+        )
+    }
+    if (pinAlertOpen.value) {
+        val forEveryone = mutableStateOf(true)
+        AlertDialog(
+            onDismissRequest = { pinAlertOpen.value = false },
+            title = {
+                Text(
+                    "Закрепить сообщения",
+                    color = MaterialTheme.colorScheme.onBackground
+                ) },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(forEveryone.value, {forEveryone.value=it})
+                    Text("Закрепить для всех")
+                }
+            },
+            confirmButton = {
+                Text("Подтвердить", Modifier.clickable {
+                    pinMessage(message, forEveryone.value)
+                    pinAlertOpen.value = false
+                }) },
+            dismissButton = {
+                Text("Отмена", Modifier.clickable {
+                    pinAlertOpen.value = false
+                })
+            }
+        )
     }
 }

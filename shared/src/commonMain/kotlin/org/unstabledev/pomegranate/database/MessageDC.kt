@@ -35,24 +35,27 @@ data class MessageDC(
         const val END_CALL = "call:end"
         const val INVITE = "invite"
         const val BUTTON = "button"
+        const val MSG_DELETE = "act:delete"
+        const val MSG_EDIT = "act:edit"
+        const val MSG_PIN = "act:pin"
 
         fun MessageDC.isDisplayable(): Boolean {
-            return type!=SECURITY_CONFIG
+            return type!=SECURITY_CONFIG && type!=MSG_EDIT && type!=MSG_DELETE && type!=MSG_PIN
         }
         fun MessageDC.canDisplaySender(): Boolean {
             return type!=INVITE && type!=BEGIN_CALL && type!=ACCEPT_CALL && type!=END_CALL && type!=SECURITY_CONFIG
         }
 
         fun MessageDC.description(): String {
-            return when (this.type) {
-                TEXT -> this.data.decodeToString()
+            return when (type) {
+                TEXT -> data.decodeToString()
                     .stripMarkdown()
 
-                BEGIN_CALL, ACCEPT_CALL -> "📞 Звонок"
-                IMAGE, ANIMATED_IMAGE -> "🖼 Изображение"
-                AUDIO -> "🎵 Аудио"
-                FILE -> "📁 Файл"
-                else -> "Неизвестно"
+                BEGIN_CALL, ACCEPT_CALL->"📞 Звонок"
+                IMAGE, ANIMATED_IMAGE->"🖼 Изображение"
+                AUDIO->"🎵 Аудио"
+                FILE->"📁 Файл"
+                else->"Неизвестно"
             }
         }
 

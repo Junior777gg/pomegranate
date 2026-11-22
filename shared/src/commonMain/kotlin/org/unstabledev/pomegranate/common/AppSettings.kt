@@ -29,6 +29,7 @@ data class AppSettingsState(
     val hideSendBarWhenNoNetwork: Boolean = true,
     val homeScreenSortingType: Int = SortingType.LAST_UPDATED_DESC,
     val lastHiddenEventId: String = "",
+    val messageDisplayTime: Boolean = true,
     val messageColor: Int = AppSettings.DefaultMessageColor.toArgb(),
     val messageMaxWidth: Float = 0.56f,
     val messageRounding: Float = 16.0f,
@@ -147,6 +148,10 @@ object AppSettings {
 
     fun setUseMDColorPrinciple(v: Boolean) {
         _state.value = _state.value.copy(useMDColorPrinciple = v)
+    }
+
+    fun setMessageDisplayTime(v: Boolean) {
+        _state.value = _state.value.copy(messageDisplayTime = v)
     }
 
     fun setUseMDSystemColor(v: Boolean) {

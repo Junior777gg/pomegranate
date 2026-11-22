@@ -40,6 +40,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
     }
 
     fun getChat() = chatDC.value!!
+    fun setChat(newChatDC: ChatDC) { chatDC.value=newChatDC }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val messages: StateFlow<List<MessageDC>> = _pageSize
@@ -79,6 +80,19 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
             if (message == null && type == MessageDC.BEGIN_CALL) {
                 val messageDC = Repository.createMessage(currentChat, type = MessageDC.BEGIN_CALL, bulkId = bulkGroupId)
                 messagesDao.insert(messageDC)
+                messagesList.add(messageDC)
+            }
+            if (message != null && type == MessageDC.MSG_DELETE) {
+                val targetTime = message.toLongOrNull()
+                if (targetTime != null) {
+                    val msg = messagesDao.getByTime(targetTime)
+                    if (msg != null) {
+                        messagesDao.delete(msg)
+                    }
+                }
+                val messageDC = Repository.createMessage(
+                    currentChat, message = message, type = MessageDC.MSG_DELETE, bulkId = bulkGroupId
+                )
                 messagesList.add(messageDC)
             }
             if (files.isNotEmpty()) {

@@ -64,7 +64,7 @@ fun HSVColorPicker(
         GradientSlider(
             value = hsvState.value,
             onValueChange = { hsvState = hsvState.copy(value = it) },
-            valueRange = 0f..1f,
+            valueRange = 0.01f..1f,
             gradientColors = listOf(
                 Color.Black,
                 Color.hsv(hsvState.hue, hsvState.saturation, 1f)

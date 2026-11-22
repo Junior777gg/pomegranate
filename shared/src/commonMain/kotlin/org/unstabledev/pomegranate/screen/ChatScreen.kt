@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -41,6 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Firebase
+import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.DraftManager
 import org.unstabledev.pomegranate.common.Util.Companion.toLocalDateTime
 import org.unstabledev.pomegranate.common.Util.Companion.toTimeMark
@@ -53,10 +55,12 @@ import org.unstabledev.pomegranate.components.NetworkWarningHeader
 import org.unstabledev.pomegranate.components.ScrollToBottomButton
 import org.unstabledev.pomegranate.components.chat.ChatHeader
 import org.unstabledev.pomegranate.components.chat.NewContactWidget
+import org.unstabledev.pomegranate.components.chat.PinnedMessageDisplay
 import org.unstabledev.pomegranate.components.chat.TimeMark
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessageDC.Companion.description
 import org.unstabledev.pomegranate.platform.fileDropArea
 import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.screen.control.ChatScreenController
@@ -166,7 +170,6 @@ fun ChatScreen(
                     }
                 )
                 NetworkWarningHeader()
-
                 LazyColumn(
                     state = listState,
                     reverseLayout = true,
@@ -186,6 +189,16 @@ fun ChatScreen(
                         val msgTime = message.time.toLocalDateTime()
                         MessageBubble(
                             message, { navController.navigate(Routes.ImagePreview(message.key)) },
+                            { viewModel.send(message=it.toString(), files=listOf(), type=MessageDC.MSG_DELETE) },
+                            {msg,everyone->
+                                val isUnpinning=viewModel.getChat().pinnedMessages.contains(msg.key)
+                                val copy=viewModel.getChat().pinnedMessages.toMutableList()
+                                if(!isUnpinning) copy.add(msg.key)
+                                else copy.remove(msg.key)
+                                viewModel.setChat(viewModel.getChat().copy(pinnedMessages = copy))
+                                scope.launch { Repository.chatDao.upsert(viewModel.getChat().copy(pinnedMessages = copy)) }
+                                if(everyone) viewModel.send(message=(!isUnpinning).toString()+":"+msg.time.toString(), files=listOf(), type=MessageDC.MSG_PIN)
+                            }, {},
                             scope, snackBarHostState, settings.parseMarkdown,
                             sameSender)
 
@@ -208,6 +221,33 @@ fun ChatScreen(
                     if (displayNewContactWidget.value) {
                         item {
                             NewContactWidget(viewModel)
+                        }
+                    }
+                }
+            }
+            key(viewModel.getChat().pinnedMessages.size) {
+                if (viewModel.getChat().pinnedMessages.isNotEmpty()) {
+                    Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 56.dp)) {
+                        val msg = remember { mutableStateOf<MessageDC?>(null) }
+                        scope.launch {
+                            msg.value =
+                                Repository.messagesDao.get(viewModel.getChat().pinnedMessages.last())
+                        }
+                        if (msg.value != null) {
+                            val m = msg.value!!
+                            PinnedMessageDisplay(m, {
+                                val copy = viewModel.getChat().pinnedMessages.toMutableList()
+                                val c=viewModel.getChat()
+                                viewModel.setChat(c)
+                                copy.remove(m.key)
+                                viewModel.setChat(viewModel.getChat().copy(pinnedMessages = copy))
+                                scope.launch {
+                                    Repository.chatDao.upsert(
+                                        viewModel.getChat().copy(pinnedMessages = copy)
+                                    )
+                                }
+                                //if(everyone) viewModel.send(message=(false).toString()+":"+msg.time.toString(), files=listOf(), type=MessageDC.MSG_PIN)
+                            })
                         }
                     }
                 }

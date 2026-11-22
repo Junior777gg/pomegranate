@@ -204,6 +204,22 @@ object Repository {
                 currentMessage = messageDC
             }
 
+            MessageDC.MSG_DELETE -> {
+                val messageDC = MessageDC(
+                    messageCreator = myEmail,
+                    data = message!!.encodeToByteArray(),
+                    type = MessageDC.MSG_DELETE,
+                    time = time,
+                    isMine = true,
+                    chatName = chatDC.chatName,
+                    chatType = chatDC.chatType,
+                    chatCreator = chatDC.chatCreator,
+                    supData = supData,
+                    bulkId = bulkId,
+                )
+                currentMessage = messageDC
+            }
+
             MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL, MessageDC.INVITE -> {
                 val messageDC = MessageDC(
                     messageCreator = myEmail,

@@ -34,11 +34,11 @@ class ProfileScreenController(val chatKey: Long?) : ViewModel() {
         }
     }
 
-    fun getChat() = chat.value!!
+    fun getChat() = chat.value
 
     fun invite(email: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val curChat = getChat()
+            val curChat = getChat()!!
             if (curChat.personsEmails.contains(email)) return@launch
             val currentChat = curChat.apply {
                 personsEmails.add(email)

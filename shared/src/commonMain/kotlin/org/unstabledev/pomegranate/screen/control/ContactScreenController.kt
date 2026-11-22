@@ -29,7 +29,8 @@ class ContactScreenController : ViewModel() {
             chatName = profile?.displayName ?: email,
             personsEmails = mutableListOf(email),
             chatType = ChatDC.Companion.ChatTypes.CHAT,
-            chatCreator = email
+            chatCreator = email,
+            pinnedMessages = mutableListOf()
         )
         viewModelScope.launch {
             Repository.personsDao.upsert(person)
@@ -43,7 +44,8 @@ class ContactScreenController : ViewModel() {
             chatName = name,
             personsEmails = mutableListOf(Repository.myEmail),
             chatType = ChatDC.Companion.ChatTypes.GROUP,
-            chatCreator = Repository.myEmail
+            chatCreator = Repository.myEmail,
+            pinnedMessages = mutableListOf()
         )
         val savedChat = Repository.chatDao.upsertAndGet(chat).first()
         return savedChat

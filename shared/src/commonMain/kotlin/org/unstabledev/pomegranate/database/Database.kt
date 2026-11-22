@@ -8,7 +8,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-@Database(entities = [ChatDC::class], version = 17)
+@Database(entities = [ChatDC::class], version = 18)
 @ConstructedBy(ChatDatabaseConstructor::class)
 abstract class ChatDatabase: RoomDatabase() {
     abstract fun get(): ChatDao

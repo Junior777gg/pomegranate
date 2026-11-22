@@ -31,6 +31,8 @@ fun App() {
     if (firstBoot.value) {
         DraftManager.load()
         PublicEventHandler.fetch()
+        val c=Color(settings.messageColor)
+        if (c.red==0f && c.blue==0f && c.green==0f) AppSettings.setMessageColor(AppSettings.DefaultMessageColor)
         firstBoot.value=false
     }
     val chatDao = DatabaseBuilder.chats().get()

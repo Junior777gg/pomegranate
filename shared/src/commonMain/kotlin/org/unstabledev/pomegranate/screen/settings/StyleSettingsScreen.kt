@@ -137,16 +137,18 @@ fun StyleSettingsScreen(navController: NavHostController) {
                     chatCreator = Repository.myEmail,
                     supData = byteArrayOf(),
                 ),
-                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, false
+                setImagePreview = {}, deleteMessage = {}, editMessage = {}, pinMessage = {l,b->}, scope = scope,
+                snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, sameSender = false
             )
             Spacer(Modifier.height(5.dp))
             MessageBubble(
                 Repository.createMessage(ChatDC("Вы",ChatDC.Companion.ChatTypes.SELFCHAT,
-                    Repository.myEmail,mutableListOf(),0),
-                    "В разлуке есть высокое значенье:\nКак ни люби, хоть день один, хоть век,\nЛюбовь есть сон, а сон – одно мгновенье,\n" +
-                            "И рано ль, поздно ль пробужденье,\nА должен наконец проснуться человек...\n\n" +
+                    Repository.myEmail,mutableListOf(),mutableListOf(),0),
+                    "В разлуке есть **высокое значенье**:\nКак ни _люби_, хоть _день_ один, хоть _век_,\nЛюбовь есть сон, а сон – **_одно мгновенье_**,\n" +
+                            "И рано ль, поздно ль **пробужденье**,\nА должен наконец проснуться человек...\n\n" +
                             "- Федор Тютчев", type = MessageDC.TEXT),
-                setImagePreview = {}, scope = scope, snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, false
+                setImagePreview = {}, deleteMessage = {}, editMessage = {}, pinMessage = {l,b->}, scope = scope,
+                snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, sameSender = false
             )
         }
         val sliderValueRounding = remember { mutableFloatStateOf(settings.messageRounding) }
@@ -204,8 +206,10 @@ fun StyleSettingsScreen(navController: NavHostController) {
             Text((sliderValueMaxWidth.value*100).roundToInt().toString()+"%", modifier = Modifier.width(45.dp))
         }
 
-        SwitchButton(settings.displayTimeMarksChat, "Временные метки")
+        SwitchButton(settings.displayTimeMarksChat, "Разделения истории")
             { AppSettings.setDisplayTimeMarksChat(it) }
+        SwitchButton(settings.messageDisplayTime, "Время сообщения")
+            { AppSettings.setMessageDisplayTime(it) }
         SwitchButton(settings.parseMarkdown, "Парсить Markdown")
             { AppSettings.setParseMarkdown(it) }
         SwitchButton(settings.messageUnifiedRounding, "Однородное скругление")
