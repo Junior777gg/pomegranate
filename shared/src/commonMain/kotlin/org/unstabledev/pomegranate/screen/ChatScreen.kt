@@ -166,6 +166,7 @@ fun ChatScreen(
                     }
                 )
                 NetworkWarningHeader()
+
                 LazyColumn(
                     state = listState,
                     reverseLayout = true,

@@ -3,6 +3,7 @@ package org.unstabledev.pomegranate.database
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
+import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
 
 @Serializable
 @Entity(tableName = "messages")
@@ -40,6 +41,19 @@ data class MessageDC(
         }
         fun MessageDC.canDisplaySender(): Boolean {
             return type!=INVITE && type!=BEGIN_CALL && type!=ACCEPT_CALL && type!=END_CALL && type!=SECURITY_CONFIG
+        }
+
+        fun MessageDC.description(): String {
+            return when (this.type) {
+                TEXT -> this.data.decodeToString()
+                    .stripMarkdown()
+
+                BEGIN_CALL, ACCEPT_CALL -> "📞 Звонок"
+                IMAGE, ANIMATED_IMAGE -> "🖼 Изображение"
+                AUDIO -> "🎵 Аудио"
+                FILE -> "📁 Файл"
+                else -> "Неизвестно"
+            }
         }
 
         fun truncatedMessageDCType(type: String): String? {

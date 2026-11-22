@@ -25,6 +25,7 @@ import org.unstabledev.pomegranate.common.SecurityConfig
 import org.unstabledev.pomegranate.common.Util.Companion.stripMarkdown
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
+import org.unstabledev.pomegranate.database.MessageDC.Companion.description
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.MessageDC.Companion.truncatedMessageDCType
 import org.unstabledev.pomegranate.database.PersonDC
@@ -103,16 +104,7 @@ class Observer(
                         ) {
                             Notifications().push(
                                 (chatDC.chatName),
-                                when (messageDC.type) {
-                                    MessageDC.TEXT -> messageDC.data.decodeToString()
-                                        .stripMarkdown()
-
-                                    MessageDC.BEGIN_CALL, MessageDC.ACCEPT_CALL -> "📞 Звонок"
-                                    MessageDC.IMAGE, MessageDC.ANIMATED_IMAGE -> "🖼 Изображение"
-                                    MessageDC.AUDIO -> "🎵 Аудио"
-                                    MessageDC.FILE -> "📁 Файл"
-                                    else -> "Неизвестно"
-                                }
+                                messageDC.description()
                             )
                         }
                         if (messageDC.type == MessageDC.INVITE) {
