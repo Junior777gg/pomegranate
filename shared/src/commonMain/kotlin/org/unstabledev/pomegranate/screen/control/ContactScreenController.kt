@@ -2,6 +2,8 @@ package org.unstabledev.pomegranate.screen.control
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -13,37 +15,37 @@ import org.unstabledev.pomegranate.database.serialize
 import org.unstabledev.pomegranate.database.sha256
 
 class ContactScreenController : ViewModel() {
-    fun createChat(email: String): ChatDC {
+    suspend fun createChat(email: String): ChatDC {
         val profile = try {
-            runBlocking { Gravatar.getProfile(email.sha256()) }
+            Gravatar.getProfile(email.sha256())
         } catch (_: Exception) {
             null
         }
-        val chat = ChatDC(
-            chatName = email,
-            personsEmails = mutableListOf(email),
-            chatType = ChatDC.Companion.ChatTypes.CHAT,
-            chatCreator = email
-        )
         val person = PersonDC(
             personEmail = email,
             profile = profile?.serialize()
         )
+        val chat = ChatDC(
+            chatName = profile?.displayName ?: email,
+            personsEmails = mutableListOf(email),
+            chatType = ChatDC.Companion.ChatTypes.CHAT,
+            chatCreator = email
+        )
         viewModelScope.launch {
             Repository.personsDao.upsert(person)
         }
-        val savedChat = runBlocking { Repository.chatDao.upsertAndGet(chat).first() }
+        val savedChat = Repository.chatDao.upsertAndGet(chat).first()
         return savedChat
     }
 
-    fun createGroup(name: String): ChatDC {
+    suspend fun createGroup(name: String): ChatDC {
         val chat = ChatDC(
             chatName = name,
             personsEmails = mutableListOf(Repository.myEmail),
             chatType = ChatDC.Companion.ChatTypes.GROUP,
             chatCreator = Repository.myEmail
         )
-        val savedChat = runBlocking { Repository.chatDao.upsertAndGet(chat).first() }
+        val savedChat = Repository.chatDao.upsertAndGet(chat).first()
         return savedChat
     }
 }

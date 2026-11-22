@@ -46,7 +46,7 @@ fun NewContactWidget(viewModel: ChatScreenController) {
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                text = viewModel.getName(),
+                text = viewModel.getChat().chatName,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground

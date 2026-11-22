@@ -93,7 +93,7 @@ fun ChatHeader(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
-                val displayName = viewModel.getName()
+                val displayName = viewModel.getChat().chatName
                 Text(
                     text = displayName,
                     color = MaterialTheme.colorScheme.onBackground,

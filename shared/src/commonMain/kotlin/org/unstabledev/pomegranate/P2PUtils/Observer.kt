@@ -9,7 +9,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.Call
@@ -115,6 +114,9 @@ class Observer(
                                     else -> "Неизвестно"
                                 }
                             )
+                        }
+                        if (messageDC.type == MessageDC.INVITE) {
+
                         }
                         val isCall = messageDC.type == MessageDC.BEGIN_CALL
                         if (isCall) {

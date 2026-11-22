@@ -34,11 +34,11 @@ class ProfileScreenController(val chatKey: Long?) : ViewModel() {
         }
     }
 
-    fun getChat() = chat
+    fun getChat() = chat.value!!
 
     fun invite(email: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val curChat = chat.value?:return@launch
+            val curChat = getChat()
             if (curChat.personsEmails.contains(email)) return@launch
             val observer = Repository.availablePersons[email]?.first()
             val currentChat = curChat.apply {
@@ -48,8 +48,7 @@ class ProfileScreenController(val chatKey: Long?) : ViewModel() {
             val message = Repository.createMessage(
                 currentChat,
                 type = MessageDC.INVITE,
-                message = email,
-                supData = Json.encodeToString(currentChat.personsEmails).encodeToByteArray()
+                message = email
             )
             if (observer != null) observer.sendMessage(message)
             else Repository.startMessaging(email, mutableListOf(message))

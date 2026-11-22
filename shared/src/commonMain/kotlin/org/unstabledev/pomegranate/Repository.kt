@@ -10,7 +10,11 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.P2PUtils.P2PManager
 import org.unstabledev.pomegranate.common.AppSettings
@@ -23,6 +27,8 @@ import org.unstabledev.pomegranate.platform.KMPFile
 import org.unstabledev.pomegranate.platform.kmpReadText
 import org.unstabledev.pomegranate.platform.rootDirectory
 import org.unstabledev.pomegranate.platform.separator
+import kotlin.collections.chunked
+import kotlin.collections.first
 import kotlin.getValue
 import kotlin.time.Clock.System.now
 import kotlin.time.Duration.Companion.milliseconds
@@ -121,6 +127,54 @@ object Repository {
                 } else {
                     waitedConnection[email]!!.addAll(messages)
                 }
+            }
+        }
+    }
+
+    suspend fun sendInGroup(clients: MutableList<String>, messagesList: MutableList<MessageDC>) = withContext(Dispatchers.IO) {
+        clients.remove(myEmail)
+        println(clients)
+        if (clients.isEmpty()) {return@withContext}
+        if (clients.size == 1) {
+            val observer = availablePersons[clients.first()]?.first()
+            if (observer != null) {
+                messagesList.forEach { message ->
+                    val currentMessage = message.apply {
+                        supData = Json.encodeToString(clients).encodeToByteArray()
+                    }
+                    observer.sendMessage(currentMessage)
+                }
+            } else {
+                messagesList.forEach { message ->
+                    message.apply {
+                        supData = Json.encodeToString(clients).encodeToByteArray()
+                    }
+                }
+                startMessaging(clients.first(), messagesList)
+            }
+            return@withContext
+        }
+        val pair = if (clients.size % 2 == 0) {
+            clients.chunked(clients.size / 2)
+        } else {
+            clients.chunked((clients.size - 1) / 2)
+        }
+        for (each in pair) {
+            val observer = availablePersons[each.first()]?.first()
+            if (observer != null) {
+                messagesList.forEach { message ->
+                    val currentMessage = message.apply {
+                        supData = Json.encodeToString(each).encodeToByteArray()
+                    }
+                    observer.sendMessage(currentMessage)
+                }
+            } else {
+                messagesList.forEach { message ->
+                    message.apply {
+                        supData = Json.encodeToString(each).encodeToByteArray()
+                    }
+                }
+                startMessaging(each.first(), messagesList)
             }
         }
     }

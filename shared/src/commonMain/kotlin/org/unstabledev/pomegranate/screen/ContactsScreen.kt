@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.unstabledev.pomegranate.components.LabeledTextField
 import org.unstabledev.pomegranate.components.BasicPage
 import org.unstabledev.pomegranate.screen.nav.Routes
@@ -64,6 +68,7 @@ fun ContactsPanel(
     onAdd: (chat: ChatDC) -> Unit
 ) {
     val viewModel = viewModel { ContactScreenController() }
+    val scope = rememberCoroutineScope()
     val state = remember { mutableStateOf<ContactsScreenState>(ContactsScreenState.AddContact()) }
     val error = remember { mutableStateOf("") }
     val pageHeader = remember { mutableStateOf("Создать чат") }
@@ -89,8 +94,12 @@ fun ContactsPanel(
                             error.value = "Название обязательно!"
                             return@Button
                         }
-                        val chat = viewModel.createGroup(name)
-                        onAdd(chat)
+                        scope.launch(Dispatchers.Default) {
+                            val chat = viewModel.createGroup(name)
+                            withContext(Dispatchers.Main) {
+                                onAdd(chat)
+                            }
+                        }
                     }) {
                         Text("Создать группу")
                     }
@@ -152,8 +161,12 @@ fun ContactsPanel(
                                     errorText = "Некорректный Email"
                                     return@Button
                                 }*/
-                                val chat = viewModel.createChat(email)
-                                onAdd(chat)
+                                scope.launch(Dispatchers.Default) {
+                                    val chat = viewModel.createChat(email)
+                                    withContext(Dispatchers.Main) {
+                                        onAdd(chat)
+                                    }
+                                }
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.Send,

@@ -5,22 +5,17 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.unstabledev.pomegranate.BaseP2P
 import org.unstabledev.pomegranate.platform.KMPFile
-import org.unstabledev.pomegranate.P2PUtils.Observer
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.database.ChatDC
 import org.unstabledev.pomegranate.database.MessageDC
@@ -107,52 +102,7 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
                 }
 
                 ChatDC.Companion.ChatTypes.GROUP -> {
-                    val clients = currentChat.personsEmails.toMutableList()
-                    clients.remove(Repository.myEmail)
-                    println(clients)
-                    if (clients.isEmpty()) {return@launch}
-                    if (clients.size == 1) {
-                        val observer = Repository.availablePersons[clients.first()]?.first()
-                        if (observer != null) {
-                            messagesList.forEach { message ->
-                                val currentMessage = message.apply {
-                                    supData = Json.encodeToString(clients).encodeToByteArray()
-                                }
-                                observer.sendMessage(currentMessage)
-                            }
-                        } else {
-                            messagesList.forEach { message ->
-                                message.apply {
-                                    supData = Json.encodeToString(clients).encodeToByteArray()
-                                }
-                            }
-                            Repository.startMessaging(clients.first(), messagesList)
-                        }
-                        return@launch
-                    }
-                    val pair = if (clients.size % 2 == 0) {
-                        clients.chunked(clients.size / 2)
-                    } else {
-                        clients.chunked((clients.size - 1) / 2)
-                    }
-                    for (each in pair) {
-                        val observer = Repository.availablePersons[each.first()]?.first()
-                        if (observer != null) {
-                            messagesList.forEach { message ->
-                                val currentMessage = message.apply {
-                                    supData = Json.encodeToString(each).encodeToByteArray()
-                                }
-                                observer.sendMessage(currentMessage)
-                            }
-                        } else {
-                            messagesList.forEach { message ->
-                                message.apply {
-                                    supData = Json.encodeToString(each).encodeToByteArray()
-                                }
-                            }
-                            Repository.startMessaging(each.first(), messagesList)
-                        }
-                    }
+                    Repository.sendInGroup(currentChat.personsEmails, messagesList)
                 }
             }
         }
@@ -170,12 +120,6 @@ class ChatScreenController(val chatKey: Long, val onChatDelete: () -> Unit) : Vi
         viewModelScope.launch(Dispatchers.Default) {
             messagesDao.deleteAll(getChat().chatName, getChat().chatCreator, getChat().chatType)
         }
-    }
-
-    fun getName(): String {
-        return getProfile(getChat().personsEmails[0])?.displayName ?:
-        //personDao.tryGetPersonByEmailFlow(chatDC.personsEmails[0]).first()?.personEmail?:
-        getChat().chatName
     }
 
     fun renameChat(name: String?) {
