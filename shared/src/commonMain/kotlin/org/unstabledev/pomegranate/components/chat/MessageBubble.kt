@@ -182,7 +182,8 @@ fun MessageBubble(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
     ) {
-        if(!message.isMine && settings.profileNearMessage) ProfileImage(person, message.messageCreator)
+        val isUniqueSender=!message.isMine && message.canDisplaySender() && message.chatType!=ChatDC.Companion.ChatTypes.CHAT && !sameSender
+        if(isUniqueSender && settings.profileNearMessage) ProfileImage(person, message.messageCreator)
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val maxMessageWidth = maxWidth * settings.messageMaxWidth
             Box(
@@ -198,9 +199,9 @@ fun MessageBubble(
                     maxMessageWidth)
             ) {
                 Column {
-                    if(!message.isMine && message.canDisplaySender() && message.chatType!=ChatDC.Companion.ChatTypes.CHAT && !sameSender) {
-                        Text(message.messageCreator, fontWeight = FontWeight.Bold, color = Util.randomColor(message.messageCreator.hashCode()))
-                    }
+                    if(isUniqueSender)
+                        Text(message.messageCreator, fontWeight = FontWeight.Bold,
+                            color = Util.randomColor(message.messageCreator.hashCode()))
                     Row(verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         when (message.type) {
@@ -313,17 +314,22 @@ fun MessageBubble(
                                     var ratio by remember(message.key) {
                                         mutableStateOf<Float?>(null)
                                     }
+                                    var canDisplay by remember { mutableStateOf(true) }
 
                                     LaunchedEffect(message.key) {
+                                        if(!KMPFile(message.data.decodeToString()).exists()) {
+                                            canDisplay=false
+                                            return@LaunchedEffect
+                                        }
                                         val bmp = withContext(Dispatchers.Default) {
                                             getBitmapFromBytes(KMPFile(message.data.decodeToString()).kmpReadBytes())
                                         }
                                         bitmap = bmp
                                         ratio = bmp.width.toFloat() / bmp.height.toFloat()
                                     }
+                                    if (!canDisplay) CantDecodeImagePlaceholder()
 
-                                    val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
-
+                                    val clampedRatio = (ratio?:1f).coerceIn(0.5f, 2.0f)
                                     Box(
                                         modifier = Modifier
                                             .widthIn(min = 120.dp, max = 260.dp)
@@ -393,8 +399,13 @@ fun MessageBubble(
                                     var isLoading by remember(message.key) {
                                         mutableStateOf(true)
                                     }
+                                    var canDisplay by remember { mutableStateOf(true) }
 
                                     LaunchedEffect(message.key) {
+                                        if(!KMPFile(message.data.decodeToString()).exists()) {
+                                            canDisplay=false
+                                            return@LaunchedEffect
+                                        }
                                         isLoading = true
                                         try {
                                             val bytes = withContext(Dispatchers.IO) {
@@ -421,9 +432,9 @@ fun MessageBubble(
                                             isLoading = false
                                         }
                                     }
+                                    if (!canDisplay) CantDecodeImagePlaceholder()
 
                                     val clampedRatio = (ratio ?: 1f).coerceIn(0.5f, 2.0f)
-
                                     Box(
                                         modifier = Modifier
                                             .widthIn(min = 120.dp, max = 260.dp)

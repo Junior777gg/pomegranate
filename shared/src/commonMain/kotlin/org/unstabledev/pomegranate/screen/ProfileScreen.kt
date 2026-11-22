@@ -126,7 +126,7 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
     var profileState by remember { mutableStateOf<ProfileState>(ProfileState.Loading) }
     val scope = rememberCoroutineScope()
 
-    ctx_chatDC = viewModel.getChat()?.collectAsState(null)?.value
+    ctx_chatDC = viewModel.getChat().collectAsState(null).value
     ctx_chatKey = chatKey
 
     val onImagePreviewClick: (MessageDC)->Unit = remember {
@@ -134,9 +134,9 @@ fun ProfileScreen(navController: NavHostController, chatKey: Long?, email: Strin
     }
     val onChatDelete: ()->Unit = remember {
         {
-            if(chatKey!=0L) {
+            if(chatKey!=null) {
                 scope.launch {
-                    val chat = viewModel.getChat()?.first()!!
+                    val chat = viewModel.getChat().first()!!
                     AppSettings.removePinnedChat(chat.key)
                     Repository.messagesDao.deleteAll(chat.chatName, chat.chatCreator, chat.chatType)
                     Repository.chatDao.delete(chat)

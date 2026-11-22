@@ -27,6 +27,7 @@ import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.AppTracer
 import org.unstabledev.pomegranate.common.Util.Companion.toDatedHHMMTime
 import org.unstabledev.pomegranate.common.collectAppSettings
+import org.unstabledev.pomegranate.components.ColorTheme
 import org.unstabledev.pomegranate.components.ScrollablePage
 import org.unstabledev.pomegranate.components.SwitchButton
 
@@ -34,9 +35,13 @@ import org.unstabledev.pomegranate.components.SwitchButton
 fun DeveloperSettingsScreen(navController: NavHostController) {
     val settings=collectAppSettings()
     ScrollablePage(navController, "Для разработчиков") {
+        Text("* - Для применения данной настройки перезапустите приложение", color = ColorTheme.Warning)
         Text("Поведение приложения", fontWeight = FontWeight.SemiBold)
-        SwitchButton(settings.dev_executeBackgroundService, "Запускать фоновый сервис")
-            { AppSettings.dev_setExecuteBackgroundService(it) }
+        SwitchButton(settings.dev_persistBackgroundService, "Сохранять фоновый сервис")
+            { AppSettings.dev_setPersistBackgroundService(it) }
+        SwitchButton(settings.dev_executeConnectionReciever, "Получать соединения*")
+            { AppSettings.dev_setExecuteConnectionReciever(it) }
+        Text("Экспериментальные функции", fontWeight = FontWeight.SemiBold)
         SwitchButton(settings.dev_displayAccountSwitching, "Отображать смену аккаунтов")
             { AppSettings.dev_setDisplayAccountSwitching(it) }
         Text("Публичные события", fontWeight = FontWeight.SemiBold)

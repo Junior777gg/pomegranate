@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.runBlocking
 import org.unstabledev.pomegranate.api.event.PublicEventHandler
 import org.unstabledev.pomegranate.common.AppSettings
 import org.unstabledev.pomegranate.common.DraftManager

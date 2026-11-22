@@ -47,7 +47,8 @@ data class AppSettingsState(
 
     val developerMode: Boolean = false,
     val dev_displayAccountSwitching: Boolean = false,
-    val dev_executeBackgroundService: Boolean = true,
+    val dev_persistBackgroundService: Boolean = true,
+    val dev_executeConnectionReciever: Boolean = true,
 
     val firebaseAddresses: List<FirebaseAddress> = listOf(FirebaseAddress("default", "Гранат", Secrets.firebaseLink)),
     val selectedFirebaseAddressId: String = "default",
@@ -265,12 +266,16 @@ object AppSettings {
         _state.value = _state.value.copy(developerMode = v)
     }
 
-    fun dev_setExecuteBackgroundService(v: Boolean) {
-        _state.value = _state.value.copy(dev_executeBackgroundService = v)
+    fun dev_setPersistBackgroundService(v: Boolean) {
+        _state.value = _state.value.copy(dev_persistBackgroundService = v)
     }
 
     fun dev_setDisplayAccountSwitching(v: Boolean) {
         _state.value = _state.value.copy(dev_displayAccountSwitching = v)
+    }
+
+    fun dev_setExecuteConnectionReciever(v: Boolean) {
+        _state.value = _state.value.copy(dev_executeConnectionReciever = v)
     }
 
     fun isInPowerSaveMode(): Boolean =

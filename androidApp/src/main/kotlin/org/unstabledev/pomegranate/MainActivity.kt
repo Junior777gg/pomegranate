@@ -39,10 +39,7 @@ class MainActivity : ComponentActivity() {
             }
         initializeSelectors()
 
-        var runBg = true
-        runBlocking {
-            runBg = runBg or AppSettings.state.first().dev_executeBackgroundService
-        }
+        val runBg = runBlocking { return@runBlocking AppSettings.state.first().dev_executeConnectionReciever }
         if(runBg) baseContext.startForegroundService(Intent(applicationContext, ReceiverService::class.java))
         setContent {
             App()
@@ -65,6 +62,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         PlatformEvents.Instance?.onAppClose()
+        runBlocking {
+            if(!AppSettings.state.first().dev_persistBackgroundService) {
+                stopService(Intent(applicationContext, ReceiverService::class.java))
+            }
+        }
         super.onDestroy()
     }
 

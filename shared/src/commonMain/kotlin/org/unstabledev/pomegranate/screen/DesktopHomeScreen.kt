@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.unstabledev.pomegranate.Repository
 import org.unstabledev.pomegranate.common.AppSettings
@@ -61,8 +62,10 @@ import org.unstabledev.pomegranate.components.chat.SearchableChatsPanel
 import org.unstabledev.pomegranate.common.Util
 import org.unstabledev.pomegranate.common.collectAppSettings
 import org.unstabledev.pomegranate.components.GeneratedProfileImage
+import org.unstabledev.pomegranate.components.ProfileImage
 import org.unstabledev.pomegranate.components.chat.addChatBackground
 import org.unstabledev.pomegranate.database.ChatDC
+import org.unstabledev.pomegranate.database.PersonDC
 import org.unstabledev.pomegranate.platform.kmpReadText
 
 private enum class PanelSubScreen {
