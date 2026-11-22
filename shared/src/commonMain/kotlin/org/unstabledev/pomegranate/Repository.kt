@@ -132,8 +132,6 @@ object Repository {
     }
 
     suspend fun sendInGroup(clients: MutableList<String>, messagesList: MutableList<MessageDC>) = withContext(Dispatchers.IO) {
-        clients.remove(myEmail)
-        println(clients)
         if (clients.isEmpty()) {return@withContext}
         if (clients.size == 1) {
             val observer = availablePersons[clients.first()]?.first()
@@ -164,7 +162,7 @@ object Repository {
             if (observer != null) {
                 messagesList.forEach { message ->
                     val currentMessage = message.apply {
-                        supData = Json.encodeToString(each).encodeToByteArray()
+                        supData = Json.encodeToString(clients).encodeToByteArray()
                     }
                     observer.sendMessage(currentMessage)
                 }

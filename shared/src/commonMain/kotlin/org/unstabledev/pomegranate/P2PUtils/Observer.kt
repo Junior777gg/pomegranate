@@ -52,15 +52,16 @@ class Observer(
         receive()
         CoroutineScope(Dispatchers.IO).launch {
             launch {
-            while ((timeOutMillis + lastAction > now().toEpochMilliseconds()) || currentCall.value != null) {
-                delay(5000.milliseconds)
+                while ((timeOutMillis + lastAction > now().toEpochMilliseconds()) || currentCall.value != null) {
+                    delay(5000.milliseconds)
+                }
+                try {
+                    scope.cancel()
+                    manager.breakConnection()
+                } finally {
+                    Repository.availablePersons.getOrPut(personEmail) { MutableSharedFlow(1) }.emit(null)
+                }
             }
-            try {
-                scope.cancel()
-                manager.breakConnection()
-            } finally {
-                Repository.availablePersons.getOrPut(personEmail) { MutableSharedFlow(1) }.emit(null)
-            }}
         }
     }
 
@@ -106,9 +107,6 @@ class Observer(
                                 (chatDC.chatName),
                                 messageDC.description()
                             )
-                        }
-                        if (messageDC.type == MessageDC.INVITE) {
-
                         }
                         val isCall = messageDC.type == MessageDC.BEGIN_CALL
                         if (isCall) {
@@ -174,24 +172,33 @@ class Observer(
         }
     }
 
-    suspend fun getChat(emil: String, message: MessageDC): ChatDC {
+    suspend fun getChat(emil: String, message: MessageDC): ChatDC{
         var chat = chatDao.tryGet(message.chatType, emil).first()
         if (chat != null) {
             return chat
         }
-        val person = getPerson(emil)
-        chat = ChatDC(
-            chatCreator = emil,
-            chatType = message.chatType,
-            chatName = person.nickname ?: try {
-                Json.decodeFromString<Profile?>(person.profile!!)?.displayName!!
-            } catch (_: Exception) {
-                emil
-            },
-            personsEmails = mutableListOf(emil)
-        )
-        chatDao.upsert(chat)
-        return chat
+        if (message.chatType == ChatDC.Companion.ChatTypes.CHAT) {
+            val person = getPerson(emil)
+            chat = ChatDC(
+                chatCreator = emil,
+                chatType = message.chatType,
+                chatName = person.nickname ?: try {
+                    Json.decodeFromString<Profile?>(person.profile!!)?.displayName!!
+                } catch (_: Exception) {
+                    emil
+                },
+                personsEmails = mutableListOf(emil)
+            )
+            chatDao.upsert(chat)
+            return chat
+        }else {
+            return ChatDC(
+                chatName = message.chatName,
+                chatCreator = message.chatCreator,
+                chatType = message.chatType,
+                personsEmails = Json.decodeFromString(message.supData.decodeToString())
+            )
+        }
     }
 
     suspend fun getPerson(email: String): PersonDC {

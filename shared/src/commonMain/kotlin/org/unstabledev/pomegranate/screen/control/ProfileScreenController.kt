@@ -40,7 +40,6 @@ class ProfileScreenController(val chatKey: Long?) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val curChat = getChat()
             if (curChat.personsEmails.contains(email)) return@launch
-            val observer = Repository.availablePersons[email]?.first()
             val currentChat = curChat.apply {
                 personsEmails.add(email)
             }
@@ -50,8 +49,7 @@ class ProfileScreenController(val chatKey: Long?) : ViewModel() {
                 type = MessageDC.INVITE,
                 message = email
             )
-            if (observer != null) observer.sendMessage(message)
-            else Repository.startMessaging(email, mutableListOf(message))
+            Repository.sendInGroup(currentChat.personsEmails, mutableListOf(message))
         }
     }
 }
