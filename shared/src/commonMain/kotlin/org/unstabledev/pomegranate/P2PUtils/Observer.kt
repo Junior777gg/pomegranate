@@ -61,12 +61,6 @@ class Observer(
             } finally {
                 Repository.availablePersons.getOrPut(personEmail) { MutableSharedFlow(1) }.emit(null)
             }}
-            launch {
-                manager.disconnect.collect {
-                    println("disconnect")
-                    manager.breakConnection()
-                }
-            }
         }
     }
 
@@ -124,8 +118,8 @@ class Observer(
                         }
                         val isCall = messageDC.type == MessageDC.BEGIN_CALL
                         if (isCall) {
-                            val videoManager = manager.fork()
-                            val audioManager = manager.fork()
+                            val videoManager = manager.fork(false)
+                            val audioManager = manager.fork(false)
                             currentCallState.value = CallState.Calling
                             currentCall.value =
                                 Call(personEmail, videoManager!!, audioManager!!, false)
@@ -156,8 +150,8 @@ class Observer(
             val isCall = message.type == MessageDC.BEGIN_CALL
             if (isCall) {
                 launch {
-                    val videoManager = manager.fork()
-                    val audioManager = manager.fork()
+                    val videoManager = manager.fork(false)
+                    val audioManager = manager.fork(false)
                     currentCallState.value = CallState.AcceptedCall
                     currentCall.value = Call(personEmail, videoManager!!, audioManager!!)
                 }

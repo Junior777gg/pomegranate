@@ -29,14 +29,14 @@ expect class ICECandidates {
     val publicKey: String
 }
 
-expect class P2PManager(tempDir: String) {
+expect class P2PManager(tempDir: String, sendLost : Boolean) {
     val tempDir: String
     var channel: P2PChannel?
-    val disconnect : MutableSharedFlow<Boolean>
+    val sendLost : Boolean
 
     fun getICECandidates(): String
     suspend fun createConnection(iceCandidates: ICECandidates): P2PChannel
-    fun fork(): P2PManager?
+    fun fork(sendLost : Boolean): P2PManager?
     fun breakConnection()
 
     companion object {

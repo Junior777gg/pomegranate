@@ -28,7 +28,7 @@ class BaseP2P {
             }
             println("New connection: $email")
             Firebase.delete("p2p/${myEmail}")
-            val manager = P2PManager("${Repository.pomegranatePath}temp")
+            val manager = P2PManager("${Repository.pomegranatePath}temp", true)
             Firebase.put(
                 "p2p/${myEmail}/${email.sha256()}/offer",
                 manager.getICECandidates()
@@ -63,7 +63,7 @@ class BaseP2P {
         } finally {
             Firebase.delete("p2p/${email.sha256()}")
         }
-        val manager = P2PManager("${Repository.pomegranatePath}temp")
+        val manager = P2PManager("${Repository.pomegranatePath}temp", true)
         try {
             Firebase.put("p2p/${email.sha256()}/${myEmail.sha256()}/answer", manager.getICECandidates())
         } catch (_: Exception) { }
