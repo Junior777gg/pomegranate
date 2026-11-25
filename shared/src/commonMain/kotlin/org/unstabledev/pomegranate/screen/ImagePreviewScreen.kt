@@ -49,7 +49,9 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.platform.Clipboard
 import org.unstabledev.pomegranate.platform.FileSaver
 import org.unstabledev.pomegranate.platform.KMPFile
+import org.unstabledev.pomegranate.platform.Sharing
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.screen.nav.applyScreenPadding
 
@@ -202,6 +204,17 @@ fun ImagePreviewScreen(messageId: Long, navController: NavHostController) {
                             menuExpanded.value = false
                         }
                     )
+                    if(isMobile) {
+                        DropdownMenuItem(
+                            text = { Text("Поделиться", color = MaterialTheme.colorScheme.onBackground) },
+                            onClick = {
+                                scope.launch {
+                                    Sharing().file(filePath)
+                                }
+                                menuExpanded.value = false
+                            }
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text("Скачать", color = MaterialTheme.colorScheme.onBackground) },
                         onClick = {

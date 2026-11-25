@@ -138,7 +138,7 @@ fun StyleSettingsScreen(navController: NavHostController) {
                     supData = byteArrayOf(),
                 ),
                 setImagePreview = {}, deleteMessage = {}, editMessage = {}, pinMessage = {l,b->}, scope = scope,
-                snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, sameSender = false
+                snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, sameSender = false, isPinned = false
             )
             Spacer(Modifier.height(5.dp))
             MessageBubble(
@@ -148,7 +148,7 @@ fun StyleSettingsScreen(navController: NavHostController) {
                             "И рано ль, поздно ль **пробужденье**,\nА должен наконец проснуться человек...\n\n" +
                             "- Федор Тютчев", type = MessageDC.TEXT),
                 setImagePreview = {}, deleteMessage = {}, editMessage = {}, pinMessage = {l,b->}, scope = scope,
-                snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, sameSender = false
+                snackBarHostState = SnackbarHostState(), renderMarkdown = settings.parseMarkdown, sameSender = false, isPinned = false
             )
         }
         val sliderValueRounding = remember { mutableFloatStateOf(settings.messageRounding) }

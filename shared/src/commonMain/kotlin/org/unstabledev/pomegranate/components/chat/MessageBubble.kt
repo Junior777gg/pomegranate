@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,12 +99,15 @@ import org.unstabledev.pomegranate.database.MessageDC
 import org.unstabledev.pomegranate.database.MessageDC.Companion.canDisplaySender
 import org.unstabledev.pomegranate.database.MessageDC.Companion.isDisplayable
 import org.unstabledev.pomegranate.database.deserialize
+import org.unstabledev.pomegranate.platform.Sharing
 import org.unstabledev.pomegranate.platform.getBitmapFromBytes
+import org.unstabledev.pomegranate.platform.isMobile
 import org.unstabledev.pomegranate.platform.kmpReadBytes
 import org.unstabledev.pomegranate.platform.openUrlInBrowser
 import org.unstabledev.pomegranate.platform.sendHaptic
 import pomegranate.shared.generated.resources.Res
 import pomegranate.shared.generated.resources.pin
+import pomegranate.shared.generated.resources.unpin
 
 @Composable
 fun MessageBubble(
@@ -115,7 +119,8 @@ fun MessageBubble(
     scope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
     renderMarkdown: Boolean,
-    sameSender: Boolean
+    sameSender: Boolean,
+    isPinned: Boolean,
 ) {
     if (!message.isDisplayable()) return
 
@@ -134,6 +139,8 @@ fun MessageBubble(
     val deleteAlertOpen = remember { mutableStateOf(false) }
     val pinAlertOpen = remember { mutableStateOf(false) }
     val editingMode = remember { mutableStateOf(false) }
+    val canShare = isMobile&&(message.type==MessageDC.ANIMATED_IMAGE||message.type==MessageDC.IMAGE
+            ||message.type==MessageDC.FILE||message.type==MessageDC.TEXT)
 
     @Composable
     fun applyMessageBubble(apply: Boolean, base: Modifier, width: Dp): Modifier {
@@ -188,6 +195,15 @@ fun MessageBubble(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground
             )
+            if (isPinned) {
+                Spacer(Modifier.width(2.dp))
+                Icon(
+                    modifier = Modifier.size(15.dp),
+                    painter = painterResource(Res.drawable.pin),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
         }
     }
     Row(
@@ -196,16 +212,16 @@ fun MessageBubble(
     ) {
         val isUniqueSender=!message.isMine && message.canDisplaySender() && message.chatType!=ChatDC.Companion.ChatTypes.CHAT && !sameSender
         if(isUniqueSender && settings.profileNearMessage) ProfileImage(person, message.messageCreator)
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        BoxWithConstraints(Modifier.fillMaxWidth().altClickable({},{
+            menuOpen.value = true
+            sendHaptic(HAPTIC_EFFECT_CLICK)
+        })) {
             val maxMessageWidth = maxWidth * settings.messageMaxWidth
             Box(
                 modifier = applyMessageBubble(noNeedForBubble, Modifier
                     .altClickable({
                         if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) setImagePreview(message)
-                    }, {
-                        menuOpen.value = true
-                        sendHaptic(HAPTIC_EFFECT_CLICK)
-                    })
+                    }, {})
                     .align(if (message.isMine) Alignment.CenterEnd else Alignment.CenterStart)
                     .pointerHoverIcon(if (message.type == MessageDC.IMAGE || message.type == MessageDC.ANIMATED_IMAGE) PointerIcon.Hand else PointerIcon.Default),
                     maxMessageWidth)
@@ -775,11 +791,29 @@ fun MessageBubble(
                                 }
                             )
                         }
+                        if (canShare) {
+                            DropdownMenuItem(
+                                text = { Text("Поделиться", color = MaterialTheme.colorScheme.onBackground) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    if(message.type==MessageDC.ANIMATED_IMAGE||message.type==MessageDC.IMAGE||message.type==MessageDC.FILE)
+                                        Sharing().file(message.data.decodeToString())
+                                    else Sharing().text(message.data.decodeToString())
+                                    menuOpen.value = false
+                                }
+                            )
+                        }
                         DropdownMenuItem(
-                            text = { Text("Закрепить/открепить", color = MaterialTheme.colorScheme.onBackground) },
+                            text = { Text(if(isPinned) "Открепить" else "Закрепить", color = MaterialTheme.colorScheme.onBackground) },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(Res.drawable.pin),
+                                    painter = if(isPinned) painterResource(Res.drawable.unpin) else painterResource(Res.drawable.pin),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     contentDescription = null,
                                     modifier = Modifier.size(15.dp).rotate(45.0f)

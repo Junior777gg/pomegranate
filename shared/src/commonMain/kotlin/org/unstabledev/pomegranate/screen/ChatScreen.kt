@@ -200,7 +200,7 @@ fun ChatScreen(
                                 if(everyone) viewModel.send(message=(!isUnpinning).toString()+":"+msg.time.toString(), files=listOf(), type=MessageDC.MSG_PIN)
                             }, {},
                             scope, snackBarHostState, settings.parseMarkdown,
-                            sameSender)
+                            sameSender, viewModel.getChat().pinnedMessages.contains(message.key))
 
                         if(settings.displayTimeMarksChat) {
                             if (index == messages.value.size - 1) {
@@ -230,8 +230,7 @@ fun ChatScreen(
                     Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 56.dp)) {
                         val msg = remember { mutableStateOf<MessageDC?>(null) }
                         scope.launch {
-                            msg.value =
-                                Repository.messagesDao.get(viewModel.getChat().pinnedMessages.last())
+                            msg.value = Repository.messagesDao.get(viewModel.getChat().pinnedMessages.last())
                         }
                         if (msg.value != null) {
                             val m = msg.value!!
